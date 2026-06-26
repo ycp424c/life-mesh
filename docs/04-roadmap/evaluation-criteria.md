@@ -59,6 +59,7 @@
 - 第一版索引遵守默认排除规则，不读取 `.git/`、`.obsidian/`、附件二进制、`Trash/`、`_archives/`、`tmp/`。
 - 修改 Vault Note 后，对应索引片段和派生事实能通过 Vault Note Revision 失效或重建。
 - 旧回答遇到 stale 或 missing 来源时不自动重写，而是展示来源状态并提供重新生成动作。
+- 通过 [Obsidian 检索最小验收样例](../02-domain/data-sources/obsidian-retrieval-sample.md)：`bundle` 产出带 `note_path`+`revision_id`+`heading`+`line_range`+`citation_status` 的 slice，agent 事实回答引用来源与状态，stale 链路生效。
 
 第 4 阶段通过条件：
 

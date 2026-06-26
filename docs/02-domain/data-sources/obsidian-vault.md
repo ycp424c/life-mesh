@@ -137,3 +137,7 @@ Obsidian Vault 是可编辑源，不应假设笔记索引后保持不变。
 - Vault 内 `.git` 历史是否完全不进入 LifeMesh？
 - frontmatter 的哪些字段可作为结构化事实？
 - 是否需要允许用户为某些归档目录建立显式白名单？
+
+## 相关样例
+
+- [Obsidian 检索最小验收样例](obsidian-retrieval-sample.md)：用真实 vault 数据验证 `bundle` 命令、JSON Bundle schema 和 stale 链路。

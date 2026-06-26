@@ -30,6 +30,7 @@ docs/
 ## 当前关键入口
 
 - [Obsidian Vault 数据源评估](02-domain/data-sources/obsidian-vault.md)
+- [Obsidian 检索最小验收样例](02-domain/data-sources/obsidian-retrieval-sample.md)
 - [Knowledge Candidates](02-domain/knowledge-candidates.md)
 - [Canonical Facts](02-domain/canonical-facts.md)
 - [Context Bundle](02-domain/context-bundle.md)

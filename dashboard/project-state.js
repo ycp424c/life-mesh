@@ -15,9 +15,9 @@ window.LIFEMESH_PROJECT_STATE = {
     {
       lane: "Now",
       items: [
-        "定义 Obsidian 检索最小验收样例",
+        "设计 Canonical Fact 复核与撤销流程",
         "细化 Candidate inbox 确认体验",
-        "设计 Canonical Fact 复核与撤销流程"
+        "定义 frontmatter 结构化事实边界"
       ]
     },
     {
@@ -348,8 +348,8 @@ window.LIFEMESH_PROJECT_STATE = {
   ],
   openQuestions: [
     {
-      title: "Obsidian 检索最小验收样例",
-      detail: "第 1 阶段 CLI 实现前，先定义一个可验收的 Obsidian 检索样例：输入什么任务、产出哪些 raw slice、citation_status 如何展示。"
+      title: "Canonical Fact 复核与撤销流程",
+      detail: "依赖的 Source Revision 变 stale/missing 后，Canonical Fact 如何标记需复核、如何撤销、tombstone 如何级联？"
     },
     {
       title: "来源引用格式",
@@ -369,6 +369,11 @@ window.LIFEMESH_PROJECT_STATE = {
     }
   ],
   recentChanges: [
+    {
+      date: "2026-06-26",
+      title: "定义 Obsidian 检索最小验收样例",
+      detail: "用真实 vault 的 hot.md 定义可验收样例：bundle 产出带 note_path/revision_id/heading/line_range/citation_status 的 raw slice，agent 给 Source-Backed Answer，stale 链路生效。见 obsidian-retrieval-sample.md。"
+    },
     {
       date: "2026-06-26",
       title: "定义 CLI 契约 + candidate 确认流程",
