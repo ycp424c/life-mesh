@@ -21,6 +21,15 @@
        - 向量索引
        - 知识图谱
        - 事件时间线
+  -> Personal Context Layer
+       - Context Slice
+       - Context Bundle
+       - Knowledge Candidate
+       - User Confirmation
+  -> Canonical Knowledge
+       - Canonical Fact
+       - Memory
+       - Decision Record
   -> 权限与策略层
        - 数据分类
        - 授权范围
@@ -42,8 +51,11 @@
 - Raw Vault 保存原始数据，不被 Agent 直接任意读取。
 - Canonical Store 保存可解释、可追溯的事实。
 - Index 和 Graph 用于检索与关联，但不能替代来源。
+- Personal Context Layer 负责把不同来源的材料组装成任务级上下文，而不是把检索结果直接交给 Agent。
+- Canonical Fact 和 Memory 可以进入 Context Bundle，但必须保留 provenance、撤销路径和风险级别。
 - Agent Access Layer 只暴露授权后的工具和资源。
 - Audit Layer 记录读取、写入、删除、授权和动作执行。
+- Source Adapter 负责接入具体数据源，但核心生命周期、权限、溯源和审计语义必须保持 source-neutral。
 
 ## 可视化边界
 

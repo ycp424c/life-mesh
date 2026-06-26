@@ -1,29 +1,29 @@
 window.LIFEMESH_PROJECT_STATE = {
   lastUpdated: "2026-06-26",
-  state: "文档与看板基线",
+  state: "Personal Context Layer",
   currentPhase: "第 0 阶段：个人数据宪法",
-  overallProgress: 12,
+  overallProgress: 14,
   summary:
-    "LifeMesh 已建立 Personal Data OS 的文档基线和静态 Web 看板。当前重点是把治理、安全、路线图和第一批数据源接入评估收敛到可执行范围。",
+    "LifeMesh 已确认第一阶段目标是 Personal Context Layer：用 Obsidian 作为首个 Source Adapter，验证 Context Bundle、Knowledge Candidate 生命周期，以及持久化/高风险写入前确认。",
   metrics: [
     { label: "文档基线", value: "active", detail: "35+ Markdown 文件", tone: "green" },
     { label: "Web 看板", value: "active", detail: "静态页面，无构建链", tone: "blue" },
-    { label: "业务代码", value: "none", detail: "尚未进入实现", tone: "amber" },
+    { label: "Context Layer", value: "phase 1", detail: "source-neutral validation", tone: "blue" },
     { label: "关键风险", value: "7", detail: "需持续跟踪", tone: "red" }
   ],
   work: [
     {
       lane: "Now",
       items: [
-        "固化项目看板同步规则",
-        "补齐阶段 0 治理细节",
-        "明确第一批数据源接入评估"
+        "确定首个 Agent 接口协议（MCP？）",
+        "细化 Knowledge Candidate inbox 体验",
+        "设计 Canonical Fact 复核与撤销流程"
       ]
     },
     {
       lane: "Next",
       items: [
-        "定义静态知识数字化最小范围",
+        "定义 Obsidian Vault 检索最小验收样例",
         "补首批用户故事验收样例",
         "评估 MCP 是否作为首个 Agent 接口"
       ]
@@ -56,11 +56,11 @@ window.LIFEMESH_PROJECT_STATE = {
     },
     {
       id: "1",
-      title: "静态知识数字化",
+      title: "Personal Context Layer",
       status: "planned",
-      progress: 18,
-      focus: "文档问答、来源引用、删除级联",
-      docs: ["data-map.md", "provenance-and-lifecycle.md"]
+      progress: 35,
+      focus: "Context Slice、Context Bundle、Knowledge Candidate、User Confirmation",
+      docs: ["ADR-0005", "ADR-0004", "obsidian-vault.md"]
     },
     {
       id: "2",
@@ -135,13 +135,87 @@ window.LIFEMESH_PROJECT_STATE = {
       tone: "agent"
     }
   ],
+  systemMap: {
+    lanes: [
+      {
+        title: "Source Adapters",
+        subtitle: "source-neutral 接入边界",
+        tone: "source",
+        nodes: [
+          { title: "Obsidian Adapter", detail: "首个验证适配器，只读 Markdown" },
+          { title: "Calendar / Tasks", detail: "后续事件、承诺、截止日期来源" },
+          { title: "Contacts / Mail / Files", detail: "后续关系、沟通、文件来源" }
+        ]
+      },
+      {
+        title: "Source Lifecycle",
+        subtitle: "可编辑来源身份",
+        tone: "vault",
+        nodes: [
+          { title: "Source Revision", detail: "path / mtime / size / hash / indexed_at" },
+          { title: "Citation Status", detail: "current / stale / missing" },
+          { title: "Tombstone", detail: "删除、排除、撤销后的失效标记" }
+        ]
+      },
+      {
+        title: "Indexes + Views",
+        subtitle: "检索只是材料层",
+        tone: "index",
+        nodes: [
+          { title: "Text / Semantic Index", detail: "关键词、全文、语义召回" },
+          { title: "Graph View", detail: "link、tag、entity、relationship" },
+          { title: "Timeline View", detail: "event、decision、revision history" }
+        ]
+      },
+      {
+        title: "Personal Context Layer",
+        subtitle: "第一阶段核心能力",
+        tone: "context",
+        nodes: [
+          { title: "Context Slice", detail: "带 evidence_role：fact / raw / context / lead" },
+          { title: "Context Bundle", detail: "按来源优先级组装：Fact > Memory > Revision > Candidate" },
+          { title: "Knowledge Candidate", detail: "fact / preference / relationship / task / decision" }
+        ]
+      },
+      {
+        title: "Canonical Knowledge",
+        subtitle: "确认后可复用",
+        tone: "store",
+        nodes: [
+          { title: "Canonical Fact", detail: "已核实、可追溯、可撤销事实" },
+          { title: "Memory", detail: "偏好/语境，只影响排序语气，不作事实证据" },
+          { title: "Decision Record", detail: "选择、理由、来源和时间" }
+        ]
+      },
+      {
+        title: "Agent Access",
+        subtitle: "最小权限调用",
+        tone: "agent",
+        nodes: [
+          { title: "MCP / Tools", detail: "搜索、总结、草稿、任务、提醒" },
+          { title: "Source-Backed Answer", detail: "引用来源和 Citation Status" },
+          { title: "User Confirmation", detail: "持久化或高风险写入前确认" }
+        ]
+      }
+    ],
+    rails: [
+      { title: "Policy", detail: "classification / permission scope / sensitivity" },
+      { title: "Audit", detail: "who used what, why, and under which revision" },
+      { title: "Revocation", detail: "delete, exclude, expire, stale, tombstone" }
+    ],
+    feedback: [
+      "User Confirmation -> Canonical Fact / Memory",
+      "Source changes -> Source Revision -> Citation Status",
+      "Revocation -> Tombstone -> Context Bundle cleanup"
+    ]
+  },
   docs: [
     { name: "Vision", path: "docs/00-vision/", status: "draft", signal: "方向已建立" },
     { name: "Governance", path: "docs/01-governance/", status: "draft", signal: "需细化删除和授权" },
-    { name: "Domain", path: "docs/02-domain/", status: "draft", signal: "核心对象已列出" },
-    { name: "Architecture", path: "docs/03-architecture/", status: "draft", signal: "高层边界已建立" },
+    { name: "Domain", path: "docs/02-domain/", status: "draft", signal: "Obsidian 数据源已记录" },
+    { name: "Architecture", path: "docs/03-architecture/", status: "draft", signal: "系统架构图已建立" },
     { name: "Roadmap", path: "docs/04-roadmap/", status: "draft", signal: "阶段已定义" },
-    { name: "ADR", path: "docs/05-decisions/", status: "active", signal: "2 条 accepted" },
+    { name: "ADR", path: "docs/05-decisions/", status: "active", signal: "5 条 accepted" },
     { name: "Security", path: "docs/07-security/", status: "draft", signal: "威胁模型初版" },
     { name: "Dashboard", path: "docs/08-dashboard/", status: "active", signal: "同步规则已落地" }
   ],
@@ -179,22 +253,40 @@ window.LIFEMESH_PROJECT_STATE = {
       title: "静态 Web 项目看板",
       status: "accepted",
       path: "../docs/05-decisions/ADR-0002-static-project-board.md"
+    },
+    {
+      id: "ADR-0003",
+      title: "Vault Note Revision",
+      status: "accepted",
+      path: "../docs/05-decisions/ADR-0003-vault-note-revision.md"
+    },
+    {
+      id: "ADR-0004",
+      title: "Source-Neutral Core",
+      status: "accepted",
+      path: "../docs/05-decisions/ADR-0004-source-neutral-core.md"
+    },
+    {
+      id: "ADR-0005",
+      title: "Personal Context Layer",
+      status: "accepted",
+      path: "../docs/05-decisions/ADR-0005-personal-context-layer.md"
     }
   ],
   dataSources: [
     {
-      name: "个人笔记",
+      name: "Obsidian Vault",
       phase: "第 1 阶段",
       sensitivity: "Private",
-      status: "planned",
-      next: "填写 data-source-intake"
+      status: "active candidate",
+      next: "作为 Source Adapter 验证样例"
     },
     {
-      name: "项目文档",
+      name: "Vault Note",
       phase: "第 1 阶段",
       sensitivity: "Private",
       status: "planned",
-      next: "定义最小字段和来源记录"
+      next: "定义来源引用格式"
     },
     {
       name: "日历与任务",
@@ -243,12 +335,16 @@ window.LIFEMESH_PROJECT_STATE = {
   ],
   openQuestions: [
     {
-      title: "首个用户场景",
-      detail: "静态知识数字化应优先服务个人文档问答还是项目资料检索？"
+      title: "MCP 是否作为首个 Agent 接口",
+      detail: "Context Bundle 通过什么协议交付给 Agent？是否采用 MCP 作为首个 Agent Access Layer 协议仍待决。"
+    },
+    {
+      title: "来源引用格式",
+      detail: "回答应如何展示 Vault Note Revision、heading、line range 和 current/stale/missing 状态？"
     },
     {
       title: "首批数据源",
-      detail: "需要确定第 1 阶段接入的最小数据源集合。"
+      detail: "首批数据源已确认为 Obsidian Vault；后续需决定是否添加白名单目录。"
     },
     {
       title: "MCP 接口",
@@ -260,6 +356,76 @@ window.LIFEMESH_PROJECT_STATE = {
     }
   ],
   recentChanges: [
+    {
+      date: "2026-06-26",
+      title: "确定 Context Slice 的 evidence_role 与 Bundle 逻辑结构",
+      detail: "evidence_role 挂在每个 Slice（fact/raw/context/lead）；事实回答只基于 fact+raw，偏好和线索不进事实陈述位。Bundle 逻辑结构为 task+permission_scope+slices+excluded_sources+freshness_report。"
+    },
+    {
+      date: "2026-06-26",
+      title: "确定 Memory 与 Canonical Fact 边界",
+      detail: "Memory 只影响排序、语气和偏好，不作事实证据；需要当事实用必须走 Fact Acceptance 升级。推断记忆分两档：普通偏好直接写入，重要偏好/关系/决策类写入前需确认。"
+    },
+    {
+      date: "2026-06-26",
+      title: "确定 Context Bundle 来源优先级",
+      detail: "组装优先级为 Canonical Fact > Memory > 当前任务相关 Source Revision > 当前任务生成的 Knowledge Candidate；失效来源只进入 excluded_sources / freshness_report。"
+    },
+    {
+      date: "2026-06-26",
+      title: "确定 Canonical Fact 生成路径",
+      detail: "第一版只允许用户确认、用户手动创建、低风险策略接受三条路径生成 Canonical Fact。"
+    },
+    {
+      date: "2026-06-26",
+      title: "新增完整系统架构图",
+      detail: "看板新增 Source Adapter 到 Agent Access 的完整架构图，并补 System Map 文档。"
+    },
+    {
+      date: "2026-06-26",
+      title: "确认 Canonical Fact 作为已核实事实层",
+      detail: "Canonical Fact 可作为 Context Bundle 的高优先级来源，但必须可追溯、可撤销。"
+    },
+    {
+      date: "2026-06-26",
+      title: "确定 Knowledge Candidate 第一版类型",
+      detail: "第一版类型为 fact、preference、relationship、task、decision，并要求 confidence、risk、lifecycle、source_revisions、why_suggested。"
+    },
+    {
+      date: "2026-06-26",
+      title: "确认 User Confirmation 不阻塞普通回答",
+      detail: "确认只在候选知识持久化、高风险写入或外部动作前触发。"
+    },
+    {
+      date: "2026-06-26",
+      title: "确认第一阶段为 Personal Context Layer",
+      detail: "第一阶段不做普通 RAG，也不做 Obsidian 知识地图，而是验证 source-neutral 上下文层。"
+    },
+    {
+      date: "2026-06-26",
+      title: "确认 Source-Neutral Core 边界",
+      detail: "Obsidian 被降级为首个 Source Adapter，不能成为 LifeMesh 产品中心。"
+    },
+    {
+      date: "2026-06-26",
+      title: "确定旧回答来源状态策略",
+      detail: "旧回答不自动重写，引用展示 current、stale 或 missing，并提供重新生成动作。"
+    },
+    {
+      date: "2026-06-26",
+      title: "接受 Vault Note Revision 模型",
+      detail: "Obsidian 被建模为可编辑源，引用和派生事实指向具体索引版本。"
+    },
+    {
+      date: "2026-06-26",
+      title: "确定 Obsidian Vault 第一版索引范围",
+      detail: "采用只读 Markdown 索引，默认排除 .git、.obsidian、_attachments 二进制、Trash、_archives、tmp。"
+    },
+    {
+      date: "2026-06-26",
+      title: "确认 Obsidian Vault 为首个验证数据源",
+      detail: "只读扫描到本机 obsidian-default vault，约 1329 个 Markdown 文件。"
+    },
     {
       date: "2026-06-26",
       title: "初始化静态 Web 项目看板",

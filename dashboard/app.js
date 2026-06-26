@@ -71,6 +71,46 @@
     `).join("");
   }
 
+  function renderSystemMap() {
+    const lanes = state.systemMap.lanes.map((lane, index) => `
+      <article class="system-lane ${toneClass(lane.tone)}">
+        <div class="system-lane-head">
+          <span>${String(index + 1).padStart(2, "0")}</span>
+          <div>
+            <h3>${esc(lane.title)}</h3>
+            <p>${esc(lane.subtitle)}</p>
+          </div>
+        </div>
+        <div class="system-nodes">
+          ${lane.nodes.map((node) => `
+            <section class="system-node">
+              <strong>${esc(node.title)}</strong>
+              <small>${esc(node.detail)}</small>
+            </section>
+          `).join("")}
+        </div>
+      </article>
+    `).join("");
+
+    const rails = state.systemMap.rails.map((rail) => `
+      <section>
+        <strong>${esc(rail.title)}</strong>
+        <span>${esc(rail.detail)}</span>
+      </section>
+    `).join("");
+
+    const feedback = state.systemMap.feedback.map((item) => `<li>${esc(item)}</li>`).join("");
+
+    byId("system-map").innerHTML = `
+      <div class="system-lanes">${lanes}</div>
+      <div class="system-rails" aria-label="横切治理能力">${rails}</div>
+      <div class="feedback-loop">
+        <strong>Feedback loops</strong>
+        <ul>${feedback}</ul>
+      </div>
+    `;
+  }
+
   function renderDocs() {
     byId("doc-health").innerHTML = state.docs.map((doc) => `
       <a class="doc-row ${toneClass(doc.status)}" href="../${esc(doc.path)}">
@@ -174,6 +214,7 @@
   renderOverview();
   renderWork();
   renderPhases();
+  renderSystemMap();
   renderArchitecture();
   renderDocs();
   renderRisks();

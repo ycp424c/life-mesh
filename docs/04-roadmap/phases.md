@@ -16,11 +16,33 @@
 - 风险登记表
 - 静态 Web 项目看板和同步维护规则
 
-## 第 1 阶段：静态知识数字化
+## 第 1 阶段：Personal Context Layer
 
-目标：让个人文档先做到问得到、找得到、能引用来源。
+目标：验证 source-neutral 的 Personal Context Layer，而不是普通 RAG 或 Obsidian 增强器。
 
-优先数据：
+第一阶段要证明 LifeMesh 能把一个个人数据源转成任务级上下文：
+
+- Context Slice：最小、可追溯、带权限和新鲜度的上下文单元。
+- Context Bundle：为某个 Agent 任务组装的上下文包，按来源优先级组装（Canonical Fact > Memory > 当前任务相关 Source Revision > 当前任务生成的 Knowledge Candidate），失效来源只进入 `excluded_sources` / `freshness_report`。
+- Knowledge Candidate：候选事实、偏好、关系、任务或决策。
+- User Confirmation：确认后才进入 Canonical Store 或 Memory。
+
+当前架构可视化：
+
+- [System Map](../03-architecture/system-map.md)
+
+首个验证适配器：
+
+- Obsidian Vault：`/Users/justynchen/Documents/docs/obsidian-default`
+
+定位：Obsidian 只验证可编辑静态知识源，不作为 LifeMesh 的产品中心。
+
+第一版索引范围：
+
+- 只读处理 Markdown 笔记文本、frontmatter、标题、wikilink、任务标记和附件链接元信息。
+- 默认排除 `.git/`、`.obsidian/`、`_attachments/` 二进制内容、`Trash/`、`_archives/`、`tmp/`。
+
+后续优先数据：
 
 - 笔记
 - 项目文档

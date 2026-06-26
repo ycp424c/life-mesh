@@ -24,12 +24,35 @@
 - 数据宪法、分类、授权、风险登记表存在。
 - 高敏感数据和高风险动作有默认禁用或确认策略。
 - Web 看板存在，且项目阶段、风险、路线图、架构、ADR 与文档一致。
+- Web 看板包含完整系统架构图，并与 `docs/03-architecture/system-map.md` 一致。
 
 第 1 阶段通过条件：
 
-- 文档问答返回来源。
-- 删除文档后索引和派生事实可清理。
+- Obsidian Vault 问答返回具体 Vault Note 来源。
+- Obsidian 相关实现没有污染通用 Source Adapter、Source Revision、权限和审计模型。
+- 能为一个任务生成 Context Bundle，而不是只返回检索片段。
+- Context Bundle 按来源优先级组装：Canonical Fact > Memory > 当前任务相关 Source Revision > 当前任务生成的 Knowledge Candidate。
+- stale / missing / revoked 来源不进入可用上下文，只进入 `excluded_sources` / `freshness_report`；依赖失效来源的 Canonical Fact 被标记为需要复核。
+- Context Bundle 内的每个 Context Slice 都有来源、权限、新鲜度和 Citation Status。
+- 每个 Context Slice 带 `evidence_role`（fact / raw / context / lead）。
+- 事实性回答是 Source-Backed Answer，只基于 `fact` + `raw`；`context` 和 `lead` 不进入事实陈述位；`lead` 不单独支撑结论且带"未核实"标注。
+- stale / missing / revoked 来源不进入证据，只进入报告区。
+- 能产出 Knowledge Candidate，但不会在未确认前写入 Canonical Store 或 Memory。
+- Knowledge Candidate 第一版至少支持 fact、preference、relationship、task、decision 五类。
+- 每个 Knowledge Candidate 都包含 confidence、risk、lifecycle、source_revisions 和 why_suggested。
+- 普通回答不被 User Confirmation 阻塞。
+- Knowledge Candidate 具备生命周期：transient、inbox、confirm_required、discard。
+- User Confirmation 只在持久化到 Canonical Store、Memory、自动化规则或高风险写入前触发。
+- Canonical Fact 第一版只允许通过用户确认、用户手动创建、低风险策略接受三条路径生成。
+- Canonical Fact 必须包含 statement、source_revisions、accepted_by、accepted_at、acceptance_path、confidence、risk、validity、revocation_status。
+- Memory 只影响排序、语气和偏好，不作为事实证据；需要当事实用必须走 Fact Acceptance 升级为 Canonical Fact。
+- 显式记忆和情境记忆可直接写入 Memory，情境记忆带范围和过期时间；普通偏好推断带置信度直接写入；重要偏好、关系、决策类推断写入 Memory 前需要 User Confirmation。
+- 路径排除、删除或撤销授权后，索引和派生事实可清理。
 - 能区分事实、摘要和推断。
+- 默认不写回 Obsidian Vault，也不把推断自动写入长期记忆。
+- 第一版索引遵守默认排除规则，不读取 `.git/`、`.obsidian/`、附件二进制、`Trash/`、`_archives/`、`tmp/`。
+- 修改 Vault Note 后，对应索引片段和派生事实能通过 Vault Note Revision 失效或重建。
+- 旧回答遇到 stale 或 missing 来源时不自动重写，而是展示来源状态并提供重新生成动作。
 
 第 4 阶段通过条件：
 

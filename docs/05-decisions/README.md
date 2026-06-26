@@ -21,3 +21,6 @@
 
 - [ADR-0001 文档先行初始化](ADR-0001-docs-first-initialization.md)
 - [ADR-0002 静态 Web 项目看板](ADR-0002-static-project-board.md)
+- [ADR-0003 Vault Note Revision](ADR-0003-vault-note-revision.md)
+- [ADR-0004 Source-Neutral Core](ADR-0004-source-neutral-core.md)
+- [ADR-0005 Personal Context Layer](ADR-0005-personal-context-layer.md)

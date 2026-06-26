@@ -17,7 +17,17 @@
 
 ## 初始接入建议
 
-优先接入：
+首个验证适配器：
+
+- Obsidian Vault：`/Users/justynchen/Documents/docs/obsidian-default`
+
+定位：
+
+- Obsidian Vault 用于验证可编辑静态知识源。
+- 它不是 LifeMesh 的中心数据源，也不应决定核心领域模型。
+- 从 Obsidian 学到的能力应抽象为 Source Adapter、Source Revision、Citation Status、删除级联和权限策略。
+
+后续优先接入：
 
 - 个人笔记
 - 项目文档
@@ -46,3 +56,13 @@
 - 保留周期
 - 允许的 Agent 能力
 - 审计要求
+
+## 当前数据源评估
+
+- [Obsidian Vault](data-sources/obsidian-vault.md)
+
+## 当前领域模型入口
+
+- [Context Bundle](context-bundle.md)
+- [Knowledge Candidates](knowledge-candidates.md)
+- [Canonical Facts](canonical-facts.md)

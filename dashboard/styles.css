@@ -248,7 +248,8 @@ main {
 }
 
 .board-grid,
-.roadmap-section {
+.roadmap-section,
+.system-map-section {
   padding-top: 8px;
 }
 
@@ -467,6 +468,161 @@ main {
   background: #eee6f3;
 }
 
+.tone-context {
+  background: #e6f1ef;
+}
+
+.system-map-section {
+  border: 2px solid var(--ink);
+  background: rgba(255, 250, 240, 0.82);
+  box-shadow: var(--shadow);
+  padding: 24px;
+}
+
+.system-map {
+  display: grid;
+  gap: 16px;
+}
+
+.system-lanes {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(210px, 1fr));
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+}
+
+.system-lane {
+  position: relative;
+  min-height: 360px;
+  border: 2px solid var(--ink);
+  padding: 14px;
+  background: var(--white);
+}
+
+.system-lane:not(:last-child)::after {
+  position: absolute;
+  top: 51px;
+  right: -13px;
+  z-index: 2;
+  width: 24px;
+  height: 18px;
+  background: var(--ink);
+  clip-path: polygon(0 0, 100% 50%, 0 100%, 22% 50%);
+  content: "";
+}
+
+.system-lane-head {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  min-height: 80px;
+  border-bottom: 1px solid rgba(35, 35, 33, 0.22);
+  padding-bottom: 12px;
+}
+
+.system-lane-head > span {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  color: var(--white);
+  background: var(--ink);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.system-lane-head h3 {
+  font-family: "Iowan Old Style", Georgia, serif;
+  font-size: 24px;
+}
+
+.system-lane-head p {
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.system-nodes {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.system-node {
+  min-height: 82px;
+  border: 1px solid rgba(35, 35, 33, 0.32);
+  background: rgba(255, 250, 240, 0.78);
+  padding: 11px;
+}
+
+.system-node strong {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 14px;
+}
+
+.system-node small {
+  color: #4a463f;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.system-rails {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.system-rails section,
+.feedback-loop {
+  border: 2px solid var(--ink);
+  background: var(--ink);
+  color: var(--white);
+  padding: 14px;
+}
+
+.system-rails strong,
+.feedback-loop strong {
+  display: block;
+  margin-bottom: 6px;
+  font-family: "Iowan Old Style", Georgia, serif;
+  font-size: 22px;
+}
+
+.system-rails span,
+.feedback-loop li {
+  color: rgba(255, 250, 240, 0.82);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.feedback-loop {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.feedback-loop ul {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.feedback-loop li {
+  border: 1px solid rgba(255, 250, 240, 0.28);
+  padding: 10px;
+}
+
 .doc-health {
   display: grid;
   gap: 10px;
@@ -651,6 +807,9 @@ main {
 
   .lanes,
   .architecture-flow,
+  .system-rails,
+  .feedback-loop,
+  .feedback-loop ul,
   .sync-checklist {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -672,12 +831,16 @@ main {
   .metric-grid,
   .lanes,
   .architecture-flow,
+  .system-rails,
+  .feedback-loop,
+  .feedback-loop ul,
   .plan-grid,
   .sync-checklist {
     grid-template-columns: 1fr;
   }
 
   .status-panel,
+  .system-map-section,
   .architecture-panel,
   .docs-panel,
   .risk-panel,

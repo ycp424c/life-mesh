@@ -13,6 +13,7 @@
 | Index Layer | 提供全文、语义和结构化检索 | 作为唯一事实来源 |
 | Graph Layer | 表达人、项目、文档、事件、承诺之间的关系 | 代替权限判断 |
 | Timeline Layer | 组织事件、任务、承诺、截止日期和历史变化 | 决定自动执行策略 |
+| Personal Context Layer | 生成 Context Slice、Context Bundle 和 Knowledge Candidate | 直接写入长期记忆或 canonical facts |
 | Policy Layer | 数据分类、授权、审计、撤销 | 存储业务事实 |
 
 ## 设计注意事项
@@ -21,3 +22,5 @@
 - 图谱关系需要来源和置信度。
 - 时间线对象应支持过去、现在、未来三类状态。
 - 删除原始数据时，需要处理派生事实、索引和记忆的级联影响。
+- Context Bundle 必须是按任务和权限临时组装的结果，不应被误当成永久知识。
+- Context Bundle 按来源优先级组装：Canonical Fact > Memory > 当前任务相关 Source Revision > 当前任务生成的 Knowledge Candidate；stale / missing / revoked 来源只进入 excluded_sources / freshness_report，不进入可用上下文。

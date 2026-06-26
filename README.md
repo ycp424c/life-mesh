@@ -19,7 +19,9 @@ LifeMesh 是一个面向个人的 Personal Data OS：把分散在生活、工作
 - [产品愿景](docs/00-vision/product-brief.md)
 - [个人数据宪法](docs/01-governance/personal-data-constitution.md)
 - [个人数据地图](docs/02-domain/data-map.md)
+- [Obsidian Vault 数据源评估](docs/02-domain/data-sources/obsidian-vault.md)
 - [架构总览](docs/03-architecture/overview.md)
+- [系统架构图说明](docs/03-architecture/system-map.md)
 - [渐进式路线图](docs/04-roadmap/phases.md)
 - [决策记录](docs/05-decisions/README.md)
 - [共享对话摘要](docs/06-research/source-conversation-summary.md)
@@ -30,4 +32,4 @@ LifeMesh 是一个面向个人的 Personal Data OS：把分散在生活、工作
 
 ## 当前状态
 
-文档基线和静态项目看板已建立。下一步应补齐第一批数据源接入评估、阶段 0 治理细节和阶段 1 静态知识数字化的最小可行范围。
+文档基线和静态项目看板已建立。第 1 阶段首个验证数据源已收敛为本地 Obsidian Vault；下一步应确认索引范围、路径排除规则、来源引用格式和只读接入边界。

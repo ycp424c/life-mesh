@@ -35,6 +35,20 @@
 | Write | 写入记忆、任务、标签 | 可撤销、可审计 |
 | Act | 发送消息、提交表单、调用外部服务 | 强制人工确认 |
 
+## 消费 Context Bundle
+
+Agent 拿到 Context Bundle 后，按每个 Context Slice 的 `evidence_role` 消费，不自己判断角色：
+
+- **事实性陈述的回答**必须是 Source-Backed Answer，只能基于 `fact` + `raw`，不能基于 `context` 或 `lead`。
+- **建议、规划、草稿类输出**可以用 `context` 调整风格和排序，用 `lead` 提供灵感，但必须区分"基于事实"和"基于偏好/线索"两部分。
+- **`lead` 永远不能单独支撑一个结论**：候选线索要进回答，必须带"未核实"标注，或先走 Fact Acceptance 变成 `fact`。
+
+Agent 不得：
+
+- 把 `context`（偏好）写成客观事实。
+- 把 `lead`（候选）当成已确认结论。
+- 在事实性回答里引用失效来源；stale / missing / revoked 来源只能进报告区。
+
 ## 待决问题
 
 - 是否采用 MCP 作为首个 Agent 接口协议？
