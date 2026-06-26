@@ -2,7 +2,7 @@ window.LIFEMESH_PROJECT_STATE = {
   lastUpdated: "2026-06-26",
   state: "Personal Context Layer",
   currentPhase: "第 0 阶段：个人数据宪法",
-  overallProgress: 14,
+  overallProgress: 18,
   summary:
     "LifeMesh 已确认第一阶段目标是 Personal Context Layer：用 Obsidian 作为首个 Source Adapter，验证 Context Bundle、Knowledge Candidate 生命周期，以及持久化/高风险写入前确认。",
   metrics: [
@@ -15,8 +15,8 @@ window.LIFEMESH_PROJECT_STATE = {
     {
       lane: "Now",
       items: [
-        "定义第 1 阶段 CLI 契约与 JSON schema",
-        "编写配套 agent skill",
+        "定义 Obsidian 检索最小验收样例",
+        "细化 Candidate inbox 确认体验",
         "设计 Canonical Fact 复核与撤销流程"
       ]
     },
@@ -58,9 +58,9 @@ window.LIFEMESH_PROJECT_STATE = {
       id: "1",
       title: "Personal Context Layer",
       status: "planned",
-      progress: 35,
-      focus: "Context Slice、Context Bundle、Knowledge Candidate、User Confirmation",
-      docs: ["ADR-0005", "ADR-0004", "obsidian-vault.md"]
+      progress: 45,
+      focus: "Context Slice、Context Bundle、Knowledge Candidate、User Confirmation、CLI 契约",
+      docs: ["ADR-0005", "ADR-0006", "cli-contract.md", "obsidian-vault.md"]
     },
     {
       id: "2",
@@ -325,6 +325,13 @@ window.LIFEMESH_PROJECT_STATE = {
       guardrail: "区分事实、摘要、推断"
     },
     {
+      name: "受限写入（事实/待办/记忆/候选）",
+      phase: "第 1 阶段",
+      risk: "medium",
+      status: "planned",
+      guardrail: "agent 推断只能走 candidate，用户确认后升级；automation 仍 deferred"
+    },
+    {
       name: "记忆写入",
       phase: "第 4 阶段",
       risk: "medium-high",
@@ -341,8 +348,8 @@ window.LIFEMESH_PROJECT_STATE = {
   ],
   openQuestions: [
     {
-      title: "第 1 阶段 CLI 契约",
-      detail: "LifeMesh CLI 的命令、参数和 JSON Bundle 输出 schema 长什么样？配套 skill 如何组织？"
+      title: "Obsidian 检索最小验收样例",
+      detail: "第 1 阶段 CLI 实现前，先定义一个可验收的 Obsidian 检索样例：输入什么任务、产出哪些 raw slice、citation_status 如何展示。"
     },
     {
       title: "来源引用格式",
@@ -362,6 +369,11 @@ window.LIFEMESH_PROJECT_STATE = {
     }
   ],
   recentChanges: [
+    {
+      date: "2026-06-26",
+      title: "定义 CLI 契约 + candidate 确认流程",
+      detail: "CLI 读(bundle)+受限写(fact/task/remember/candidate)；agent 推断禁止直接 fact add，走 candidate 待确认。candidate 按 type 升级：fact→Canonical Fact、task→Task、preference/relationship/decision→Memory。低风险自动接受，不阻塞普通回答。见 cli-contract.md、ADR-0005/0006。"
+    },
     {
       date: "2026-06-26",
       title: "确定 Bundle 产物格式为 JSON + CLI 搭配 skill",

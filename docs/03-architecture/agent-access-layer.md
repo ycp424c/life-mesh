@@ -37,10 +37,13 @@
 
 ## 交付方式（`ADR-0006`）
 
-第 1 阶段 Agent 接口 = 薄 CLI + skill，不引入运行时 server：
+第 1 阶段 Agent 接口 = 薄 CLI + skill，不引入运行时 server。CLI 契约见 `cli-contract.md`：
 
-- CLI 读索引、按任务组装 **JSON Context Bundle**、输出到文件或 stdout。
-- 配套 skill 是 agent 可读说明，告诉 agent 如何调用 CLI、如何按 `evidence_role` 消费 Bundle。
+- 读：`lifemesh bundle "<task>"` 产出 JSON Context Bundle。
+- 用户手动写：`fact add` / `task add` / `remember`（用户断言路径，直接写）。
+- agent 推断写：`candidate add`（进 inbox，需用户确认）。
+- 配套 skill 指导 agent 调用与按 `evidence_role` 消费，使用范围是用户的所有信息，不限定某个 source。
+- 硬规则：agent 推断禁止直接 `fact add`，只能走 candidate → 用户确认。
 - 任何能读 skill 的 agent 都能使用 LifeMesh，不绑定特定 client 或协议。
 
 ## 消费 Context Bundle

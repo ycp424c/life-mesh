@@ -39,6 +39,10 @@
 - stale / missing / revoked 来源不进入证据，只进入报告区。
 - Context Bundle 作为可序列化 JSON 产物交付（薄 CLI + skill），第 1 阶段不引入运行时 server，不绑定 MCP。
 - 配套 skill 存在，能指导 agent 调用 CLI 并按 `evidence_role` 消费 Bundle。
+- CLI 契约存在（`cli-contract.md`）：`bundle` 读 + `fact add`/`task add`/`remember`/`candidate add` 写。
+- agent 推断不得直接 `fact add`，只能 `candidate add`；用户用 CLI 确认候选，dashboard 只读展示 inbox。
+- candidate 确认按 type 升级：`fact`→Canonical Fact、`task`→Task、`preference`/`relationship`/`decision`→Memory。
+- 低风险事实可策略自动接受；普通回答不被候选确认阻塞。
 - 能产出 Knowledge Candidate，但不会在未确认前写入 Canonical Store 或 Memory。
 - Knowledge Candidate 第一版至少支持 fact、preference、relationship、task、decision 五类。
 - 每个 Knowledge Candidate 都包含 confidence、risk、lifecycle、source_revisions 和 why_suggested。

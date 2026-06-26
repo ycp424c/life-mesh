@@ -5,7 +5,7 @@
 
 ## Context
 
-第 1 阶段需要把 Context Bundle 交付给 Agent。`mcp-and-tool-interface.md` 一直把 MCP 列为候选首个协议。但 MCP 要求维护长驻 server，协议分帧和结构较复杂，与 LifeMesh 既有立场冲突：`ADR-0001` 是 docs-first，`ADR-0002` 是静态看板无构建链，`ADR-0004` 要求核心 source-neutral 且协议无关。第 1 阶段只需要只读交付 Bundle，不需要实时、有状态的工具调用。
+第 1 阶段需要把 Context Bundle 交付给 Agent，并允许写入事实、待办、记忆和候选。`mcp-and-tool-interface.md` 一直把 MCP 列为候选首个协议。但 MCP 要求维护长驻 server，协议分帧和结构较复杂，与 LifeMesh 既有立场冲突：`ADR-0001` 是 docs-first，`ADR-0002` 是静态看板无构建链，`ADR-0004` 要求核心 source-neutral 且协议无关。第 1 阶段只需要 CLI 读写交付，不需要实时、有状态的工具调用。
 
 ## Decision
 
@@ -16,7 +16,8 @@
 - 搭配一份 **skill**（agent 可读说明）：告诉 agent 如何调用 CLI，以及拿到 JSON Bundle 后按 `evidence_role` 消费（事实回答只用 `fact` + `raw`，`context` 只调语气，`lead` 标"未核实"）。Skill 把 Q15 的消费规则固化成 agent 可遵循的指令。
 - Agent 通过 shell 调 CLI 或读文件拿到 JSON Bundle，按 skill 说明消费。任何能读 skill 的 agent 都能用，不绑定特定 client。
 - 核心模型保持协议无关：CLI/文件/skill 只是交付通道，换通道不改动 Context Bundle / evidence_role / Source Revision 模型。
-- 第 1 阶段只读交付，不暴露 `memory-write` 或 `automation`。
+- 第 1 阶段纳入**读 + 受限写**：读（`bundle`）+ 用户手动写（`fact add` / `task add` / `remember`）+ agent 推断走候选（`candidate add`，需用户确认）。`automation`（外发、不可逆动作）仍 deferred 在阶段 6。
+- **硬规则**：agent 推断禁止直接 `fact add`，只能 `candidate add` → 用户确认 → 升级；直接写命令是用户断言路径。
 
 ## Consequences
 
@@ -29,7 +30,8 @@
 代价：
 
 - 需要先定义 Bundle 产物格式（JSON 还是结构化 Markdown）和 CLI 契约，作为后续工作。
-- 没有实时工具调用能力，`memory-write` / `automation` 推迟到后续阶段。
+- 没有实时工具调用能力，`automation` 推迟到阶段 6。
+- 第 1 阶段纳入受限写，部分把原阶段 4 的记忆写入前移；阶段 4 仍负责记忆的查看/修改/删除/过期完整能力。
 
 ## Alternatives Considered
 
@@ -38,6 +40,6 @@
 
 ## Follow-ups
 
-- 定义第 1 阶段 CLI 契约（命令、参数、JSON 输出 schema）。第 1 阶段可只定义不实现。
-- 编写配套 skill（调用方式 + evidence_role 消费规则）。
+- CLI 契约已定义在 `docs/03-architecture/cli-contract.md`（命令、JSON schema、skill 契约）。第 1 阶段可只定义不实现。
+- 编写配套 skill 实体文件（`skills/lifemesh/SKILL.md`）。
 - 后续阶段需要实时、有状态工具调用时，重新评估 MCP。

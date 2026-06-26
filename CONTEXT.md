@@ -76,6 +76,10 @@ _Avoid_: approval, feedback
 The lifecycle state of a Knowledge Candidate before it becomes durable knowledge. Initial states are transient, inbox, confirm_required, and discard.
 _Avoid_: confirmation status, review queue
 
+**Candidate Inbox**:
+A local store (phase 1: a JSON file) where Knowledge Candidates wait for user confirmation. Users confirm, edit, merge, defer, or discard candidates via CLI, asynchronously and in batches; the dashboard shows the inbox read-only and does not write back.
+_Avoid_: approval queue, task list, notification center
+
 **Source-Backed Answer**:
 An answer that cites the Vault Notes or other source assets used to produce it. It must distinguish source facts from summaries and model inferences.
 _Avoid_: AI answer, search result

@@ -32,6 +32,10 @@ Knowledge Candidate 第一版类型：
 
 每条候选知识都应带有 confidence、risk、lifecycle、source_revisions 和 why_suggested。
 
+Knowledge Candidate 确认流程：candidate 存本地 inbox，用户用 CLI 异步批量确认（`candidate list/confirm/discard/edit/merge/defer`），dashboard 只读展示、不写回；低风险自动接受（Q12 路径 3）；普通回答不被确认阻塞；agent 只能 `candidate add`，不能 confirm。
+
+确认后升级映射（按 type）：`fact` → Canonical Fact（acceptance_path=user_confirmation）；`task` → Task；`preference`/`relationship`/`decision` → Memory。只有 fact 候选进 Canonical Fact，偏好/关系/决策候选进 Memory，与 Q14 边界对齐。
+
 Canonical Fact 第一版生成路径：
 
 - 用户显式确认 Knowledge Candidate。

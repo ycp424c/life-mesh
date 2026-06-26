@@ -33,6 +33,7 @@ docs/
 - [Knowledge Candidates](02-domain/knowledge-candidates.md)
 - [Canonical Facts](02-domain/canonical-facts.md)
 - [Context Bundle](02-domain/context-bundle.md)
+- [CLI Contract](03-architecture/cli-contract.md)
 - [System Map](03-architecture/system-map.md)
 - [渐进式路线图](04-roadmap/phases.md)
 - [项目看板维护规则](08-dashboard/project-board.md)

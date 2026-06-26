@@ -27,10 +27,13 @@
 - Knowledge Candidate：候选事实、偏好、关系、任务或决策。
 - User Confirmation：确认后才进入 Canonical Store 或 Memory。
 
-交付方式（`ADR-0006`）：
+交付方式（`ADR-0006` + `cli-contract.md`）：
 
-- Context Bundle 序列化为 **JSON 产物**，通过**薄 CLI + skill** 交付，agent 无关。
-- Skill 指导 agent 调用 CLI 并按 `evidence_role` 消费 Bundle；第 1 阶段只读交付，不引入运行时 server，不绑定 MCP。
+- 读：`lifemesh bundle` 产出 JSON Context Bundle。
+- 写（受限）：`fact add` / `task add` / `remember`（用户断言路径，直接写）；`candidate add`（agent 推断，进 inbox 待确认）。
+- agent 推断禁止直接 `fact add`，只能走 candidate → 用户 CLI 确认 → 按 type 升级（fact→Canonical Fact、task→Task、preference/relationship/decision→Memory）。
+- Skill 指导 agent 调用与 `evidence_role` 消费，使用范围是用户的所有信息。
+- 不引入运行时 server，不绑定 MCP；`automation` 仍 deferred 在阶段 6。
 
 当前架构可视化：
 
@@ -86,6 +89,8 @@
 ## 第 4 阶段：长期记忆
 
 目标：建立显式、推断、情境三类记忆，并支持查看、修改、删除、过期。
+
+注：第 1 阶段已纳入受限写（`remember` 显式记忆、`preference`/`relationship`/`decision` 候选确认后入 Memory）。第 4 阶段负责记忆的完整查看、修改、删除、过期和情境记忆管理能力。
 
 ## 第 5 阶段：高敏感数据
 
