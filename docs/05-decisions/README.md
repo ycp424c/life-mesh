@@ -24,3 +24,4 @@
 - [ADR-0003 Vault Note Revision](ADR-0003-vault-note-revision.md)
 - [ADR-0004 Source-Neutral Core](ADR-0004-source-neutral-core.md)
 - [ADR-0005 Personal Context Layer](ADR-0005-personal-context-layer.md)
+- [ADR-0006 Context Bundle as Artifact, Not Server](ADR-0006-bundle-as-artifact-not-server.md)

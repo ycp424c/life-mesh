@@ -15,8 +15,8 @@ window.LIFEMESH_PROJECT_STATE = {
     {
       lane: "Now",
       items: [
-        "确定首个 Agent 接口协议（MCP？）",
-        "细化 Knowledge Candidate inbox 体验",
+        "定义第 1 阶段 CLI 契约与 JSON schema",
+        "编写配套 agent skill",
         "设计 Canonical Fact 复核与撤销流程"
       ]
     },
@@ -215,7 +215,7 @@ window.LIFEMESH_PROJECT_STATE = {
     { name: "Domain", path: "docs/02-domain/", status: "draft", signal: "Obsidian 数据源已记录" },
     { name: "Architecture", path: "docs/03-architecture/", status: "draft", signal: "系统架构图已建立" },
     { name: "Roadmap", path: "docs/04-roadmap/", status: "draft", signal: "阶段已定义" },
-    { name: "ADR", path: "docs/05-decisions/", status: "active", signal: "5 条 accepted" },
+    { name: "ADR", path: "docs/05-decisions/", status: "active", signal: "6 条 accepted" },
     { name: "Security", path: "docs/07-security/", status: "draft", signal: "威胁模型初版" },
     { name: "Dashboard", path: "docs/08-dashboard/", status: "active", signal: "同步规则已落地" }
   ],
@@ -271,6 +271,12 @@ window.LIFEMESH_PROJECT_STATE = {
       title: "Personal Context Layer",
       status: "accepted",
       path: "../docs/05-decisions/ADR-0005-personal-context-layer.md"
+    },
+    {
+      id: "ADR-0006",
+      title: "Context Bundle as Artifact, Not Server",
+      status: "accepted",
+      path: "../docs/05-decisions/ADR-0006-bundle-as-artifact-not-server.md"
     }
   ],
   dataSources: [
@@ -335,8 +341,8 @@ window.LIFEMESH_PROJECT_STATE = {
   ],
   openQuestions: [
     {
-      title: "MCP 是否作为首个 Agent 接口",
-      detail: "Context Bundle 通过什么协议交付给 Agent？是否采用 MCP 作为首个 Agent Access Layer 协议仍待决。"
+      title: "第 1 阶段 CLI 契约",
+      detail: "LifeMesh CLI 的命令、参数和 JSON Bundle 输出 schema 长什么样？配套 skill 如何组织？"
     },
     {
       title: "来源引用格式",
@@ -356,6 +362,16 @@ window.LIFEMESH_PROJECT_STATE = {
     }
   ],
   recentChanges: [
+    {
+      date: "2026-06-26",
+      title: "确定 Bundle 产物格式为 JSON + CLI 搭配 skill",
+      detail: "Context Bundle 序列化为 JSON（不用 Markdown）；交付靠薄 CLI + agent skill，skill 指导调用与 evidence_role 消费。见 ADR-0006。"
+    },
+    {
+      date: "2026-06-26",
+      title: "第 1 阶段不采用 MCP，Bundle 作为产物交付",
+      detail: "Context Bundle 作为可序列化产物经薄 CLI/文件交付，agent 无关；MCP 降级为未来选项。见 ADR-0006。"
+    },
     {
       date: "2026-06-26",
       title: "确定 Context Slice 的 evidence_role 与 Bundle 逻辑结构",

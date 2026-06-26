@@ -35,6 +35,14 @@
 | Write | 写入记忆、任务、标签 | 可撤销、可审计 |
 | Act | 发送消息、提交表单、调用外部服务 | 强制人工确认 |
 
+## 交付方式（`ADR-0006`）
+
+第 1 阶段 Agent 接口 = 薄 CLI + skill，不引入运行时 server：
+
+- CLI 读索引、按任务组装 **JSON Context Bundle**、输出到文件或 stdout。
+- 配套 skill 是 agent 可读说明，告诉 agent 如何调用 CLI、如何按 `evidence_role` 消费 Bundle。
+- 任何能读 skill 的 agent 都能使用 LifeMesh，不绑定特定 client 或协议。
+
 ## 消费 Context Bundle
 
 Agent 拿到 Context Bundle 后，按每个 Context Slice 的 `evidence_role` 消费，不自己判断角色：
@@ -51,7 +59,8 @@ Agent 不得：
 
 ## 待决问题
 
-- 是否采用 MCP 作为首个 Agent 接口协议？
-- 是否每类数据源独立暴露服务？
-- Agent 会话授权和长期授权如何区分？
-- 工具调用日志是否进入用户可见时间线？
+- ~~是否采用 MCP 作为首个 Agent 接口协议？~~ 已决：第 1 阶段不采用 MCP，Context Bundle 作为 JSON 产物经薄 CLI + skill 交付（`ADR-0006`）。
+- ~~Bundle 产物格式：JSON 还是结构化 Markdown？~~ 已决：JSON。
+- 第 1 阶段 CLI 契约（命令、参数、JSON schema）长什么样？
+- 配套 skill 如何组织（调用方式 + evidence_role 消费规则）？
+- 后续阶段需要实时、有状态工具调用时，何时重新评估 MCP？

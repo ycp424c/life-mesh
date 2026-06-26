@@ -101,6 +101,21 @@ Agent 不得做的事：
 - 不得把 `lead`（候选）当成已确认结论。
 - 不得在事实性回答里引用失效来源；stale / missing / revoked 只能进报告区，不能进证据。
 
+## 产物格式
+
+Context Bundle 序列化成 **JSON 产物**，不使用 Markdown。理由：Markdown 只是格式化呈现层，Bundle 这一层需要的是结构化字段（`evidence_role`、`provenance`、`citation_status`、`confidence` 等）供 agent 程序化消费，不需要排版。
+
+JSON 产物承载 Q15 的逻辑结构：`task`、`permission_scope`、`slices[]`、`excluded_sources[]`、`freshness_report[]`，每个 Slice 带 `evidence_role` 和对应字段子集。
+
+## 与 Agent 的交付：CLI + Skill
+
+Bundle 不通过运行时 server 交付（见 `ADR-0006`），而是 **薄 CLI + skill** 的组合：
+
+- **CLI**：读索引、按任务组装 JSON Bundle、输出到文件或 stdout。
+- **Skill**：一份 agent 可读的说明，告诉 agent 如何调用 CLI、以及拿到 JSON Bundle 后按 `evidence_role` 消费（事实回答只用 `fact` + `raw`，`context` 只调语气，`lead` 标"未核实"）。
+
+Skill 把 Q15 的消费规则固化成 agent 能直接遵循的指令，使交付保持 agent 无关——任何能读 skill 的 agent 都能正确使用 LifeMesh，不需要专门 client，也不需要长驻 server。
+
 ## 组装边界
 
 - Context Bundle 是按任务和权限临时组装的结果，不应被误当成永久知识。

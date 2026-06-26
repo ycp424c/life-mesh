@@ -36,6 +36,14 @@ _Avoid_: chunk, search hit
 The per-slice tag on a Context Slice that decides how an agent may use it in a Context Bundle. Initial roles are `fact` (Canonical Fact, usable as evidence), `raw` (Source Revision, source material), `context` (Memory, tone and ranking only), and `lead` (Knowledge Candidate, unverified hint only).
 _Avoid_: slice type, output type
 
+**Bundle Artifact**:
+The JSON serialization of a Context Bundle, produced by the LifeMesh CLI for an agent to consume. It is a structured file, not a running service, and not Markdown.
+_Avoid_: prompt payload, server response, document
+
+**Agent Skill**:
+An agent-readable instruction file paired with the CLI that teaches an agent how to invoke the CLI and how to consume a Bundle Artifact by `evidence_role`. It replaces a protocol server as the delivery glue, keeping the interface agent-agnostic.
+_Avoid_: plugin, server endpoint, client SDK
+
 **Context Bundle**:
 A task-scoped collection of Context Slices assembled for an agent under a specific permission boundary.
 _Avoid_: prompt context, retrieval result

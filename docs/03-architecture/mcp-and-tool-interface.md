@@ -6,7 +6,7 @@
 
 ## 当前立场
 
-MCP 可以作为 Agent 接入 LifeMesh 的候选接口层，但当前文档阶段不绑定实现。
+第 1 阶段**不采用 MCP**。Context Bundle 作为可序列化产物，通过薄 CLI 或文件交付，agent 无关（见 `ADR-0006`）。MCP 保留为未来选项：等到后续阶段需要实时、有状态的工具调用（`memory-write`、`automation`）时再评估，第 1 阶段只读交付不需要它。
 
 ## 接口设计原则
 

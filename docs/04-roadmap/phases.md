@@ -27,6 +27,11 @@
 - Knowledge Candidate：候选事实、偏好、关系、任务或决策。
 - User Confirmation：确认后才进入 Canonical Store 或 Memory。
 
+交付方式（`ADR-0006`）：
+
+- Context Bundle 序列化为 **JSON 产物**，通过**薄 CLI + skill** 交付，agent 无关。
+- Skill 指导 agent 调用 CLI 并按 `evidence_role` 消费 Bundle；第 1 阶段只读交付，不引入运行时 server，不绑定 MCP。
+
 当前架构可视化：
 
 - [System Map](../03-architecture/system-map.md)
