@@ -30,7 +30,7 @@ Knowledge Candidate 第一版类型：
 - task
 - decision
 
-每条候选知识都应带有 confidence、risk、lifecycle、source_revisions 和 why_suggested。
+每条候选知识都应带有 confidence、risk、lifecycle、source_refs 和 why_suggested。
 
 Knowledge Candidate 确认流程：candidate 存本地 inbox，用户用 CLI 异步批量确认（`candidate list/confirm/discard/edit/merge/defer`），dashboard 只读展示、不写回；低风险自动接受（Q12 路径 3）；普通回答不被确认阻塞；agent 只能 `candidate add`，不能 confirm。
 
@@ -42,28 +42,28 @@ Canonical Fact 第一版生成路径：
 - 用户手动创建事实。
 - 低风险策略自动接受。
 
-Canonical Fact 必须包含 statement、source_revisions、accepted_by、accepted_at、acceptance_path、confidence、risk、validity、revocation_status。偏好、关系、任务、决策和高敏事实不得自动接受。
+Canonical Fact 必须包含 statement、source_refs、accepted_by、accepted_at、acceptance_path、confidence、risk、validity、revocation_status。source_refs 可以指向 SourceRevision，也可以指向 Manual Input record / extraction。偏好、关系、任务、决策和高敏事实不得自动接受。
 
 Context Bundle 组装时的来源优先级：
 
 1. Canonical Fact
 2. Memory
-3. 当前任务相关的 Source Revision
+3. 当前任务相关的 Source Reference
 4. 当前任务生成的 Knowledge Candidate
 5. 被排除或失效来源只进入 `excluded_sources` / `freshness_report`
 
-规则：Canonical Fact 优先但必须先检查 validity / revocation / 来源新鲜度；只有 `validity=valid`、`revocation_status=active`、且有 current supporting Source Revision 的 Canonical Fact 能作为 `fact` slice 使用。Memory 只影响排序、语气和偏好，不替代事实证据；Source Revision 提供新鲜证据用于补充或复核；Knowledge Candidate 只作为可能线索，不能伪装成事实；stale / missing / revoked 内容不进入可用上下文，只进入报告区。依赖失效来源的 Canonical Fact 按 ADR-0007 进入复核，不立即删除；复核后 revalidate、revise、invalidate 或 revoke。
+规则：Canonical Fact 优先但必须先检查 validity / revocation / 来源新鲜度；只有 `validity=valid`、`revocation_status=active`、且有 current supporting source reference 的 Canonical Fact 能作为 `fact` slice 使用。Memory 只影响排序、语气和偏好，不替代事实证据；Source Reference 提供新鲜证据用于补充或复核；Knowledge Candidate 只作为可能线索，不能伪装成事实；stale / missing / revoked / deleted 内容不进入可用上下文，只进入报告区。依赖失效来源的 Canonical Fact 按 ADR-0007 进入复核，不立即删除；复核后 revalidate、revise、invalidate 或 revoke。
 
 Memory 与 Canonical Fact 的边界：
 
-- Canonical Fact = 事实证据，带 source_revisions，可在 Source-Backed Answer 中被引用为事实。
+- Canonical Fact = 事实证据，带 source_refs，可在 Source-Backed Answer 中被引用为事实。
 - Memory = 语境与偏好，影响排序、语气、风格和默认假设，不能作为事实证据。
 - Memory 永远不能升级成事实证据；需要当事实用必须走 Fact Acceptance 升级为 Canonical Fact。
 - 推断记忆分两档：普通偏好带置信度直接写入 Memory；重要偏好、关系、决策类推断写入 Memory 前需要 User Confirmation。显式记忆和情境记忆可直接写入，情境记忆必须带范围和过期时间。
 
 Context Bundle 与 Agent 消费：
 
-- 每个 Context Slice 带 `evidence_role`：`fact`（Canonical Fact，可作证据）、`raw`（Source Revision，原始材料）、`context`（Memory，只影响语气/排序）、`lead`（Knowledge Candidate，未核实线索）。
+- 每个 Context Slice 带 `evidence_role`：`fact`（Canonical Fact，可作证据）、`raw`（Source Reference，原始材料）、`context`（Memory，只影响语气/排序）、`lead`（Knowledge Candidate，未核实线索）。
 - `evidence_role` 挂在 Slice 上，不挂在 Bundle 上；角色决定 Slice 带的字段子集和能在回答中出现的位置。
 - 事实性回答只能是 Source-Backed Answer，基于 `fact` + `raw`；`context` 和 `lead` 不得进入事实陈述位；`lead` 不得单独支撑结论。
 - Context Bundle 的逻辑结构为 `task + permission_scope + slices[] + excluded_sources[] + freshness_report[]`，第一版不锁死序列化格式或传输协议。

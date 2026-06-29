@@ -16,6 +16,9 @@
 | 溯源断裂 | 派生事实无法追到来源 | provenance 必填、删除级联 |
 | 授权遗留 | 已撤销授权仍被缓存或索引使用 | 授权状态检查、缓存清理、过期机制 |
 | 过期事实复用 | 依赖 stale / missing / revoked 来源的 Canonical Fact 继续进入回答 | Fact Review、tombstone、Bundle 准入检查 |
+| Agent 沉默记忆 | Agent 自动把对话内容写入 Inbox 而用户不知情 | 自动捕获后必须透明说明记录 id、kind、摘要、sensitivity 和 Bundle 可用性 |
+| 本地 VLM 误读截图 | OCR/VLM 将截图误解为事实、日程或任务 | extraction 不等于 fact；promote 需要用户确认；记录 provider/model/confidence |
+| 本地库文件泄露 | SQLite、raw assets 或 embeddings 被未授权读取 | `~/.lifemesh` 0700，数据库和 assets 0600；后续评估加密 |
 
 ## 早期默认防线
 
@@ -23,6 +26,9 @@
 - 高敏感数据后置。
 - Agent 只通过工具接口访问数据。
 - 写入长期记忆需要来源。
+- Agent 自动捕获只适用于非高敏信息，只进 Manual Input Inbox，不能自动 promote。
+- Sensitive 可本地记录，但默认不进普通 Bundle。
+- embedding 和截图 VLM 默认使用本机 LM Studio，不默认远程发送。
 - 高风险动作必须确认。
 - 所有工具调用都生成审计事件。
 
@@ -32,5 +38,7 @@
 - 日历事件里嵌入外泄指令。
 - 联系人备注被错误推断并长期影响 Agent。
 - 撤销某个数据源后，旧向量索引仍返回相关片段。
-- Source Revision stale 后，旧 Canonical Fact 未进入复核而继续支撑新回答。
+- Source Revision stale 或 Manual Input revoked/deleted 后，旧 Canonical Fact 未进入复核而继续支撑新回答。
+- Agent 自动捕获 Sensitive 内容后，被默认 Bundle 召回。
+- LM Studio 未启动、模型未加载或 embedding 维度变化导致索引不一致。
 - 多个 Agent 共享同一记忆导致权限混淆。

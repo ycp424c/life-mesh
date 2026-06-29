@@ -1,7 +1,7 @@
 # Data Classification
 
 状态：draft
-最后更新：2026-06-26
+最后更新：2026-06-29
 职责边界：定义个人数据的分类、敏感级别和默认处理策略。
 
 ## 敏感级别
@@ -11,7 +11,7 @@
 | Public | 可公开的信息 | 可索引，可用于普通上下文 |
 | Internal | 个人普通资料和低敏文档 | 可索引，需要来源记录 |
 | Private | 个人偏好、项目资料、联系人、承诺 | 限定授权，访问需审计 |
-| Sensitive | 身份、家庭、金融、健康、位置、人际敏感关系 | 后期接入，本地优先，强确认 |
+| Sensitive | 身份、家庭、金融、健康、位置、人际敏感关系、高敏截图内容 | 可进入本地 Inbox，但默认不进入 Bundle、长期记忆、事实层或模型上下文 |
 | Restricted | 极高风险或法律/医疗/财务关键数据 | 默认不接入或只读隔离 |
 
 ## 分类维度
@@ -34,3 +34,11 @@
 - 明确保留周期
 - 明确撤销路径
 - 明确审计字段
+
+## Manual Input 默认策略
+
+- Agent 可自动记录非高敏个人相关信息到 Manual Input Inbox，但必须在回复中说明记录内容；明显高敏信息必须由用户明确提交。
+- 如果 Agent 误捕高敏信息，必须标记 `Sensitive` 并提示用户复核；规则上不得主动捕获明显高敏内容。
+- `Sensitive` 默认可在本机保存、embedding 和索引，但不能在 `--sensitivity-cap Private` 下进入 Bundle。
+- 截图和 VLM extraction 的敏感级别按内容升级；含身份、金融、健康、位置或第三方隐私时升为 `Sensitive`。
+- 删除与撤销分开：撤销保留 tombstone，删除移除 managed raw asset 和索引，只保留最小 deletion tombstone。

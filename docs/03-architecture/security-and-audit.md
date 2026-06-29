@@ -51,9 +51,9 @@
 
 ## Canonical Fact 复核审计
 
-当 Source Revision 变为 stale / missing / revoked 时，系统必须记录：
+当 Source Revision 变为 stale / missing / revoked，或 Manual Input 变为 revoked / deleted 时，系统必须记录：
 
-- 触发复核的 Source Revision 或 tombstone。
+- 触发复核的 source reference 或 tombstone。
 - 受影响的 Canonical Fact、Knowledge Candidate、索引片段和 Bundle。
 - 状态变化：`valid` → `needs_review` → `valid` / `superseded` / `invalid` / `revoked`。
 - 操作者：用户、策略或系统检测。

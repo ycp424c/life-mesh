@@ -31,18 +31,43 @@ class BundleCliTest(unittest.TestCase):
         return json.loads(completed.stdout)
 
     def test_bundle_requires_explicit_vault_without_env_default(self) -> None:
-        env = os.environ.copy()
-        env.pop("LIFEMESH_OBSIDIAN_VAULT", None)
-        completed = subprocess.run(
-            [sys.executable, "-m", "lifemesh", "bundle", "AI 对开源生态有什么结构性冲击？"],
-            cwd=ROOT,
-            env=env,
-            capture_output=True,
-            text=True,
-        )
+        with tempfile.TemporaryDirectory() as tmp:
+            env = os.environ.copy()
+            env.pop("LIFEMESH_OBSIDIAN_VAULT", None)
+            env["LIFEMESH_HOME"] = str(Path(tmp) / "empty-home")
+            completed = subprocess.run(
+                [sys.executable, "-m", "lifemesh", "bundle", "AI 对开源生态有什么结构性冲击？"],
+                cwd=ROOT,
+                env=env,
+                capture_output=True,
+                text=True,
+            )
 
         self.assertEqual(completed.returncode, 2)
         self.assertIn("--vault is required", completed.stderr)
+
+    def test_bundle_reads_vault_from_config_file(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            home = Path(tmp) / "home"
+            home.mkdir()
+            (home / "config.json").write_text(
+                json.dumps({"obsidian_vault": str(FIXTURE_VAULT)}),
+                encoding="utf-8",
+            )
+            env = os.environ.copy()
+            env.pop("LIFEMESH_OBSIDIAN_VAULT", None)
+            env["LIFEMESH_HOME"] = str(home)
+            completed = subprocess.run(
+                [sys.executable, "-m", "lifemesh", "bundle", "AI 对开源生态有什么结构性冲击？"],
+                cwd=ROOT,
+                env=env,
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+
+        bundle = json.loads(completed.stdout)
+        self.assertEqual(bundle["slices"][0]["provenance"]["source"], "obsidian")
 
     def test_bundle_returns_source_backed_raw_slice(self) -> None:
         bundle = self.run_bundle("AI 对开源生态有什么结构性冲击？", FIXTURE_VAULT)

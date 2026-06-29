@@ -4,7 +4,7 @@
 
 ## 当前项目阶段
 
-LifeMesh 已从文档与项目看板初始化进入第 1 阶段最小只读 CLI 原型。除非用户明确要求，否则不要新增超出 Phase 1 的业务代码、脚手架代码、依赖配置或运行时目录。
+LifeMesh 已从文档与项目看板初始化进入第 1 阶段本地 CLI 原型。当前 Phase 1 允许两条最小闭环：Obsidian 只读 Context Bundle，以及 ADR-0008 定义的 Manual Input Inbox 本地记录、检索、撤销、删除和 inbox-derived promote。除非用户明确要求，否则不要新增超出 Phase 1 的业务代码、脚手架代码、依赖配置或运行时目录。
 
 允许修改的内容：
 
@@ -15,7 +15,7 @@ LifeMesh 已从文档与项目看板初始化进入第 1 阶段最小只读 CLI 
 - 项目说明类文件
 - `dashboard/` 下的静态 Web 看板文件
 - `bin/` 下的最小 CLI 入口
-- `lifemesh/` 下的标准库只读原型实现
+- `lifemesh/` 下的标准库 Phase 1 原型实现，包括只读 bundle 和 Manual Input 受限写入闭环
 - `tests/` 下的单元测试和脱敏 fixture
 - `skills/` 下的 LifeMesh agent skill 说明
 

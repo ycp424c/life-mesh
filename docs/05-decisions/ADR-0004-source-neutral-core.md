@@ -11,7 +11,7 @@ Obsidian Vault 是 LifeMesh 第一个真实验证适配器，但 LifeMesh 的目
 
 LifeMesh 的核心模型保持 source-neutral。Obsidian 只作为第一个 Source Adapter，用于验证可编辑静态知识源。
 
-通用概念优先使用 `SourceAdapter`、`SourceRevision`、`CitationStatus`、权限、审计、删除级联和最小上下文。`VaultNoteRevision` 是 `SourceRevision` 在 Obsidian 场景下的特例，而不是整个系统的中心模型。
+通用概念优先使用 `SourceAdapter`、`SourceReference`、`CitationStatus`、权限、审计、删除级联和最小上下文。`SourceRevision` 是 Obsidian 等可编辑外部来源的 Source Reference 类型；Manual Input 不使用 SourceRevision，而以 input record、content_hash、状态和 audit event 表达来源身份。`VaultNoteRevision` 是 `SourceRevision` 在 Obsidian 场景下的特例，而不是整个系统的中心模型。
 
 ## Consequences
 

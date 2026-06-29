@@ -16,7 +16,7 @@
 
 Memory 和 Canonical Fact 都已确认、可复用，但在 Context Bundle 中承担不同角色，不可混用：
 
-- **Canonical Fact = 事实证据**。已核实、带 `source_revisions` 的客观陈述，可以在 Source-Backed Answer 里被引用为“这件事是真的”。
+- **Canonical Fact = 事实证据**。已核实、带 `source_refs` 的客观陈述，可以在 Source-Backed Answer 里被引用为“这件事是真的”。`source_refs` 可以指向 SourceRevision，也可以指向 Manual Input record / extraction。
 - **Memory = 语境与偏好**。长期偏好、目标、关系语境、情境记忆。它影响排序、语气、风格和默认假设，但不能作为事实证据出现在回答里。
 
 硬边界：

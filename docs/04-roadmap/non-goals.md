@@ -7,7 +7,7 @@
 ## 当前不做
 
 - 不写超出 [Phase 1 Delivery Plan](phase-1-delivery-plan.md) 的业务代码。
-- 不选定完整前端、后端、数据库或部署技术栈；Phase 1 只允许最小 CLI 和本地文件产物。
+- 不选定完整前端、后端、数据库或部署技术栈；Phase 1 只允许最小 CLI、本地文件产物，以及 ADR-0008 milestone 明确限定的用户级 SQLite / Raw Vault 本地存储。
 - 不默认接入真实个人数据；真实 vault 仅能由用户显式传入路径或环境变量，用于只读手工验收，不持久化原文。
 - 不处理真实敏感样例。
 - 不实现 Agent 自动执行。
@@ -22,4 +22,4 @@
 - 数据分类和授权策略已有第 0 阶段草案。
 - 最小可行架构已明确：CLI + JSON Bundle + skill，不引入 server。
 - 审计、删除、复核和撤销策略已有 ADR / 治理文档。
-- 最小只读 CLI 原型可以启动；在扩展到 richer citation UI、frontmatter 结构化抽取、candidate inbox 或写侧命令前，仍需确认对应边界。
+- 最小 CLI 原型和 ADR-0008 限定的 Manual Input 本地 Inbox 可以启动；在扩展到 richer citation UI、frontmatter 结构化抽取、通用 candidate inbox、非 Manual Input 写侧命令或 Agent 自动执行前，仍需确认对应边界。

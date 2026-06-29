@@ -27,7 +27,7 @@
 第一阶段要证明 LifeMesh 能把一个个人数据源转成任务级上下文：
 
 - Context Slice：最小、可追溯、带权限和新鲜度的上下文单元。
-- Context Bundle：为某个 Agent 任务组装的上下文包，按来源优先级组装（Canonical Fact > Memory > 当前任务相关 Source Revision > 当前任务生成的 Knowledge Candidate），失效来源只进入 `excluded_sources` / `freshness_report`。
+- Context Bundle：为某个 Agent 任务组装的上下文包，按来源优先级组装（Canonical Fact > Memory > 当前任务相关 Source Reference > 当前任务生成的 Knowledge Candidate），失效来源只进入 `excluded_sources` / `freshness_report`。
 - Knowledge Candidate：候选事实、偏好、关系、任务或决策。
 - User Confirmation：确认后才进入 Canonical Store 或 Memory。
 - Canonical Fact Review：依赖来源 stale / missing / revoked 后，事实进入复核、撤销或 tombstone 级联，而不是继续作为已核实事实使用。
@@ -35,7 +35,9 @@
 交付方式（`ADR-0006` + `cli-contract.md`）：
 
 - 读：`lifemesh bundle` 产出 JSON Context Bundle。
-- 写（受限）：`fact add` / `task add` / `remember`（用户断言路径，直接写）；`candidate add`（agent 推断，进 inbox 待确认）。
+- 写（受限）：只读原型验收后的 Phase 1 后续 milestone 是 Manual Input Inbox + promote 闭环；`fact add` / `task add` / `remember` 与底层目标对象表保持一致；`candidate add` 用于 agent 推断待确认。
+- 手动输入：`input add/search/list/show/update/revoke/delete/promote` 接收用户或 Agent 提交的截图、日程、心情、活动、待办和备注；默认本地 embedding，截图默认通过本地 LM Studio VLM 同步 extraction；Manual Input 不使用 SourceRevision。
+- Agent 自动捕获：Agent 可自主把非高敏个人相关信息写入 `auto_captured` Inbox，但必须在回复中说明；不得自动 promote。
 - agent 推断禁止直接 `fact add`，只能走 candidate → 用户 CLI 确认 → 按 type 升级（fact→Canonical Fact、task→Task、preference/relationship/decision→Memory）。
 - fact 复核与撤销：`fact review` / `fact revoke` 处理 `needs_review`、superseded、invalid、revoked 和 tombstone。
 - Skill 指导 agent 调用与 `evidence_role` 消费，使用范围是用户的所有信息。
@@ -67,10 +69,11 @@
 - 旅行资料
 - 重要邮件导出
 - 家庭文档
+- 用户或 Agent 主动提交的截图、日程、心情、活动、待办和备注
 
-## 第 2 阶段：时间与任务
+## 第 2 阶段：系统日历/任务同步与高级调度
 
-目标：接入日历、任务、提醒和承诺，支持计划、提醒、冲突检测和 DDL 追踪。
+目标：在 Phase 1 已有 inbox-derived 最小 Event / Task 对象后，接入系统日历、提醒事项和外部任务应用，支持双向同步、计划、提醒、冲突检测和 DDL 追踪。
 
 核心对象：
 

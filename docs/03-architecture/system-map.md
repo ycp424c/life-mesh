@@ -32,11 +32,11 @@ Source Adapters
 ## 关键边界
 
 - Source Adapter 接入具体数据源，但核心语义保持 source-neutral。
-- Source Revision 负责可编辑来源的版本身份。
+- Source Revision 负责 Obsidian 等可编辑外部来源的版本身份；Manual Input 不使用 SourceRevision，而以 input record、content_hash、状态和 audit event 作为 source reference。
 - Personal Context Layer 产出 Context Bundle，而不是裸检索结果。
 - Knowledge Candidate 在确认或策略接受前不能成为 Canonical Fact 或 Memory。
 - Canonical Fact 可以作为 Context Bundle 来源，但必须可追溯、可复核、可撤销。
-- Agent Access 在第 1 阶段通过 CLI + skill 获取授权后的 JSON Context Bundle。
+- Agent Access 在第 1 阶段通过 CLI + skill 获取授权后的 JSON Context Bundle；只读原型验收后，ADR-0008 定义 Manual Input Inbox 作为 Phase 1 后续 milestone。
 
 ## Context Bundle 来源优先级
 
@@ -44,11 +44,20 @@ Source Adapters
 
 1. Canonical Fact（已核实，但先检查 validity / revocation / 来源新鲜度）
 2. Memory（影响排序、语气和偏好，不替代事实证据）
-3. 当前任务相关的 Source Revision（新鲜证据，用于补充或复核）
+3. 当前任务相关的 Source Reference（Source Revision 或 Manual Input，新鲜证据，用于补充或复核）
 4. 当前任务生成的 Knowledge Candidate（只作为可能线索，不能伪装成事实）
 5. 被排除或失效的来源只进入 `excluded_sources` / `freshness_report`，不进入可用上下文
 
-失效来源不静默丢弃：依赖失效 Source Revision 且没有其他 current supporting revision 的 Canonical Fact 标记为 `needs_review`，不能继续作为"已核实"使用。
+失效来源不静默丢弃：依赖失效 source reference 且没有其他 current supporting source 的 Canonical Fact 标记为 `needs_review`，不能继续作为"已核实"使用。
+
+## Manual Input Inbox
+
+ADR-0008 将 Manual Input 定义为 Phase 1 后续 milestone：
+
+- Manual Input 接收用户或 Agent 主动提交的截图、日程、心情、活动、待办和备注。
+- 默认存储在用户级 `~/.lifemesh/`，以 SQLite、FTS、本地 embedding 和 Raw Vault managed assets 支撑检索。
+- Agent 可自动捕获非高敏信息到 `auto_captured` Inbox，但必须透明说明，且不得自动 promote。
+- `input promote` 只创建 inbox-derived 最小 Task / Event / Memory / Fact / Candidate 对象；系统日历、提醒事项和外部任务应用同步属于第 2 阶段。
 
 ## Canonical Fact 生成路径
 
@@ -62,11 +71,12 @@ Source Adapters
 
 ## Canonical Fact 复核与撤销
 
-只有 `validity=valid`、`revocation_status=active`、且至少有 current supporting Source Revision 的 Canonical Fact，才能作为 `fact` slice 进入 Bundle。
+只有 `validity=valid`、`revocation_status=active`、且至少有 current supporting source reference 的 Canonical Fact，才能作为 `fact` slice 进入 Bundle。
 
-Source Revision stale / missing / revoked 后：
+Source Revision stale / missing / revoked，或 Manual Input revoked / deleted 后：
 
 - Source Tombstone 阻止旧 revision 被新检索命中。
+- Manual Input Tombstone 阻止旧 input、extraction 和 embedding 被新检索命中。
 - 依赖事实进入复核队列或报告区。
 - 用户复核后可 revalidate、revise、invalidate 或 revoke。
 - Fact Tombstone 阻止被撤销或失效的旧 fact 继续进入新 Bundle，同时保留历史审计。

@@ -5,9 +5,9 @@
 
 ## Context
 
-Canonical Fact 是 Context Bundle 的最高优先级来源，但它依赖可编辑来源的 Source Revision。Obsidian Vault 等来源会被编辑、移动、删除、排除或撤销授权。如果 Source Revision 失效后 Canonical Fact 仍作为已核实事实进入 Bundle，Agent 会继续使用过期或不可访问的证据；如果立即删除事实，又会丢失历史审计和用户确认记录。
+Canonical Fact 是 Context Bundle 的最高优先级来源，但它依赖可复核的 source reference。Obsidian Vault 等可编辑外部来源使用 Source Revision；Manual Input 不使用 SourceRevision，而使用 input record、extraction、content_hash、状态和审计事件表达来源身份。如果 source reference 失效后 Canonical Fact 仍作为已核实事实进入 Bundle，Agent 会继续使用过期或不可访问的证据；如果立即删除事实，又会丢失历史审计和用户确认记录。
 
-Q21 需要定义 Source Revision 变 stale / missing / revoked 后，Canonical Fact 如何进入复核、如何撤销，以及 tombstone 如何级联到 Bundle、索引和审计。
+Q21 需要定义 Source Revision 或 Manual Input 变 stale / missing / revoked / deleted 后，Canonical Fact 如何进入复核、如何撤销，以及 tombstone 如何级联到 Bundle、索引和审计。
 
 ## Decision
 
@@ -24,13 +24,13 @@ Canonical Fact 增加明确状态语义：
 
 Bundle 使用硬规则：
 
-- 只有 `validity=valid`、`revocation_status=active`、且至少有一个 current supporting Source Revision 的 Canonical Fact，才能进入 `slices[]` 并作为 `evidence_role=fact` 使用。
+- 只有 `validity=valid`、`revocation_status=active`、且至少有一个 current supporting source reference 的 Canonical Fact，才能进入 `slices[]` 并作为 `evidence_role=fact` 使用。
 - `needs_review` / `invalid` / `superseded` / `revoked` 的事实不得进入可用上下文，只能进入 `freshness_report` 或 `excluded_sources`。
-- `stale` 不是事实为假的证明，只是证据需要复核；`missing`、路径排除和授权撤销生成 tombstone，阻止旧 revision 被新检索命中。
+- `stale` 不是事实为假的证明，只是证据需要复核；`missing`、路径排除、授权撤销和 Manual Input 删除生成 tombstone，阻止旧来源被新检索命中。
 
 复核动作：
 
-- `revalidate`：用户或策略确认当前来源仍支持该 statement，绑定 current Source Revision，恢复 `valid`。
+- `revalidate`：用户或策略确认当前来源仍支持该 statement，绑定 current supporting source reference，恢复 `valid`。
 - `revise`：statement 需要修改，生成新的 Canonical Fact，旧 fact 标记 `superseded`。
 - `invalidate`：事实不再成立，标记 `invalid`。
 - `revoke`：用户撤销该事实，设置 `revocation_status=revoked`，生成 Fact Tombstone。
@@ -38,9 +38,10 @@ Bundle 使用硬规则：
 Tombstone 级联：
 
 - Source Tombstone：记录 Source Revision 因删除、移动到排除路径或授权撤销而不可用；它阻止旧 revision 进入新检索，并触发依赖 fact / candidate 的复核。
+- Manual Input Tombstone：记录 Manual Input 因 revoke 或 delete 而不可用；它阻止 input、extraction 和 embedding 进入新检索，并触发依赖 fact / candidate / memory 的复核或停止使用。
 - Fact Tombstone：记录 Canonical Fact 被撤销、失效或替代；它阻止旧 fact 进入新 Bundle，但保留历史审计链。
 
-每次状态变化都必须生成审计事件，记录触发原因、操作者、旧状态、新状态、影响的 Source Revision / Fact / Bundle。
+每次状态变化都必须生成审计事件，记录触发原因、操作者、旧状态、新状态、影响的 source reference / Fact / Bundle。
 
 ## Consequences
 
@@ -55,7 +56,7 @@ Tombstone 级联：
 
 - Canonical Fact 需要维护更多状态字段和审计事件。
 - 第 1 阶段实现时必须有复核队列或报告区，不能只做静态事实表。
-- 多来源支持同一事实时，需要判断是否仍有 current supporting revision。
+- 多来源支持同一事实时，需要判断是否仍有 current supporting source reference。
 
 ## Alternatives Considered
 

@@ -8,7 +8,7 @@
 
 第 1 阶段要从 docs-first 进入最小可运行原型，但目标不是完成整个 Personal Data OS，也不是做 Obsidian 增强器。
 
-本阶段只验证一条最小闭环：
+第一轮只读原型先验证一条最小闭环：
 
 ```text
 Obsidian Vault
@@ -19,13 +19,16 @@ Obsidian Vault
   -> Source 变化后 citation_status / freshness_report 生效
 ```
 
+第一轮通过后，第 1 阶段的后续 milestone 是 Manual Input Inbox（ADR-0008）：把用户和 Agent 主动提交的截图、日程、心情、活动、待办和备注写入本地 Inbox，并验证本地 embedding / VLM extraction / SQLite 向量检索 / Bundle 准入 / promote 到 inbox-derived 最小对象的闭环。
+
 ## 当前实现状态
 
-截至 2026-06-29，第一轮只读原型已开始落地：
+截至 2026-06-29，第 1 阶段本地 CLI 原型已开始落地：
 
 - `bin/lifemesh bundle` 可生成 JSON Context Bundle。
 - `lifemesh/` 包含 Obsidian 只读扫描、Source Revision、section 提取、简单检索排序、sensitivity cap 过滤、stale / missing state 检测。
-- `tests/fixtures/obsidian-vault/` 和 `tests/test_bundle_cli.py` 覆盖 fixture vault、显式 vault、路径排除、sensitivity cap、stale 和 missing。
+- `lifemesh/` 包含 Manual Input 配置层、SQLite 主库、FTS、sqlite-vec 加载、LM Studio embedding/VLM 调用、审计、revoke/delete/promote 和 Bundle slice 生成。
+- `tests/fixtures/obsidian-vault/`、`tests/test_bundle_cli.py` 和 `tests/test_manual_input_cli.py` 覆盖 fixture vault、显式/config vault、路径排除、sensitivity cap、stale/missing、Manual Input add/search/list/show/update/revoke/delete/promote、`bundle --source all` 和模型/向量失败降级。
 - `skills/lifemesh/SKILL.md` 已提供 agent 使用说明。
 
 仍未完成：
@@ -113,9 +116,9 @@ lifemesh bundle "AI 对开源生态有什么结构性冲击？" --source obsidia
 - stale 或 missing 来源继续作为事实证据进入新回答。
 - Obsidian 特定概念污染 source-neutral 的 Source Revision / Context Bundle 模型。
 
-## 完成定义
+## 第一轮只读原型完成定义
 
-第 1 阶段落地可判定完成，当且仅当：
+第一轮只读原型可判定完成，当且仅当：
 
 - `lifemesh bundle` 最小读链路可运行。
 - fixture vault 自动化测试通过。
@@ -123,6 +126,19 @@ lifemesh bundle "AI 对开源生态有什么结构性冲击？" --source obsidia
 - `skills/lifemesh/SKILL.md` 存在，并能指导 Agent 正确调用和消费 Bundle。
 - 文档、ADR、README、dashboard 与实现状态同步。
 - 已知未实现写侧能力在文档中明确标注为 contract-only 或后续阶段，不被看板展示为已完成能力。
+
+## Phase 1 后续 Manual Input milestone 完成定义
+
+ADR-0008 对应第 1 阶段后续 milestone，不覆盖上面的只读原型完成定义。该 milestone 完成，当且仅当：
+
+- `input add/search/list/show/update/revoke/delete/promote` 最小 CLI 路径可运行。
+- Manual Input 使用 input record、content_hash、状态和 audit event 表达来源身份，不创建 SourceRevision。
+- SQLite 主存储、FTS、本地 embedding、Raw Vault managed assets 和模型/向量失败降级路径有最小测试。
+- 截图 extraction 可通过本地 provider 跑通；`--no-extract` 只跳过 VLM，embedding 失败时降级为 FTS-only 或 metadata-only；模型输出不自动变成事实。
+- `bundle --source all` 能按权限合并 Obsidian 与 Manual Input；`active` 作为 raw，`auto_captured` 最多作为 lead。
+- revoke/delete 后 input、extraction、embedding 和派生对象准入状态正确更新。
+- promote 只创建 inbox-derived 最小 Task/Event/Memory/Canonical Fact/Candidate 对象，并保留 `derived_from_input_id`。
+- 看板、CLI 契约、Agent skill、治理、安全、领域和路线图文档同步。
 
 ## 验收通过后的下一步
 
@@ -136,23 +152,32 @@ lifemesh bundle "AI 对开源生态有什么结构性冲击？" --source obsidia
    - 先支持 `candidate add/list/show/discard`，再支持 confirm / merge / edit。
    - dashboard 继续只读展示，不做写回。
 
-3. **受限写入**
-   - 实现用户断言路径：`fact add`、`task add`、`remember`。
-   - agent 推断仍只能 `candidate add`。
+3. **Manual Input 真实本机验收**
+   - 使用真实 LM Studio embedding/VLM 模型和真实 sqlite-vec 扩展路径跑通 `input add/search/show/update/revoke/delete/promote`。
+   - 记录 embedding 模型 identifier、维度、截图 VLM 调用方式、失败提示和性能边界。
+   - 使用 `lifemesh bundle --source all` 显式合并 Obsidian 与 Manual Input。
+   - Agent 可以自动捕获非高敏个人相关信息进入 `auto_captured` Inbox，但必须透明说明，且不得自动 promote。
+   - Promote 到 task/event/memory/fact/candidate 必须创建 inbox-derived 最小目标对象并保留 `derived_from_input_id`。
 
-4. **Canonical Fact 持久化与复核**
+4. **用户断言与候选确认**
+   - 将 `fact add`、`task add`、`remember` 与 Manual Input promote 共用目标对象表。
+   - agent 推断仍只能 `candidate add` 或 `input promote --to candidate`。
+
+5. **Canonical Fact 持久化与复核**
    - 实现 `fact review list/show/revalidate/revise/invalidate` 和 `fact revoke`。
    - 支持 Source Tombstone / Fact Tombstone 的影响范围展示。
 
-5. **进入第 2 阶段准备**
-   - 当读链路、候选确认和事实复核稳定后，再进入时间与任务对象：Event、Task、Commitment、Deadline。
+6. **进入第 2 阶段准备**
+   - 当读链路、候选确认、Manual Input 和事实复核稳定后，再进入系统日历/任务同步与高级调度。
    - 第 2 阶段前必须复盘第 1 阶段的来源、权限、审计和撤销模型是否足够 source-neutral。
 
 ## 不在第 1 阶段做
 
 - 不做 MCP server。
-- 不做完整数据库和后台服务。
+- 不做多用户数据库、后台服务或远程托管数据层；Manual Input 的 SQLite 仅作为本机 CLI 原型存储。
 - 不做自动化外发或不可逆动作。
-- 不接入金融、健康、位置等高敏数据。
+- 不正式接入金融、健康、位置等高敏数据源；用户明确提交的 `Sensitive` Manual Input 仅作为本地隔离 Inbox 记录处理，默认不进入 Bundle。
 - 不把 Obsidian 变成产品中心。
 - 不要求一次性实现所有写侧命令。
+- 不做后台截屏、系统日历同步或活动自动追踪；这些需要独立 Source Adapter 评估。
+- 不默认使用远程 embedding、远程 OCR 或远程视觉模型。

@@ -19,7 +19,7 @@
 
 ## 可编辑来源
 
-Obsidian Vault 这类来源不是不可变归档。LifeMesh 应先用 `VaultNoteRevision` 验证可编辑来源语义，但核心抽象应是 source-neutral 的 `SourceRevision`。
+Obsidian Vault 这类来源不是不可变归档。LifeMesh 应先用 `VaultNoteRevision` 验证可编辑外部来源语义，但核心抽象应是 source-neutral 的 `SourceReference`。`SourceRevision` 是一种 Source Reference；Manual Input 不使用 SourceRevision。
 
 不同 Source Adapter 都应能表达：
 
@@ -39,7 +39,7 @@ Obsidian Vault 这类来源不是不可变归档。LifeMesh 应先用 `VaultNote
 - indexed_at
 - index scope
 
-引用、索引片段、摘要和抽取事实都应指向具体 SourceRevision。当前文件发生编辑、移动、删除或被排除后，旧 revision 进入 stale 状态，不再用于新的检索命中。
+引用、索引片段、摘要和抽取事实都应指向具体 source reference。当前文件发生编辑、移动、删除或被排除后，旧 revision 进入 stale 状态，不再用于新的检索命中。Manual Input 则通过状态、content_hash 和 audit event 判断 current / revoked / deleted。
 
 第一版变更检测策略：
 
@@ -55,13 +55,36 @@ Tombstone 是不可用来源或事实的保留标记，不是简单删除。
 | tombstone | 触发条件 | 影响 |
 |---|---|---|
 | Source Tombstone | source 被删除、移出索引范围、授权撤销 | 旧 revision 不再被新检索命中；依赖它的 fact / candidate 进入复核 |
+| Manual Input Tombstone | input 被 revoke 或 delete | 输入不再检索或进入 Bundle；依赖对象进入复核或停止使用 |
 | Fact Tombstone | Canonical Fact 被撤销、失效或替代 | 旧 fact 不再进入新 Bundle；历史回答和审计仍可解释 |
 
-依赖 Source Revision 的 Canonical Fact 使用三段式处理：
+依赖 source reference 的 Canonical Fact 使用三段式处理。Obsidian 等可编辑外部来源使用 Source Revision；Manual Input 使用 input record、content_hash、状态和 audit event：
 
 1. 来源 stale / missing / revoked 后，先进入 `validity=needs_review`，不立即删除。
 2. `needs_review` 的 fact 不能作为 `evidence_role=fact` 进入可用 Bundle，只进入 `freshness_report`。
 3. 复核后执行 `revalidate`、`revise`、`invalidate` 或 `revoke`，每次状态变化都生成审计事件。
+
+## Manual Input 生命周期
+
+Manual Input 是可编辑、可检索、可撤销的用户级来源。它不使用 SourceRevision 表达每次编辑，而是通过 input record + audit event + content_hash 表达当前状态和变更历史。
+
+第一版状态：
+
+| 状态 | 触发 | 默认行为 |
+|---|---|---|
+| active | 用户手动提交或确认 | 可检索；按权限作为 raw slice |
+| auto_captured | Agent 自主记录 | 可检索；进入 Bundle 时最多作为 lead |
+| promoted | 用户确认并派生为正式对象 | 目标对象进入对应层，input 保留 provenance |
+| revoked | 用户撤销 | 不检索，不进 Bundle，仅保留 tombstone/audit |
+
+删除与撤销分开：
+
+- `revoke` 保留 tombstone、审计和派生关系，用于解释为什么目标对象需要复核。
+- `delete` 删除 managed raw asset、embedding、extraction 和主记录内容，只保留最小 deletion tombstone。
+
+截图类 input 默认复制 managed asset 到 `~/.lifemesh/raw-assets/manual-input/`，并记录 original path、stored path、sha256、mtime、size 和 media type。撤销不会删除 original path；删除只删除 managed copy。
+
+Manual Input 的 VLM/OCR extraction 与 embedding 必须记录 provider、model、content_hash 和状态。模型输出可被检索，但不是已核实事实；进入 Canonical Fact、Memory、Task 或 Event 必须通过 promote。
 
 ## 旧回答与来源状态
 

@@ -2,14 +2,14 @@ window.LIFEMESH_PROJECT_STATE = {
   lastUpdated: "2026-06-29",
   state: "Personal Context Layer",
   currentPhase: "第 1 阶段：Personal Context Layer",
-  overallProgress: 28,
+  overallProgress: 36,
   summary:
-    "LifeMesh 第 1 阶段已进入落地：lifemesh bundle 最小只读 CLI、Obsidian Source Adapter、JSON Context Bundle、fixture 测试和 agent skill 已有第一轮原型。",
+    "LifeMesh 第 1 阶段已进入本地 CLI 原型：只读 Obsidian bundle 已完成第一轮；ADR-0008 Manual Input Inbox 已落地 SQLite + FTS + sqlite-vec + LM Studio embedding/VLM + inbox-derived promote 闭环。",
   metrics: [
-    { label: "文档基线", value: "active", detail: "35+ Markdown 文件", tone: "green" },
+    { label: "文档基线", value: "active", detail: "Manual Input 实现已同步", tone: "green" },
     { label: "Web 看板", value: "active", detail: "静态页面，无构建链", tone: "blue" },
     { label: "Context Layer", value: "phase 1", detail: "source-neutral validation", tone: "blue" },
-    { label: "关键风险", value: "8", detail: "需持续跟踪", tone: "red" }
+    { label: "关键风险", value: "11", detail: "含自动捕获和本地模型风险", tone: "red" }
   ],
   work: [
     {
@@ -17,23 +17,22 @@ window.LIFEMESH_PROJECT_STATE = {
       items: [
         "用真实 vault 完成 Q20 手工验收记录",
         "定义来源引用展示格式",
-        "定义 frontmatter 结构化事实边界"
+        "用真实 LM Studio 和 sqlite-vec 路径验收 Manual Input CLI"
       ]
     },
     {
       lane: "Next",
       items: [
-        "用 Q20 真实 vault 样例做手工验收",
-        "定义 skill 安装与版本化方式",
-        "补首批用户故事验收样例",
-        "细化 Candidate inbox 确认体验"
+        "记录本机 embedding 模型 identifier、维度和性能边界",
+        "完善 Candidate inbox 批量确认体验",
+        "补 Fact Review 对 Manual Input tombstone 的级联验收"
       ]
     },
     {
       lane: "Later",
       items: [
-        "进入文档检索原型",
-        "接入时间与任务对象",
+        "完善 Candidate inbox 批量确认体验",
+        "接入系统日历和提醒事项 Source Adapter",
         "建立长期记忆查看和删除流程"
       ]
     },
@@ -59,16 +58,16 @@ window.LIFEMESH_PROJECT_STATE = {
       id: "1",
       title: "Personal Context Layer",
       status: "active",
-      progress: 64,
-      focus: "只读 bundle CLI 原型、真实 vault 验收、来源引用展示、frontmatter 边界",
-      docs: ["phase-1-delivery-plan.md", "cli-contract.md", "ADR-0005", "ADR-0006"]
+      progress: 74,
+      focus: "只读 bundle 原型、Manual Input 本地写入检索、LM Studio embedding/VLM、inbox-derived promote",
+      docs: ["phase-1-delivery-plan.md", "cli-contract.md", "ADR-0005", "ADR-0006", "ADR-0008"]
     },
     {
       id: "2",
-      title: "时间与任务",
+      title: "系统日历/任务同步与高级调度",
       status: "planned",
       progress: 8,
-      focus: "Event、Task、Commitment、Deadline",
+      focus: "系统日历、提醒事项、外部任务应用同步、冲突检测",
       docs: ["canonical-objects.md", "user-stories.md"]
     },
     {
@@ -144,7 +143,8 @@ window.LIFEMESH_PROJECT_STATE = {
         tone: "source",
         nodes: [
           { title: "Obsidian Adapter", detail: "首个验证适配器，只读 Markdown" },
-          { title: "Calendar / Tasks", detail: "后续事件、承诺、截止日期来源" },
+          { title: "Manual Input Inbox", detail: "截图、日程、心情、活动、待办和备注的本地写入源" },
+          { title: "Calendar / Tasks", detail: "后续系统同步来源" },
           { title: "Contacts / Mail / Files", detail: "后续关系、沟通、文件来源" }
         ]
       },
@@ -153,9 +153,10 @@ window.LIFEMESH_PROJECT_STATE = {
         subtitle: "可编辑来源身份",
         tone: "vault",
         nodes: [
-          { title: "Source Revision", detail: "path / mtime / size / hash / indexed_at" },
+          { title: "Source Reference", detail: "SourceRevision 或 Manual Input record / extraction" },
+          { title: "Manual Input State", detail: "active / auto_captured / promoted / revoked / deleted" },
           { title: "Citation Status", detail: "current / stale / missing" },
-          { title: "Tombstone", detail: "删除、排除、撤销后的失效标记" }
+          { title: "Tombstone", detail: "Source / Manual Input / Fact 的失效标记" }
         ]
       },
       {
@@ -163,7 +164,7 @@ window.LIFEMESH_PROJECT_STATE = {
         subtitle: "检索只是材料层",
         tone: "index",
         nodes: [
-          { title: "Text / Semantic Index", detail: "关键词、全文、语义召回" },
+          { title: "Text / Semantic Index", detail: "FTS + 本地 embedding + SQLite 向量检索" },
           { title: "Graph View", detail: "link、tag、entity、relationship" },
           { title: "Timeline View", detail: "event、decision、revision history" }
         ]
@@ -174,7 +175,7 @@ window.LIFEMESH_PROJECT_STATE = {
         tone: "context",
         nodes: [
           { title: "Context Slice", detail: "带 evidence_role：fact / raw / context / lead" },
-          { title: "Context Bundle", detail: "按来源优先级组装：Fact > Memory > Revision > Candidate" },
+          { title: "Context Bundle", detail: "显式 --source all 时组装 Obsidian + Manual Input" },
           { title: "Knowledge Candidate", detail: "fact / preference / relationship / task / decision" }
         ]
       },
@@ -185,6 +186,7 @@ window.LIFEMESH_PROJECT_STATE = {
         nodes: [
           { title: "Canonical Fact", detail: "已核实、可追溯、可复核、可撤销事实" },
           { title: "Memory", detail: "偏好/语境，只影响排序语气，不作事实证据" },
+          { title: "Promoted Object", detail: "由 input promote 创建 inbox-derived 最小对象" },
           { title: "Decision Record", detail: "选择、理由、来源和时间" }
         ]
       },
@@ -201,23 +203,23 @@ window.LIFEMESH_PROJECT_STATE = {
     ],
     rails: [
       { title: "Policy", detail: "classification / permission scope / sensitivity" },
-      { title: "Audit", detail: "who used what, why, and under which revision" },
+      { title: "Audit", detail: "who used what, why, and under which source reference" },
       { title: "Revocation", detail: "delete, exclude, expire, stale, tombstone" }
     ],
     feedback: [
       "User Confirmation -> Canonical Fact / Memory",
-      "Source changes -> Source Revision -> Citation Status",
+      "Source changes -> Source Reference -> Citation Status",
       "Revocation -> Tombstone -> Context Bundle cleanup"
     ]
   },
   docs: [
     { name: "Vision", path: "docs/00-vision/", status: "draft", signal: "方向已建立" },
     { name: "Governance", path: "docs/01-governance/", status: "draft", signal: "需细化删除和授权" },
-    { name: "Domain", path: "docs/02-domain/", status: "draft", signal: "Obsidian 数据源已记录" },
-    { name: "Architecture", path: "docs/03-architecture/", status: "draft", signal: "系统架构图已建立" },
-    { name: "Roadmap", path: "docs/04-roadmap/", status: "active", signal: "Phase 1 落地计划已定义" },
-    { name: "ADR", path: "docs/05-decisions/", status: "active", signal: "7 条 accepted" },
-    { name: "Security", path: "docs/07-security/", status: "draft", signal: "威胁模型初版" },
+    { name: "Domain", path: "docs/02-domain/", status: "draft", signal: "Manual Input 数据源已落地到原型" },
+    { name: "Architecture", path: "docs/03-architecture/", status: "draft", signal: "Manual Input CLI 已实现" },
+    { name: "Roadmap", path: "docs/04-roadmap/", status: "active", signal: "下一步是真实本机验收" },
+    { name: "ADR", path: "docs/05-decisions/", status: "active", signal: "8 条 accepted" },
+    { name: "Security", path: "docs/07-security/", status: "draft", signal: "补充自动捕获和本地模型风险" },
     { name: "Dashboard", path: "docs/08-dashboard/", status: "active", signal: "同步规则已落地" }
   ],
   risks: [
@@ -237,14 +239,44 @@ window.LIFEMESH_PROJECT_STATE = {
       control: "来源、置信度、确认、复核、过期、删除"
     },
     {
+      title: "原始数据和派生事实断链",
+      severity: "high",
+      control: "每个事实保存 provenance，Manual Input 保留 derived_from_input_id"
+    },
+    {
       title: "过期事实继续复用",
       severity: "high",
       control: "Fact Review、Source Tombstone、Fact Tombstone、Bundle 准入检查"
     },
     {
+      title: "自动执行不可逆动作",
+      severity: "high",
+      control: "风险分级、人工确认、撤销机制"
+    },
+    {
+      title: "只做向量库导致语义混乱",
+      severity: "medium",
+      control: "原始、结构化、索引、图谱、时间线分层"
+    },
+    {
       title: "高敏数据过早接入",
       severity: "high",
-      control: "阶段 5 前默认后置"
+      control: "阶段 5 前不正式接入高敏数据源，Sensitive input 默认隔离"
+    },
+    {
+      title: "Agent 自动捕获造成沉默记忆",
+      severity: "high",
+      control: "每次记录必须说明 id、kind、摘要、sensitivity 和 Bundle 可用性"
+    },
+    {
+      title: "本地 VLM 误读截图",
+      severity: "medium",
+      control: "extraction 不等于 fact，promote 必须确认"
+    },
+    {
+      title: "本地个人数据库泄露",
+      severity: "high",
+      control: "~/.lifemesh 0700，数据库和 raw asset 0600，后续评估加密"
     }
   ],
   decisions: [
@@ -289,6 +321,12 @@ window.LIFEMESH_PROJECT_STATE = {
       title: "Canonical Fact Review And Revocation",
       status: "accepted",
       path: "../docs/05-decisions/ADR-0007-canonical-fact-review-and-revocation.md"
+    },
+    {
+      id: "ADR-0008",
+      title: "Manual Input Inbox With Local Retrieval",
+      status: "accepted",
+      path: "../docs/05-decisions/ADR-0008-manual-input-inbox-local-retrieval.md"
     }
   ],
   dataSources: [
@@ -307,11 +345,18 @@ window.LIFEMESH_PROJECT_STATE = {
       next: "定义来源引用格式"
     },
     {
+      name: "Manual Input",
+      phase: "第 1 阶段",
+      sensitivity: "Private / Sensitive",
+      status: "prototype",
+      next: "用真实 LM Studio 模型和 sqlite-vec 扩展做本机验收"
+    },
+    {
       name: "日历与任务",
       phase: "第 2 阶段",
       sensitivity: "Private",
       status: "planned",
-      next: "确认 Event/Task/Commitment 语义"
+      next: "Manual Input event/task 最小对象稳定后再接系统同步和高级调度"
     },
     {
       name: "金融、健康、位置",
@@ -340,8 +385,29 @@ window.LIFEMESH_PROJECT_STATE = {
       name: "受限写入（事实/待办/记忆/候选）",
       phase: "第 1 阶段",
       risk: "medium",
-      status: "planned",
-      guardrail: "agent 推断只能走 candidate，用户确认后升级；automation 仍 deferred"
+      status: "prototype",
+      guardrail: "agent 推断只能走 candidate 或 auto_captured，用户确认后升级；automation 仍 deferred"
+    },
+    {
+      name: "Manual Input Inbox",
+      phase: "第 1 阶段",
+      risk: "medium-high",
+      status: "prototype",
+      guardrail: "auto_captured 只能做 lead；promote 必须用户确认"
+    },
+    {
+      name: "本地语义检索",
+      phase: "第 1 阶段",
+      risk: "medium",
+      status: "prototype",
+      guardrail: "LM Studio 本地 embedding，Sensitive 默认不进 Bundle"
+    },
+    {
+      name: "截图 VLM extraction",
+      phase: "第 1 阶段",
+      risk: "medium-high",
+      status: "prototype",
+      guardrail: "extraction 带 provider/model/confidence，不直接成为 fact"
     },
     {
       name: "记忆写入",
@@ -372,12 +438,8 @@ window.LIFEMESH_PROJECT_STATE = {
       detail: "CLI + skill 契约和实体文件已落地；仍需决定如何安装、版本化并暴露给不同 agent runtime。"
     },
     {
-      title: "Candidate inbox 展示体验",
-      detail: "dashboard 只读展示已定；仍需细化列表字段、排序、批量操作提示和风险解释。"
-    },
-    {
-      title: "Frontmatter 结构化事实边界",
-      detail: "需要决定哪些 frontmatter 字段可作为结构化事实、哪些只能作为 raw/source metadata。"
+      title: "LM Studio 模型配置",
+      detail: "需要用真实本机配置确认 embedding 模型 identifier、维度、VLM 调用方式和性能边界。"
     },
     {
       title: "MCP 重新评估触发条件",
@@ -387,18 +449,33 @@ window.LIFEMESH_PROJECT_STATE = {
   recentChanges: [
     {
       date: "2026-06-29",
+      title: "落地 Manual Input 本地 CLI 原型",
+      detail: "新增 ~/.lifemesh 配置层、SQLite 主库、FTS、sqlite-vec 加载、LM Studio embedding/VLM 调用、input add/search/list/show/update/revoke/delete/promote，以及 bundle --source manual-input/all；测试覆盖 mocked LM Studio、模型/向量失败降级和 Obsidian 兼容。"
+    },
+    {
+      date: "2026-06-29",
+      title: "收敛 Manual Input 与 Phase 1 边界",
+      detail: "确认 Manual Input 不使用 SourceRevision，而作为 source reference 参与 Bundle 和 Fact Review；ADR-0008 是 Phase 1 后续 milestone；Phase 1 promote 只创建 inbox-derived 最小对象，第 2 阶段改为系统日历/任务同步与高级调度。"
+    },
+    {
+      date: "2026-06-29",
+      title: "确定 Manual Input Inbox + 本地检索规格",
+      detail: "新增 ADR-0008 和 manual-input 数据源评估：作为 Phase 1 后续 milestone，契约定义 ~/.lifemesh SQLite 主库、Raw Vault managed assets、FTS、LM Studio 本地 embedding、qwen3-vl-8b 截图 extraction、SQLite 向量检索；规划 input add/search/show/list/update/revoke/delete/promote，并在实现后进入 bundle --source all。"
+    },
+    {
+      date: "2026-06-29",
       title: "落地第一轮只读 bundle CLI 原型",
       detail: "新增 bin/lifemesh 与 lifemesh/ Python 标准库实现，支持 Obsidian 只读扫描、Source Revision、raw slice JSON Bundle、显式 vault、路径排除、sensitivity cap、stale/missing state 检测；补 fixture vault 单测和 skills/lifemesh/SKILL.md。"
     },
     {
       date: "2026-06-29",
       title: "定义 Phase 1 落地计划",
-      detail: "新增 phase-1-delivery-plan.md：第 1 阶段先实现 lifemesh bundle 最小只读链路、Obsidian Source Adapter、JSON Context Bundle、stale/missing 链路和 agent skill；验收通过后再推进 Candidate inbox、受限写入和 Canonical Fact 复核实现。"
+      detail: "新增 phase-1-delivery-plan.md：第 1 阶段先实现 lifemesh bundle 最小只读链路、Obsidian Source Adapter、JSON Context Bundle、stale/missing 链路和 agent skill；只读原型验收后，ADR-0008 作为 Manual Input 后续 milestone。"
     },
     {
       date: "2026-06-29",
       title: "确定 Canonical Fact 复核与撤销流程",
-      detail: "新增 ADR-0007：只有 valid + active + current-supported 的 Canonical Fact 能作为 fact slice；stale/missing/revoked 来源触发 needs_review 和 tombstone 级联，用户可 revalidate、revise、invalidate 或 revoke。"
+      detail: "新增 ADR-0007：只有 valid + active + current-supported 的 Canonical Fact 能作为 fact slice；Source Revision 或 Manual Input source reference 失效会触发 needs_review 和 tombstone 级联，用户可 revalidate、revise、invalidate 或 revoke。"
     },
     {
       date: "2026-06-29",
@@ -438,7 +515,7 @@ window.LIFEMESH_PROJECT_STATE = {
     {
       date: "2026-06-26",
       title: "确定 Context Bundle 来源优先级",
-      detail: "组装优先级为 Canonical Fact > Memory > 当前任务相关 Source Revision > 当前任务生成的 Knowledge Candidate；失效来源只进入 excluded_sources / freshness_report。"
+      detail: "组装优先级为 Canonical Fact > Memory > 当前任务相关 Source Reference > 当前任务生成的 Knowledge Candidate；失效来源只进入 excluded_sources / freshness_report。"
     },
     {
       date: "2026-06-26",
@@ -458,7 +535,7 @@ window.LIFEMESH_PROJECT_STATE = {
     {
       date: "2026-06-26",
       title: "确定 Knowledge Candidate 第一版类型",
-      detail: "第一版类型为 fact、preference、relationship、task、decision，并要求 confidence、risk、lifecycle、source_revisions、why_suggested。"
+      detail: "第一版类型为 fact、preference、relationship、task、decision，并要求 confidence、risk、lifecycle、source_refs、why_suggested。"
     },
     {
       date: "2026-06-26",

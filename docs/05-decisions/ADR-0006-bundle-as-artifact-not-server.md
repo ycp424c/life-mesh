@@ -15,7 +15,7 @@
 - 交付方式：薄 CLI 读取索引、按任务组装 JSON Bundle、输出到文件或 stdout；无长驻进程、无协议分帧、无 server 维护。
 - 搭配一份 **skill**（agent 可读说明）：告诉 agent 如何调用 CLI，以及拿到 JSON Bundle 后按 `evidence_role` 消费（事实回答只用 `fact` + `raw`，`context` 只调语气，`lead` 标"未核实"）。Skill 把 Q15 的消费规则固化成 agent 可遵循的指令。
 - Agent 通过 shell 调 CLI 或读文件拿到 JSON Bundle，按 skill 说明消费。任何能读 skill 的 agent 都能用，不绑定特定 client。
-- 核心模型保持协议无关：CLI/文件/skill 只是交付通道，换通道不改动 Context Bundle / evidence_role / Source Revision 模型。
+- 核心模型保持协议无关：CLI/文件/skill 只是交付通道，换通道不改动 Context Bundle / evidence_role / Source Reference 模型。Source Revision 是 Obsidian 等可编辑外部来源的 source reference 类型。
 - 第 1 阶段纳入**读 + 受限写**：读（`bundle`）+ 用户手动写（`fact add` / `task add` / `remember`）+ agent 推断走候选（`candidate add`，需用户确认）。`automation`（外发、不可逆动作）仍 deferred 在阶段 6。
 - **硬规则**：agent 推断禁止直接 `fact add`，只能 `candidate add` → 用户确认 → 升级；直接写命令是用户断言路径。
 

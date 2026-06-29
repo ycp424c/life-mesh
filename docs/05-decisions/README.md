@@ -26,3 +26,4 @@
 - [ADR-0005 Personal Context Layer](ADR-0005-personal-context-layer.md)
 - [ADR-0006 Context Bundle as Artifact, Not Server](ADR-0006-bundle-as-artifact-not-server.md)
 - [ADR-0007 Canonical Fact Review And Revocation](ADR-0007-canonical-fact-review-and-revocation.md)
+- [ADR-0008 Manual Input Inbox With Local Retrieval](ADR-0008-manual-input-inbox-local-retrieval.md)

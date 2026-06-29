@@ -33,9 +33,9 @@
 - Obsidian Vault 问答返回具体 Vault Note 来源。
 - Obsidian 相关实现没有污染通用 Source Adapter、Source Revision、权限和审计模型。
 - 能为一个任务生成 Context Bundle，而不是只返回检索片段。
-- Context Bundle 按来源优先级组装：Canonical Fact > Memory > 当前任务相关 Source Revision > 当前任务生成的 Knowledge Candidate。
+- Context Bundle 按来源优先级组装：Canonical Fact > Memory > 当前任务相关 Source Reference > 当前任务生成的 Knowledge Candidate。
 - stale / missing / revoked 来源不进入可用上下文，只进入 `excluded_sources` / `freshness_report`；依赖失效来源的 Canonical Fact 被标记为需要复核。
-- Canonical Fact 只有 `validity=valid`、`revocation_status=active`、且有 current supporting Source Revision 时，才能作为 `fact` slice 使用。
+- Canonical Fact 只有 `validity=valid`、`revocation_status=active`、且有 current supporting source reference 时，才能作为 `fact` slice 使用。
 - Canonical Fact 复核支持 revalidate、revise、invalidate、revoke；Source Tombstone / Fact Tombstone 能阻止旧 revision 或旧 fact 被新 Bundle 使用。
 - Context Bundle 内的每个 Context Slice 都有来源、权限、新鲜度和 Citation Status。
 - 每个 Context Slice 带 `evidence_role`（fact / raw / context / lead）。
@@ -43,18 +43,18 @@
 - stale / missing / revoked 来源不进入证据，只进入报告区。
 - Context Bundle 作为可序列化 JSON 产物交付（薄 CLI + skill），第 1 阶段不引入运行时 server，不绑定 MCP。
 - 配套 skill 存在，能指导 agent 调用 CLI 并按 `evidence_role` 消费 Bundle。
-- CLI 契约存在（`cli-contract.md`）：`bundle` 读 + `fact add`/`task add`/`remember`/`candidate add` 写。
-- agent 推断不得直接 `fact add`，只能 `candidate add`；用户用 CLI 确认候选，dashboard 只读展示 inbox。
+- CLI 契约存在（`cli-contract.md`）：`bundle` 读 + Phase 1 后续 Manual Input `input add/search/list/show/update/revoke/delete/promote` + 传统 `fact add`/`task add`/`remember`/`candidate add` 写。
+- agent 自动捕获只能用于非高敏信息并进入 `auto_captured` Manual Input，必须透明说明；agent 推断不得直接 `fact add` 或自动 promote，只能走 candidate / auto_captured → 用户确认。
 - candidate 确认按 type 升级：`fact`→Canonical Fact、`task`→Task、`preference`/`relationship`/`decision`→Memory。
 - 低风险事实可策略自动接受；普通回答不被候选确认阻塞。
 - 能产出 Knowledge Candidate，但不会在未确认前写入 Canonical Store 或 Memory。
 - Knowledge Candidate 第一版至少支持 fact、preference、relationship、task、decision 五类。
-- 每个 Knowledge Candidate 都包含 confidence、risk、lifecycle、source_revisions 和 why_suggested。
+- 每个 Knowledge Candidate 都包含 confidence、risk、lifecycle、source_refs 和 why_suggested。
 - 普通回答不被 User Confirmation 阻塞。
 - Knowledge Candidate 具备生命周期：transient、inbox、confirm_required、discard。
 - User Confirmation 只在持久化到 Canonical Store、Memory、自动化规则或高风险写入前触发。
 - Canonical Fact 第一版只允许通过用户确认、用户手动创建、低风险策略接受三条路径生成。
-- Canonical Fact 必须包含 statement、source_revisions、accepted_by、accepted_at、acceptance_path、confidence、risk、validity、revocation_status。
+- Canonical Fact 必须包含 statement、source_refs、accepted_by、accepted_at、acceptance_path、confidence、risk、validity、revocation_status。
 - Canonical Fact 复核状态必须能记录 review_reason、review_started_at、reviewed_at 和 superseded_by（按需）。
 - Memory 只影响排序、语气和偏好，不作为事实证据；需要当事实用必须走 Fact Acceptance 升级为 Canonical Fact。
 - 显式记忆和情境记忆可直接写入 Memory，情境记忆带范围和过期时间；普通偏好推断带置信度直接写入；重要偏好、关系、决策类推断写入 Memory 前需要 User Confirmation。
@@ -65,6 +65,16 @@
 - 修改 Vault Note 后，对应索引片段和派生事实能通过 Vault Note Revision 失效或重建。
 - 旧回答遇到 stale 或 missing 来源时不自动重写，而是展示来源状态并提供重新生成动作。
 - 通过 [Obsidian 检索最小验收样例](../02-domain/data-sources/obsidian-retrieval-sample.md)：`bundle` 产出带 `note_path`+`revision_id`+`heading`+`line_range`+`citation_status` 的 slice，agent 事实回答引用来源与状态，stale 链路生效。
+
+Phase 1 后续 Manual Input milestone 通过条件：
+
+- Manual Input 不使用 SourceRevision；input record、content_hash、状态和 audit event 足以支撑 Bundle provenance、撤销和复核。
+- `input add/search/list/show/update/revoke/delete/promote` 最小 CLI 路径可运行。
+- 本地 SQLite、FTS、embedding、Raw Vault managed assets 和模型/向量失败降级路径有最小测试。
+- `bundle --source all` 能按权限合并 Obsidian 和 Manual Input。
+- `active` input 可作为 raw，`auto_captured` input 最多作为 lead，`Sensitive` 默认不进入普通 Bundle。
+- promote 只创建 inbox-derived 最小 Task/Event/Memory/Canonical Fact/Candidate 对象；系统日历、提醒事项和外部任务应用同步不属于该 milestone。
+- revoke/delete 后相关 input、extraction、embedding 和派生对象不再进入新 Bundle，依赖事实进入复核或停止使用。
 
 第 4 阶段通过条件：
 
