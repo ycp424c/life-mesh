@@ -2,7 +2,7 @@
 
 LifeMesh 是一个面向个人的 Personal Data OS：把分散在生活、工作、关系、文件、日程和决策中的个人数据，逐步整理成可检索、可理解、可授权、可审计，并能被 AI Agent 安全使用的上下文基础设施。
 
-当前阶段初始化文档结构和静态 Web 项目看板，不包含业务代码、运行时框架或技术栈绑定。
+当前阶段已从文档结构和静态 Web 项目看板，进入第 1 阶段最小只读 CLI 原型；暂不引入运行时服务、数据库或完整技术栈绑定。
 
 ## 项目原则
 
@@ -33,4 +33,24 @@ LifeMesh 是一个面向个人的 Personal Data OS：把分散在生活、工作
 
 ## 当前状态
 
-文档基线和静态项目看板已建立。第 1 阶段已收敛为 Personal Context Layer，并已有落地计划：先实现 `lifemesh bundle` 最小只读链路、Obsidian Source Adapter、JSON Context Bundle、stale/missing 链路和 agent skill；验收通过后再推进来源引用展示、Candidate inbox、受限写入和 Canonical Fact 复核实现。
+文档基线和静态项目看板已建立。第 1 阶段已收敛为 Personal Context Layer，第一轮只读原型已提供 `lifemesh bundle`、Obsidian Source Adapter、JSON Context Bundle、stale/missing 链路和 agent skill；验收通过后再推进来源引用展示、Candidate inbox、受限写入和 Canonical Fact 复核实现。
+
+## 本地 CLI 原型
+
+第一轮只读原型已提供本地命令：
+
+```bash
+bin/lifemesh bundle "AI 对开源生态有什么结构性冲击？" --source obsidian --vault tests/fixtures/obsidian-vault --out /tmp/lifemesh-bundle.json
+```
+
+使用测试 vault：
+
+```bash
+bin/lifemesh bundle "AI 对开源生态有什么结构性冲击？" --source obsidian --vault tests/fixtures/obsidian-vault
+```
+
+运行测试：
+
+```bash
+python3 -m unittest discover -s tests
+```

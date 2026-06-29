@@ -11,14 +11,15 @@
 ## 读命令
 
 ```bash
-lifemesh bundle "<task>" [--source obsidian] [--out <path>] [--max-slices 20] [--sensitivity-cap Private]
+lifemesh bundle "<task>" [--source obsidian] --vault <path> [--out <path>] [--max-slices 20] [--sensitivity-cap Private]
 ```
 
 - `<task>`（必填）：自然语言任务描述。
 - `--source`：Source Adapter，第 1 阶段默认且只有 `obsidian`。
+- `--vault <path>`：Obsidian vault 路径；也可通过 `LIFEMESH_OBSIDIAN_VAULT` 显式设置。CLI 不内置真实个人 vault 默认路径。
 - `--out <path>`：写 JSON 到文件（默认写 stdout）。
 - `--max-slices`：Bundle 大小上限，防爆上下文。
-- `--sensitivity-cap`：允许的最高敏感级，阶段 5 前 `Sensitive` 不允许。
+- `--sensitivity-cap`：允许的最高敏感级，阶段 5 前 `Sensitive` 不允许；超过 cap 的来源只能进入 `excluded_sources`。
 
 不提供直接返回答案的命令——回答是 agent 的职责，CLI 只交付 Bundle。
 
@@ -137,10 +138,10 @@ skill 随仓库版本化（如 `skills/lifemesh/SKILL.md`），内容契约：
 4. **怎么消费**：按 `evidence_role`——事实回答只用 `fact`+`raw` 并引 `note_path`+`revision_id`+`line_range`+`citation_status`；`context` 只调语气；`lead` 标"未核实"；`freshness_report` 的 stale/missing 要在回答里提示。
 5. **边界**：agent 推断不得直接 `fact add`，只能 `candidate add`；不引用失效来源；不把 `context`/`lead` 当事实；不把 `needs_review` fact 当作可用事实。
 
-skill 实体文件是 follow-up，等 CLI 实现时再写；当前只把契约钉进文档。
+skill 实体文件已落在 `skills/lifemesh/SKILL.md`，当前覆盖只读 `bundle` 路径和 Bundle 消费规则。写侧、candidate 和 fact review 仍是契约。
 
 ## 非目标
 
-- 不在第 1 阶段实现 CLI（只定义契约）。
+- 不在第一轮只读原型中实现写侧命令和完整持久化。
 - 不暴露 `automation`（外发、不可逆动作），仍 deferred 在阶段 6。
 - 不锁死 JSON schema 之外的传输细节。

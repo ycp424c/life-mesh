@@ -2,9 +2,9 @@ window.LIFEMESH_PROJECT_STATE = {
   lastUpdated: "2026-06-29",
   state: "Personal Context Layer",
   currentPhase: "第 1 阶段：Personal Context Layer",
-  overallProgress: 24,
+  overallProgress: 28,
   summary:
-    "LifeMesh 第 1 阶段已进入落地准备：先实现 lifemesh bundle 最小只读链路、Obsidian Source Adapter、JSON Context Bundle、stale/missing 链路和 agent skill。",
+    "LifeMesh 第 1 阶段已进入落地：lifemesh bundle 最小只读 CLI、Obsidian Source Adapter、JSON Context Bundle、fixture 测试和 agent skill 已有第一轮原型。",
   metrics: [
     { label: "文档基线", value: "active", detail: "35+ Markdown 文件", tone: "green" },
     { label: "Web 看板", value: "active", detail: "静态页面，无构建链", tone: "blue" },
@@ -15,8 +15,7 @@ window.LIFEMESH_PROJECT_STATE = {
     {
       lane: "Now",
       items: [
-        "启动 lifemesh bundle 最小 CLI 原型",
-        "实现 Obsidian Source Adapter + Source Revision",
+        "用真实 vault 完成 Q20 手工验收记录",
         "定义来源引用展示格式",
         "定义 frontmatter 结构化事实边界"
       ]
@@ -24,8 +23,8 @@ window.LIFEMESH_PROJECT_STATE = {
     {
       lane: "Next",
       items: [
-        "编写配套 LifeMesh agent skill 实体",
         "用 Q20 真实 vault 样例做手工验收",
+        "定义 skill 安装与版本化方式",
         "补首批用户故事验收样例",
         "细化 Candidate inbox 确认体验"
       ]
@@ -60,9 +59,9 @@ window.LIFEMESH_PROJECT_STATE = {
       id: "1",
       title: "Personal Context Layer",
       status: "active",
-      progress: 58,
-      focus: "最小 bundle CLI、Obsidian Source Adapter、JSON Context Bundle、stale/missing 验收",
-      docs: ["phase-1-delivery-plan.md", "ADR-0005", "ADR-0006", "ADR-0007"]
+      progress: 64,
+      focus: "只读 bundle CLI 原型、真实 vault 验收、来源引用展示、frontmatter 边界",
+      docs: ["phase-1-delivery-plan.md", "cli-contract.md", "ADR-0005", "ADR-0006"]
     },
     {
       id: "2",
@@ -297,8 +296,8 @@ window.LIFEMESH_PROJECT_STATE = {
       name: "Obsidian Vault",
       phase: "第 1 阶段",
       sensitivity: "Private",
-      status: "implementation target",
-      next: "实现只读 Source Adapter 和 Q20 验收样例"
+      status: "prototype",
+      next: "完成 Q20 真实 vault 手工验收记录"
     },
     {
       name: "Vault Note",
@@ -327,7 +326,7 @@ window.LIFEMESH_PROJECT_STATE = {
       name: "文档搜索",
       phase: "第 1 阶段",
       risk: "low-medium",
-      status: "next build",
+      status: "prototype",
       guardrail: "必须返回 note_path、line_range、citation_status"
     },
     {
@@ -369,8 +368,8 @@ window.LIFEMESH_PROJECT_STATE = {
       detail: "首批数据源已确认为 Obsidian Vault；仍需决定是否允许用户为归档或专题目录建立显式白名单。"
     },
     {
-      title: "Agent skill 实体",
-      detail: "CLI + skill 契约已定义；实体文件是否等 CLI 实现时再写、放在哪里、如何版本化仍需落地。"
+      title: "Agent skill 分发方式",
+      detail: "CLI + skill 契约和实体文件已落地；仍需决定如何安装、版本化并暴露给不同 agent runtime。"
     },
     {
       title: "Candidate inbox 展示体验",
@@ -386,6 +385,11 @@ window.LIFEMESH_PROJECT_STATE = {
     }
   ],
   recentChanges: [
+    {
+      date: "2026-06-29",
+      title: "落地第一轮只读 bundle CLI 原型",
+      detail: "新增 bin/lifemesh 与 lifemesh/ Python 标准库实现，支持 Obsidian 只读扫描、Source Revision、raw slice JSON Bundle、显式 vault、路径排除、sensitivity cap、stale/missing state 检测；补 fixture vault 单测和 skills/lifemesh/SKILL.md。"
+    },
     {
       date: "2026-06-29",
       title: "定义 Phase 1 落地计划",

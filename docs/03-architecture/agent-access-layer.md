@@ -67,5 +67,5 @@ Agent 不得：
 - ~~是否采用 MCP 作为首个 Agent 接口协议？~~ 已决：第 1 阶段不采用 MCP，Context Bundle 作为 JSON 产物经薄 CLI + skill 交付（`ADR-0006`）。
 - ~~Bundle 产物格式：JSON 还是结构化 Markdown？~~ 已决：JSON。
 - ~~第 1 阶段 CLI 契约（命令、参数、JSON schema）长什么样？~~ 已决：见 `cli-contract.md`。
-- ~~配套 skill 如何组织（调用方式 + evidence_role 消费规则）？~~ 契约已决：见 `cli-contract.md`；实体文件待 CLI 实现时再写。
+- ~~配套 skill 如何组织（调用方式 + evidence_role 消费规则）？~~ 已决且第一版实体已落地：见 `cli-contract.md` 和 `skills/lifemesh/SKILL.md`。
 - 后续阶段需要实时、有状态工具调用时，何时重新评估 MCP？

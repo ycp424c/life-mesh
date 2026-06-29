@@ -19,6 +19,22 @@ Obsidian Vault
   -> Source 变化后 citation_status / freshness_report 生效
 ```
 
+## 当前实现状态
+
+截至 2026-06-29，第一轮只读原型已开始落地：
+
+- `bin/lifemesh bundle` 可生成 JSON Context Bundle。
+- `lifemesh/` 包含 Obsidian 只读扫描、Source Revision、section 提取、简单检索排序、sensitivity cap 过滤、stale / missing state 检测。
+- `tests/fixtures/obsidian-vault/` 和 `tests/test_bundle_cli.py` 覆盖 fixture vault、显式 vault、路径排除、sensitivity cap、stale 和 missing。
+- `skills/lifemesh/SKILL.md` 已提供 agent 使用说明。
+
+仍未完成：
+
+- 来源引用展示格式。
+- frontmatter 结构化事实边界。
+- Candidate inbox 与写侧命令。
+- Canonical Fact 持久化与复核命令实现。
+
 ## 落地范围
 
 ### 必做
@@ -80,7 +96,7 @@ Obsidian Vault
 使用真实 vault：
 
 ```bash
-lifemesh bundle "AI 对开源生态有什么结构性冲击？" --source obsidian --out /tmp/bundle.json
+lifemesh bundle "AI 对开源生态有什么结构性冲击？" --source obsidian --vault <real-vault-path> --out /tmp/bundle.json
 ```
 
 通过条件：
