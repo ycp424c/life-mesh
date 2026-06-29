@@ -20,6 +20,10 @@
 
 目标：验证 source-neutral 的 Personal Context Layer，而不是普通 RAG 或 Obsidian 增强器。
 
+落地计划：
+
+- [Phase 1 Delivery Plan](phase-1-delivery-plan.md)
+
 第一阶段要证明 LifeMesh 能把一个个人数据源转成任务级上下文：
 
 - Context Slice：最小、可追溯、带权限和新鲜度的上下文单元。

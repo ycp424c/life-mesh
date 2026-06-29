@@ -23,6 +23,7 @@ LifeMesh 是一个面向个人的 Personal Data OS：把分散在生活、工作
 - [架构总览](docs/03-architecture/overview.md)
 - [系统架构图说明](docs/03-architecture/system-map.md)
 - [渐进式路线图](docs/04-roadmap/phases.md)
+- [Phase 1 落地计划](docs/04-roadmap/phase-1-delivery-plan.md)
 - [决策记录](docs/05-decisions/README.md)
 - [共享对话摘要](docs/06-research/source-conversation-summary.md)
 - [威胁模型](docs/07-security/threat-model.md)
@@ -32,4 +33,4 @@ LifeMesh 是一个面向个人的 Personal Data OS：把分散在生活、工作
 
 ## 当前状态
 
-文档基线和静态项目看板已建立。第 1 阶段已收敛为 Personal Context Layer：Obsidian Vault 作为首个 Source Adapter，Context Bundle 以 JSON 产物通过薄 CLI + skill 交付；Canonical Fact 复核与撤销流程已进入 ADR。下一步应细化来源引用展示、Candidate inbox 体验和 frontmatter 结构化事实边界。
+文档基线和静态项目看板已建立。第 1 阶段已收敛为 Personal Context Layer，并已有落地计划：先实现 `lifemesh bundle` 最小只读链路、Obsidian Source Adapter、JSON Context Bundle、stale/missing 链路和 agent skill；验收通过后再推进来源引用展示、Candidate inbox、受限写入和 Canonical Fact 复核实现。

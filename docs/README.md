@@ -38,6 +38,7 @@ docs/
 - [ADR-0007 Canonical Fact Review And Revocation](05-decisions/ADR-0007-canonical-fact-review-and-revocation.md)
 - [System Map](03-architecture/system-map.md)
 - [渐进式路线图](04-roadmap/phases.md)
+- [Phase 1 Delivery Plan](04-roadmap/phase-1-delivery-plan.md)
 - [项目看板维护规则](08-dashboard/project-board.md)
 
 ## 演进规则

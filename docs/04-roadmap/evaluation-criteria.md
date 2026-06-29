@@ -28,6 +28,8 @@
 
 第 1 阶段通过条件：
 
+概览与执行顺序见 [Phase 1 Delivery Plan](phase-1-delivery-plan.md)。
+
 - Obsidian Vault 问答返回具体 Vault Note 来源。
 - Obsidian 相关实现没有污染通用 Source Adapter、Source Revision、权限和审计模型。
 - 能为一个任务生成 Context Bundle，而不是只返回检索片段。

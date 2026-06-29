@@ -1,10 +1,10 @@
 window.LIFEMESH_PROJECT_STATE = {
   lastUpdated: "2026-06-29",
   state: "Personal Context Layer",
-  currentPhase: "第 0 阶段：个人数据宪法",
-  overallProgress: 20,
+  currentPhase: "第 1 阶段：Personal Context Layer",
+  overallProgress: 24,
   summary:
-    "LifeMesh 已确认第一阶段目标是 Personal Context Layer：用 Obsidian 作为首个 Source Adapter，验证 Context Bundle、Knowledge Candidate 生命周期、Canonical Fact 复核撤销，以及持久化/高风险写入前确认。",
+    "LifeMesh 第 1 阶段已进入落地准备：先实现 lifemesh bundle 最小只读链路、Obsidian Source Adapter、JSON Context Bundle、stale/missing 链路和 agent skill。",
   metrics: [
     { label: "文档基线", value: "active", detail: "35+ Markdown 文件", tone: "green" },
     { label: "Web 看板", value: "active", detail: "静态页面，无构建链", tone: "blue" },
@@ -15,17 +15,19 @@ window.LIFEMESH_PROJECT_STATE = {
     {
       lane: "Now",
       items: [
+        "启动 lifemesh bundle 最小 CLI 原型",
+        "实现 Obsidian Source Adapter + Source Revision",
         "定义来源引用展示格式",
-        "细化 Candidate inbox 确认体验",
         "定义 frontmatter 结构化事实边界"
       ]
     },
     {
       lane: "Next",
       items: [
-        "补首批用户故事验收样例",
         "编写配套 LifeMesh agent skill 实体",
-        "定义 Obsidian 白名单目录规则"
+        "用 Q20 真实 vault 样例做手工验收",
+        "补首批用户故事验收样例",
+        "细化 Candidate inbox 确认体验"
       ]
     },
     {
@@ -57,10 +59,10 @@ window.LIFEMESH_PROJECT_STATE = {
     {
       id: "1",
       title: "Personal Context Layer",
-      status: "planned",
-      progress: 50,
-      focus: "Context Slice、Context Bundle、Knowledge Candidate、User Confirmation、Canonical Fact 复核、CLI 契约",
-      docs: ["ADR-0005", "ADR-0006", "ADR-0007", "cli-contract.md"]
+      status: "active",
+      progress: 58,
+      focus: "最小 bundle CLI、Obsidian Source Adapter、JSON Context Bundle、stale/missing 验收",
+      docs: ["phase-1-delivery-plan.md", "ADR-0005", "ADR-0006", "ADR-0007"]
     },
     {
       id: "2",
@@ -214,7 +216,7 @@ window.LIFEMESH_PROJECT_STATE = {
     { name: "Governance", path: "docs/01-governance/", status: "draft", signal: "需细化删除和授权" },
     { name: "Domain", path: "docs/02-domain/", status: "draft", signal: "Obsidian 数据源已记录" },
     { name: "Architecture", path: "docs/03-architecture/", status: "draft", signal: "系统架构图已建立" },
-    { name: "Roadmap", path: "docs/04-roadmap/", status: "draft", signal: "阶段已定义" },
+    { name: "Roadmap", path: "docs/04-roadmap/", status: "active", signal: "Phase 1 落地计划已定义" },
     { name: "ADR", path: "docs/05-decisions/", status: "active", signal: "7 条 accepted" },
     { name: "Security", path: "docs/07-security/", status: "draft", signal: "威胁模型初版" },
     { name: "Dashboard", path: "docs/08-dashboard/", status: "active", signal: "同步规则已落地" }
@@ -295,8 +297,8 @@ window.LIFEMESH_PROJECT_STATE = {
       name: "Obsidian Vault",
       phase: "第 1 阶段",
       sensitivity: "Private",
-      status: "active candidate",
-      next: "作为 Source Adapter 验证样例"
+      status: "implementation target",
+      next: "实现只读 Source Adapter 和 Q20 验收样例"
     },
     {
       name: "Vault Note",
@@ -325,8 +327,8 @@ window.LIFEMESH_PROJECT_STATE = {
       name: "文档搜索",
       phase: "第 1 阶段",
       risk: "low-medium",
-      status: "planned",
-      guardrail: "必须返回来源"
+      status: "next build",
+      guardrail: "必须返回 note_path、line_range、citation_status"
     },
     {
       name: "摘要与事实抽取",
@@ -384,6 +386,11 @@ window.LIFEMESH_PROJECT_STATE = {
     }
   ],
   recentChanges: [
+    {
+      date: "2026-06-29",
+      title: "定义 Phase 1 落地计划",
+      detail: "新增 phase-1-delivery-plan.md：第 1 阶段先实现 lifemesh bundle 最小只读链路、Obsidian Source Adapter、JSON Context Bundle、stale/missing 链路和 agent skill；验收通过后再推进 Candidate inbox、受限写入和 Canonical Fact 复核实现。"
+    },
     {
       date: "2026-06-29",
       title: "确定 Canonical Fact 复核与撤销流程",
