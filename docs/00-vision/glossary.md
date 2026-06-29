@@ -1,7 +1,7 @@
 # Glossary
 
 状态：draft
-最后更新：2026-06-26
+最后更新：2026-06-29
 职责边界：统一 LifeMesh 的核心术语，避免后续文档语义漂移。
 
 | 术语 | 含义 |
@@ -25,6 +25,9 @@
 | Knowledge Candidate Type | Knowledge Candidate 的类型，第一版包括 fact、preference、relationship、task、decision。 |
 | Canonical Fact | 已核实、可追溯、可撤销，并可在 Context Bundle 中复用的事实。 |
 | Fact Acceptance | 将 Knowledge Candidate 或用户手动陈述转成 Canonical Fact 的动作或策略路径。 |
+| Fact Review | Source Revision stale、missing 或 revoked 后，对依赖它的 Canonical Fact 进行重新确认、修订、失效或撤销的流程。 |
+| Source Tombstone | 来源被删除、排除或撤销授权后的不可用标记，用于阻止旧 Source Revision 继续命中新任务。 |
+| Fact Tombstone | Canonical Fact 被撤销、失效或替代后的不可用标记，用于阻止旧 fact 继续进入新 Context Bundle。 |
 | User Confirmation | 候选知识进入 canonical facts、长期记忆或高风险外部动作前的用户确认；普通回答不应被确认流程阻塞。 |
 | Candidate Lifecycle | Knowledge Candidate 持久化前的生命周期状态，初始包括 transient、inbox、confirm_required、discard。 |
 | Obsidian Vault | LifeMesh 第一个验证适配器：本地 Obsidian 知识库，用于验证可编辑知识源，不是产品中心。 |

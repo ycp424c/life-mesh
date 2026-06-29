@@ -1,7 +1,7 @@
 # LifeMesh 文档地图
 
 状态：active
-最后更新：2026-06-26
+最后更新：2026-06-29
 职责边界：说明文档体系如何组织、维护和演进。
 
 ## 目录结构
@@ -35,6 +35,7 @@ docs/
 - [Canonical Facts](02-domain/canonical-facts.md)
 - [Context Bundle](02-domain/context-bundle.md)
 - [CLI Contract](03-architecture/cli-contract.md)
+- [ADR-0007 Canonical Fact Review And Revocation](05-decisions/ADR-0007-canonical-fact-review-and-revocation.md)
 - [System Map](03-architecture/system-map.md)
 - [渐进式路线图](04-roadmap/phases.md)
 - [项目看板维护规则](08-dashboard/project-board.md)

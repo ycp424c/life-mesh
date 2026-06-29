@@ -1,7 +1,7 @@
 # Architecture Overview
 
 状态：draft
-最后更新：2026-06-26
+最后更新：2026-06-29
 职责边界：描述 LifeMesh 的高层架构，不绑定具体技术栈。
 
 ## 一句话架构
@@ -27,7 +27,8 @@
        - Knowledge Candidate
        - User Confirmation
   -> Canonical Knowledge
-       - Canonical Fact
+      - Canonical Fact
+      - Fact Review / Tombstone
        - Memory
        - Decision Record
   -> 权限与策略层
@@ -52,7 +53,7 @@
 - Canonical Store 保存可解释、可追溯的事实。
 - Index 和 Graph 用于检索与关联，但不能替代来源。
 - Personal Context Layer 负责把不同来源的材料组装成任务级上下文，而不是把检索结果直接交给 Agent。
-- Canonical Fact 和 Memory 可以进入 Context Bundle，但必须保留 provenance、撤销路径和风险级别。
+- Canonical Fact 和 Memory 可以进入 Context Bundle，但 Canonical Fact 必须保留 provenance、复核/撤销路径和风险级别，并通过 current source 支撑检查。
 - Agent Access Layer 只暴露授权后的工具和资源。
 - Audit Layer 记录读取、写入、删除、授权和动作执行。
 - Source Adapter 负责接入具体数据源，但核心生命周期、权限、溯源和审计语义必须保持 source-neutral。

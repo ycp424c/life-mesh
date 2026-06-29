@@ -1,7 +1,7 @@
 # System Map
 
 状态：draft
-最后更新：2026-06-26
+最后更新：2026-06-29
 职责边界：说明 Web 看板中的 LifeMesh 系统架构图及其层级含义。
 
 ## 定位
@@ -35,8 +35,8 @@ Source Adapters
 - Source Revision 负责可编辑来源的版本身份。
 - Personal Context Layer 产出 Context Bundle，而不是裸检索结果。
 - Knowledge Candidate 在确认或策略接受前不能成为 Canonical Fact 或 Memory。
-- Canonical Fact 可以作为 Context Bundle 来源，但必须可追溯、可撤销。
-- Agent Access 只能拿到授权后的 Context Bundle 和工具能力。
+- Canonical Fact 可以作为 Context Bundle 来源，但必须可追溯、可复核、可撤销。
+- Agent Access 在第 1 阶段通过 CLI + skill 获取授权后的 JSON Context Bundle。
 
 ## Context Bundle 来源优先级
 
@@ -48,7 +48,7 @@ Source Adapters
 4. 当前任务生成的 Knowledge Candidate（只作为可能线索，不能伪装成事实）
 5. 被排除或失效的来源只进入 `excluded_sources` / `freshness_report`，不进入可用上下文
 
-失效来源不静默丢弃：依赖失效 Source Revision 的 Canonical Fact 标记为需要复核，不能继续作为"已核实"使用。
+失效来源不静默丢弃：依赖失效 Source Revision 且没有其他 current supporting revision 的 Canonical Fact 标记为 `needs_review`，不能继续作为"已核实"使用。
 
 ## Canonical Fact 生成路径
 
@@ -59,3 +59,14 @@ Source Adapters
 - 低风险策略自动接受。
 
 偏好、关系、任务、决策和高敏事实不得自动进入 Canonical Fact。
+
+## Canonical Fact 复核与撤销
+
+只有 `validity=valid`、`revocation_status=active`、且至少有 current supporting Source Revision 的 Canonical Fact，才能作为 `fact` slice 进入 Bundle。
+
+Source Revision stale / missing / revoked 后：
+
+- Source Tombstone 阻止旧 revision 被新检索命中。
+- 依赖事实进入复核队列或报告区。
+- 用户复核后可 revalidate、revise、invalidate 或 revoke。
+- Fact Tombstone 阻止被撤销或失效的旧 fact 继续进入新 Bundle，同时保留历史审计。

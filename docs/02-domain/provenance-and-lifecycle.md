@@ -1,7 +1,7 @@
 # Provenance And Lifecycle
 
 状态：draft
-最后更新：2026-06-26
+最后更新：2026-06-29
 职责边界：定义数据从原始进入、派生、使用、过期到删除的生命周期。
 
 ## 生命周期
@@ -46,7 +46,22 @@ Obsidian Vault 这类来源不是不可变归档。LifeMesh 应先用 `VaultNote
 - 查询前或手动刷新时扫描允许范围内的 Markdown 文件。
 - 先比较 `mtime + size`，只对疑似变化文件计算 content hash。
 - 修改过的笔记重建索引片段。
-- 被删除、移动到排除目录或撤销授权的笔记生成 tombstone，使旧索引和派生事实失效。
+- 被删除、移动到排除目录或撤销授权的笔记生成 Source Tombstone，使旧索引不可再命中，并触发依赖派生事实复核。
+
+## Tombstone 与事实复核
+
+Tombstone 是不可用来源或事实的保留标记，不是简单删除。
+
+| tombstone | 触发条件 | 影响 |
+|---|---|---|
+| Source Tombstone | source 被删除、移出索引范围、授权撤销 | 旧 revision 不再被新检索命中；依赖它的 fact / candidate 进入复核 |
+| Fact Tombstone | Canonical Fact 被撤销、失效或替代 | 旧 fact 不再进入新 Bundle；历史回答和审计仍可解释 |
+
+依赖 Source Revision 的 Canonical Fact 使用三段式处理：
+
+1. 来源 stale / missing / revoked 后，先进入 `validity=needs_review`，不立即删除。
+2. `needs_review` 的 fact 不能作为 `evidence_role=fact` 进入可用 Bundle，只进入 `freshness_report`。
+3. 复核后执行 `revalidate`、`revise`、`invalidate` 或 `revoke`，每次状态变化都生成审计事件。
 
 ## 旧回答与来源状态
 
@@ -72,3 +87,4 @@ Obsidian Vault 这类来源不是不可变归档。LifeMesh 应先用 `VaultNote
 - 最近被哪个 Agent 或工具使用？
 - 是否被用户确认或纠正过？
 - 当前来源版本是否仍然有效？
+- 如果进入复核或撤销，触发原因、操作者和替代事实是什么？

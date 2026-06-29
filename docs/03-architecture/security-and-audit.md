@@ -1,7 +1,7 @@
 # Security And Audit
 
 状态：draft
-最后更新：2026-06-26
+最后更新：2026-06-29
 职责边界：定义安全、审计、撤销和确认机制的架构要求。
 
 ## 必备能力
@@ -27,6 +27,8 @@
 - 是否产生派生事实或记忆
 - 是否执行外部动作
 - 用户是否确认、撤销或纠错
+- Canonical Fact 是否进入复核、被重新确认、替代、失效或撤销
+- Source Tombstone / Fact Tombstone 的触发原因和影响范围
 
 ## 确认机制
 
@@ -46,3 +48,15 @@
 - 生成过哪些派生事实
 - 写入过哪些记忆
 - 是否需要清除索引或缓存
+
+## Canonical Fact 复核审计
+
+当 Source Revision 变为 stale / missing / revoked 时，系统必须记录：
+
+- 触发复核的 Source Revision 或 tombstone。
+- 受影响的 Canonical Fact、Knowledge Candidate、索引片段和 Bundle。
+- 状态变化：`valid` → `needs_review` → `valid` / `superseded` / `invalid` / `revoked`。
+- 操作者：用户、策略或系统检测。
+- 对后续 Agent 访问的影响：是否从 `slices[]` 移除，是否进入 `freshness_report`。
+
+用户撤销事实时，不直接抹除历史审计，而是生成 Fact Tombstone，阻止后续 Bundle 使用该事实。

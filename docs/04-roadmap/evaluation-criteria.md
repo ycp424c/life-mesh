@@ -1,7 +1,7 @@
 # Evaluation Criteria
 
 状态：draft
-最后更新：2026-06-26
+最后更新：2026-06-29
 职责边界：定义 LifeMesh 每个阶段如何判断“做得对”，避免只按功能数量推进。
 
 ## 基础评估维度
@@ -33,6 +33,8 @@
 - 能为一个任务生成 Context Bundle，而不是只返回检索片段。
 - Context Bundle 按来源优先级组装：Canonical Fact > Memory > 当前任务相关 Source Revision > 当前任务生成的 Knowledge Candidate。
 - stale / missing / revoked 来源不进入可用上下文，只进入 `excluded_sources` / `freshness_report`；依赖失效来源的 Canonical Fact 被标记为需要复核。
+- Canonical Fact 只有 `validity=valid`、`revocation_status=active`、且有 current supporting Source Revision 时，才能作为 `fact` slice 使用。
+- Canonical Fact 复核支持 revalidate、revise、invalidate、revoke；Source Tombstone / Fact Tombstone 能阻止旧 revision 或旧 fact 被新 Bundle 使用。
 - Context Bundle 内的每个 Context Slice 都有来源、权限、新鲜度和 Citation Status。
 - 每个 Context Slice 带 `evidence_role`（fact / raw / context / lead）。
 - 事实性回答是 Source-Backed Answer，只基于 `fact` + `raw`；`context` 和 `lead` 不进入事实陈述位；`lead` 不单独支撑结论且带"未核实"标注。
@@ -51,6 +53,7 @@
 - User Confirmation 只在持久化到 Canonical Store、Memory、自动化规则或高风险写入前触发。
 - Canonical Fact 第一版只允许通过用户确认、用户手动创建、低风险策略接受三条路径生成。
 - Canonical Fact 必须包含 statement、source_revisions、accepted_by、accepted_at、acceptance_path、confidence、risk、validity、revocation_status。
+- Canonical Fact 复核状态必须能记录 review_reason、review_started_at、reviewed_at 和 superseded_by（按需）。
 - Memory 只影响排序、语气和偏好，不作为事实证据；需要当事实用必须走 Fact Acceptance 升级为 Canonical Fact。
 - 显式记忆和情境记忆可直接写入 Memory，情境记忆带范围和过期时间；普通偏好推断带置信度直接写入；重要偏好、关系、决策类推断写入 Memory 前需要 User Confirmation。
 - 路径排除、删除或撤销授权后，索引和派生事实可清理。

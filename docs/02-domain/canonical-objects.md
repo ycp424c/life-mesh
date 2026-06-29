@@ -1,7 +1,7 @@
 # Canonical Objects
 
 状态：draft
-最后更新：2026-06-26
+最后更新：2026-06-29
 职责边界：定义规范化事实库中的核心对象，供后续数据模型和接口设计使用。
 
 ## 核心对象
@@ -18,6 +18,8 @@
 | KnowledgeCandidate | 候选事实、偏好、关系、任务或决策。 |
 | CanonicalFact | 已核实、可追溯、可撤销，并可在 Context Bundle 中复用的事实。 |
 | FactAcceptance | 将候选知识或用户手动陈述转成 CanonicalFact 的动作或策略路径。 |
+| SourceTombstone | 来源被删除、排除或撤销授权后的不可用标记，用于阻止旧 revision 继续命中。 |
+| FactTombstone | CanonicalFact 被撤销、失效或替代后的不可用标记，用于阻止旧 fact 继续进入 Bundle。 |
 | UserConfirmation | 用户对候选知识或高风险写入的确认或拒绝。 |
 | ExtractedFact | 从原始数据抽取出的事实。 |
 | Entity | 人、组织、地点、项目、资产等实体。 |
@@ -43,6 +45,8 @@
 - KnowledgeCandidate 第一版类型为 fact、preference、relationship、task、decision。
 - KnowledgeCandidate 应带有 CandidateLifecycle，用于区分本次任务临时使用、候选收件箱、持久化前确认和丢弃。
 - CanonicalFact 可作为 Context Bundle 的高优先级来源，但必须保留 provenance 和撤销路径。
+- CanonicalFact 只有在 `validity=valid`、`revocation_status=active` 且有 current supporting Source Revision 时，才能作为 `fact` slice 使用。
+- 依赖失效来源的 CanonicalFact 先进入 `needs_review`，复核后 revalidate、revise、invalidate 或 revoke；撤销和失效通过 tombstone 阻止后续使用。
 - Context Bundle 按来源优先级组装：Canonical Fact > Memory > 当前任务相关 Source Revision > 当前任务生成的 Knowledge Candidate；失效来源只进入 excluded_sources / freshness_report。
 - CanonicalFact 第一版只允许通过用户确认、用户手动创建、低风险策略接受三条路径生成。
 - UserConfirmation 只应用于持久化或高风险写入，不应阻塞普通回答生成。

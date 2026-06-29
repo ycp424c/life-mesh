@@ -60,6 +60,18 @@ _Avoid_: tag, label, entity type
 A confirmed, source-backed, revocable fact that LifeMesh can reuse when assembling Context Bundles. It is more durable than a Knowledge Candidate and less identity-shaping than Memory.
 _Avoid_: inbox item, accepted candidate, note summary
 
+**Fact Review**:
+The review flow triggered when a Canonical Fact depends on a stale, missing, or revoked Source Revision. The fact cannot be used as `evidence_role=fact` again until it is revalidated, revised, invalidated, or revoked.
+_Avoid_: automatic deletion, silent refresh
+
+**Source Tombstone**:
+A marker that a Source Revision is no longer usable because the source was deleted, excluded, or authorization was revoked. It blocks new retrieval hits and triggers dependent fact review.
+_Avoid_: deleted file, stale source
+
+**Fact Tombstone**:
+A marker that a Canonical Fact has been revoked, invalidated, or superseded. It blocks the old fact from entering new Context Bundles while preserving audit history.
+_Avoid_: hard delete, hidden fact
+
 **Memory**:
 Long-lived preference, goal, relational context, or situational context that influences how a Context Bundle is ranked, toned, and styled. It is never cited as factual evidence; when a Memory must be used as a fact, it must go through Fact Acceptance to become a Canonical Fact.
 _Avoid_: fact, knowledge, profile, extracted preference

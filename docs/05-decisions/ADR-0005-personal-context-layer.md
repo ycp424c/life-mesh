@@ -52,7 +52,7 @@ Context Bundle 组装时的来源优先级：
 4. 当前任务生成的 Knowledge Candidate
 5. 被排除或失效来源只进入 `excluded_sources` / `freshness_report`
 
-规则：Canonical Fact 优先但必须先检查 validity / revocation / 来源新鲜度；Memory 只影响排序、语气和偏好，不替代事实证据；Source Revision 提供新鲜证据用于补充或复核；Knowledge Candidate 只作为可能线索，不能伪装成事实；stale / missing / revoked 内容不进入可用上下文，只进入报告区。依赖失效来源的 Canonical Fact 标记为需要复核，不立即删除。
+规则：Canonical Fact 优先但必须先检查 validity / revocation / 来源新鲜度；只有 `validity=valid`、`revocation_status=active`、且有 current supporting Source Revision 的 Canonical Fact 能作为 `fact` slice 使用。Memory 只影响排序、语气和偏好，不替代事实证据；Source Revision 提供新鲜证据用于补充或复核；Knowledge Candidate 只作为可能线索，不能伪装成事实；stale / missing / revoked 内容不进入可用上下文，只进入报告区。依赖失效来源的 Canonical Fact 按 ADR-0007 进入复核，不立即删除；复核后 revalidate、revise、invalidate 或 revoke。
 
 Memory 与 Canonical Fact 的边界：
 

@@ -1,7 +1,7 @@
 # Data Layers
 
 状态：draft
-最后更新：2026-06-26
+最后更新：2026-06-29
 职责边界：定义 LifeMesh 数据层分层和各层职责。
 
 ## 分层
@@ -24,3 +24,4 @@
 - 删除原始数据时，需要处理派生事实、索引和记忆的级联影响。
 - Context Bundle 必须是按任务和权限临时组装的结果，不应被误当成永久知识。
 - Context Bundle 按来源优先级组装：Canonical Fact > Memory > 当前任务相关 Source Revision > 当前任务生成的 Knowledge Candidate；stale / missing / revoked 来源只进入 excluded_sources / freshness_report，不进入可用上下文。
+- Canonical Fact 进入 Bundle 前必须通过 `valid + active + current-supported` 准入检查；失效来源触发 Fact Review 和 tombstone 级联。

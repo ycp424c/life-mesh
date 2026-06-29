@@ -32,4 +32,4 @@ LifeMesh 是一个面向个人的 Personal Data OS：把分散在生活、工作
 
 ## 当前状态
 
-文档基线和静态项目看板已建立。第 1 阶段首个验证数据源已收敛为本地 Obsidian Vault；下一步应确认索引范围、路径排除规则、来源引用格式和只读接入边界。
+文档基线和静态项目看板已建立。第 1 阶段已收敛为 Personal Context Layer：Obsidian Vault 作为首个 Source Adapter，Context Bundle 以 JSON 产物通过薄 CLI + skill 交付；Canonical Fact 复核与撤销流程已进入 ADR。下一步应细化来源引用展示、Candidate inbox 体验和 frontmatter 结构化事实边界。

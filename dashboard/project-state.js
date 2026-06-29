@@ -1,21 +1,21 @@
 window.LIFEMESH_PROJECT_STATE = {
-  lastUpdated: "2026-06-26",
+  lastUpdated: "2026-06-29",
   state: "Personal Context Layer",
   currentPhase: "第 0 阶段：个人数据宪法",
-  overallProgress: 18,
+  overallProgress: 20,
   summary:
-    "LifeMesh 已确认第一阶段目标是 Personal Context Layer：用 Obsidian 作为首个 Source Adapter，验证 Context Bundle、Knowledge Candidate 生命周期，以及持久化/高风险写入前确认。",
+    "LifeMesh 已确认第一阶段目标是 Personal Context Layer：用 Obsidian 作为首个 Source Adapter，验证 Context Bundle、Knowledge Candidate 生命周期、Canonical Fact 复核撤销，以及持久化/高风险写入前确认。",
   metrics: [
     { label: "文档基线", value: "active", detail: "35+ Markdown 文件", tone: "green" },
     { label: "Web 看板", value: "active", detail: "静态页面，无构建链", tone: "blue" },
     { label: "Context Layer", value: "phase 1", detail: "source-neutral validation", tone: "blue" },
-    { label: "关键风险", value: "7", detail: "需持续跟踪", tone: "red" }
+    { label: "关键风险", value: "8", detail: "需持续跟踪", tone: "red" }
   ],
   work: [
     {
       lane: "Now",
       items: [
-        "设计 Canonical Fact 复核与撤销流程",
+        "定义来源引用展示格式",
         "细化 Candidate inbox 确认体验",
         "定义 frontmatter 结构化事实边界"
       ]
@@ -23,9 +23,9 @@ window.LIFEMESH_PROJECT_STATE = {
     {
       lane: "Next",
       items: [
-        "定义 Obsidian Vault 检索最小验收样例",
         "补首批用户故事验收样例",
-        "评估 MCP 是否作为首个 Agent 接口"
+        "编写配套 LifeMesh agent skill 实体",
+        "定义 Obsidian 白名单目录规则"
       ]
     },
     {
@@ -58,9 +58,9 @@ window.LIFEMESH_PROJECT_STATE = {
       id: "1",
       title: "Personal Context Layer",
       status: "planned",
-      progress: 45,
-      focus: "Context Slice、Context Bundle、Knowledge Candidate、User Confirmation、CLI 契约",
-      docs: ["ADR-0005", "ADR-0006", "cli-contract.md", "obsidian-vault.md"]
+      progress: 50,
+      focus: "Context Slice、Context Bundle、Knowledge Candidate、User Confirmation、Canonical Fact 复核、CLI 契约",
+      docs: ["ADR-0005", "ADR-0006", "ADR-0007", "cli-contract.md"]
     },
     {
       id: "2",
@@ -131,7 +131,7 @@ window.LIFEMESH_PROJECT_STATE = {
     },
     {
       title: "Agent Access Layer",
-      detail: "MCP/工具接口，最小权限返回上下文",
+      detail: "CLI + skill + 工具接口，最小权限返回上下文",
       tone: "agent"
     }
   ],
@@ -182,7 +182,7 @@ window.LIFEMESH_PROJECT_STATE = {
         subtitle: "确认后可复用",
         tone: "store",
         nodes: [
-          { title: "Canonical Fact", detail: "已核实、可追溯、可撤销事实" },
+          { title: "Canonical Fact", detail: "已核实、可追溯、可复核、可撤销事实" },
           { title: "Memory", detail: "偏好/语境，只影响排序语气，不作事实证据" },
           { title: "Decision Record", detail: "选择、理由、来源和时间" }
         ]
@@ -192,7 +192,7 @@ window.LIFEMESH_PROJECT_STATE = {
         subtitle: "最小权限调用",
         tone: "agent",
         nodes: [
-          { title: "MCP / Tools", detail: "搜索、总结、草稿、任务、提醒" },
+          { title: "CLI + Skill", detail: "bundle JSON、受限写入、fact review、agent 消费规则" },
           { title: "Source-Backed Answer", detail: "引用来源和 Citation Status" },
           { title: "User Confirmation", detail: "持久化或高风险写入前确认" }
         ]
@@ -215,7 +215,7 @@ window.LIFEMESH_PROJECT_STATE = {
     { name: "Domain", path: "docs/02-domain/", status: "draft", signal: "Obsidian 数据源已记录" },
     { name: "Architecture", path: "docs/03-architecture/", status: "draft", signal: "系统架构图已建立" },
     { name: "Roadmap", path: "docs/04-roadmap/", status: "draft", signal: "阶段已定义" },
-    { name: "ADR", path: "docs/05-decisions/", status: "active", signal: "6 条 accepted" },
+    { name: "ADR", path: "docs/05-decisions/", status: "active", signal: "7 条 accepted" },
     { name: "Security", path: "docs/07-security/", status: "draft", signal: "威胁模型初版" },
     { name: "Dashboard", path: "docs/08-dashboard/", status: "active", signal: "同步规则已落地" }
   ],
@@ -233,7 +233,12 @@ window.LIFEMESH_PROJECT_STATE = {
     {
       title: "长期记忆污染",
       severity: "medium",
-      control: "来源、置信度、确认、过期、删除"
+      control: "来源、置信度、确认、复核、过期、删除"
+    },
+    {
+      title: "过期事实继续复用",
+      severity: "high",
+      control: "Fact Review、Source Tombstone、Fact Tombstone、Bundle 准入检查"
     },
     {
       title: "高敏数据过早接入",
@@ -277,6 +282,12 @@ window.LIFEMESH_PROJECT_STATE = {
       title: "Context Bundle as Artifact, Not Server",
       status: "accepted",
       path: "../docs/05-decisions/ADR-0006-bundle-as-artifact-not-server.md"
+    },
+    {
+      id: "ADR-0007",
+      title: "Canonical Fact Review And Revocation",
+      status: "accepted",
+      path: "../docs/05-decisions/ADR-0007-canonical-fact-review-and-revocation.md"
     }
   ],
   dataSources: [
@@ -348,27 +359,41 @@ window.LIFEMESH_PROJECT_STATE = {
   ],
   openQuestions: [
     {
-      title: "Canonical Fact 复核与撤销流程",
-      detail: "依赖的 Source Revision 变 stale/missing 后，Canonical Fact 如何标记需复核、如何撤销、tombstone 如何级联？"
-    },
-    {
       title: "来源引用格式",
       detail: "回答应如何展示 Vault Note Revision、heading、line range 和 current/stale/missing 状态？"
     },
     {
-      title: "首批数据源",
-      detail: "首批数据源已确认为 Obsidian Vault；后续需决定是否添加白名单目录。"
+      title: "Obsidian 白名单目录",
+      detail: "首批数据源已确认为 Obsidian Vault；仍需决定是否允许用户为归档或专题目录建立显式白名单。"
     },
     {
-      title: "MCP 接口",
-      detail: "是否采用 MCP 作为首个 Agent Access Layer 协议仍待决。"
+      title: "Agent skill 实体",
+      detail: "CLI + skill 契约已定义；实体文件是否等 CLI 实现时再写、放在哪里、如何版本化仍需落地。"
     },
     {
-      title: "记忆确认",
-      detail: "推断记忆是否默认需要用户确认后才生效？"
+      title: "Candidate inbox 展示体验",
+      detail: "dashboard 只读展示已定；仍需细化列表字段、排序、批量操作提示和风险解释。"
+    },
+    {
+      title: "Frontmatter 结构化事实边界",
+      detail: "需要决定哪些 frontmatter 字段可作为结构化事实、哪些只能作为 raw/source metadata。"
+    },
+    {
+      title: "MCP 重新评估触发条件",
+      detail: "第 1 阶段不采用 MCP 已决；后续仅在需要实时、有状态工具调用时重新评估。"
     }
   ],
   recentChanges: [
+    {
+      date: "2026-06-29",
+      title: "确定 Canonical Fact 复核与撤销流程",
+      detail: "新增 ADR-0007：只有 valid + active + current-supported 的 Canonical Fact 能作为 fact slice；stale/missing/revoked 来源触发 needs_review 和 tombstone 级联，用户可 revalidate、revise、invalidate 或 revoke。"
+    },
+    {
+      date: "2026-06-29",
+      title: "清理看板与文档状态漂移",
+      detail: "移除已完成的 Obsidian 检索样例和 MCP 首选协议评估待办；Agent Access 改为 CLI + skill；MCP 保留为后续有状态工具调用时的重新评估项。"
+    },
     {
       date: "2026-06-26",
       title: "定义 Obsidian 检索最小验收样例",

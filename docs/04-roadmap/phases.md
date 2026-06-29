@@ -1,7 +1,7 @@
 # Roadmap Phases
 
 状态：draft
-最后更新：2026-06-26
+最后更新：2026-06-29
 职责边界：定义 LifeMesh 从文档基线到可行动 Agent 的渐进路线。
 
 ## 第 0 阶段：个人数据宪法
@@ -26,12 +26,14 @@
 - Context Bundle：为某个 Agent 任务组装的上下文包，按来源优先级组装（Canonical Fact > Memory > 当前任务相关 Source Revision > 当前任务生成的 Knowledge Candidate），失效来源只进入 `excluded_sources` / `freshness_report`。
 - Knowledge Candidate：候选事实、偏好、关系、任务或决策。
 - User Confirmation：确认后才进入 Canonical Store 或 Memory。
+- Canonical Fact Review：依赖来源 stale / missing / revoked 后，事实进入复核、撤销或 tombstone 级联，而不是继续作为已核实事实使用。
 
 交付方式（`ADR-0006` + `cli-contract.md`）：
 
 - 读：`lifemesh bundle` 产出 JSON Context Bundle。
 - 写（受限）：`fact add` / `task add` / `remember`（用户断言路径，直接写）；`candidate add`（agent 推断，进 inbox 待确认）。
 - agent 推断禁止直接 `fact add`，只能走 candidate → 用户 CLI 确认 → 按 type 升级（fact→Canonical Fact、task→Task、preference/relationship/decision→Memory）。
+- fact 复核与撤销：`fact review` / `fact revoke` 处理 `needs_review`、superseded、invalid、revoked 和 tombstone。
 - Skill 指导 agent 调用与 `evidence_role` 消费，使用范围是用户的所有信息。
 - 不引入运行时 server，不绑定 MCP；`automation` 仍 deferred 在阶段 6。
 
