@@ -15,6 +15,8 @@ from pathlib import Path
 from unittest import mock
 
 from lifemesh import cli
+from lifemesh.assembler import BundleAssembler
+from lifemesh.context_types import ContextCandidate
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURE_VAULT = ROOT / "tests" / "fixtures" / "obsidian-vault"
@@ -53,6 +55,22 @@ class FirstRowsVectorBackend(FakeVectorBackend):
             (limit,),
         ).fetchall()
         return [(int(row["embedding_id"]), 0.0) for row in rows]
+
+
+class LowScoreVectorBackend(FakeVectorBackend):
+    def search(self, con: sqlite3.Connection, vector: list[float], limit: int) -> list[tuple[int, float]]:
+        rows = con.execute(
+            "SELECT embedding_id FROM embedding_records WHERE status = 'ready' ORDER BY embedding_id LIMIT ?",
+            (limit,),
+        ).fetchall()
+        return [(int(row["embedding_id"]), 1.0) for row in rows]
+
+
+class EmptyWhenLimitTooLargeVectorBackend(FakeVectorBackend):
+    def search(self, con: sqlite3.Connection, vector: list[float], limit: int) -> list[tuple[int, float]]:
+        if limit > 200:
+            return []
+        return super().search(con, vector, limit)
 
 
 class FakeLMStudio:
@@ -290,6 +308,142 @@ class ManualInputCliTest(unittest.TestCase):
             self.assertIn("obsidian", sources)
             self.assertIn("manual-input", sources)
 
+    def test_bundle_all_keeps_manual_input_when_obsidian_has_many_matches(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp, FakeLMStudio() as lm:
+            home = Path(tmp) / "home"
+            self.write_config(home, lm.base_url)
+            vault = Path(tmp) / "vault"
+            vault.mkdir()
+            for index in range(30):
+                (vault / f"note-{index:02d}.md").write_text(
+                    f"# Project Focus {index}\n\nproject focus repeated source evidence {index}\n",
+                    encoding="utf-8",
+                )
+            manual_id = self.run_json(
+                ["input", "add", "--kind", "note", "--text", "LifeMesh is the current primary investment"],
+                home,
+                backend=LowScoreVectorBackend,
+            )["input_id"]
+
+            bundle = self.run_json(
+                [
+                    "bundle",
+                    "project focus",
+                    "--source",
+                    "all",
+                    "--vault",
+                    str(vault),
+                    "--max-slices",
+                    "20",
+                ],
+                home,
+                backend=LowScoreVectorBackend,
+            )
+
+            manual_hits = [
+                item
+                for item in bundle["slices"]
+                if item["provenance"].get("source") == "manual-input"
+            ]
+            self.assertEqual([item["provenance"]["input_id"] for item in manual_hits], [manual_id])
+            self.assertEqual(manual_hits[0]["evidence_role"], "raw")
+            self.assertIn("assembly_report", bundle)
+
+    def test_manual_bundle_large_max_slices_uses_stable_candidate_window(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp, FakeLMStudio() as lm:
+            home = Path(tmp) / "home"
+            self.write_config(home, lm.base_url)
+            input_id = self.run_json(
+                ["input", "add", "--kind", "note", "--text", "semantic only record"],
+                home,
+                backend=EmptyWhenLimitTooLargeVectorBackend,
+            )["input_id"]
+
+            bundle = self.run_json(
+                ["bundle", "unrelated vector query", "--source", "manual-input", "--max-slices", "1000"],
+                home,
+                backend=EmptyWhenLimitTooLargeVectorBackend,
+            )
+
+            self.assertEqual(bundle["slices"][0]["provenance"]["input_id"], input_id)
+
+    def test_sensitive_hits_do_not_displace_private_bundle_candidates(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp, FakeLMStudio() as lm:
+            home = Path(tmp) / "home"
+            self.write_config(home, lm.base_url)
+            sensitive_text = "garden garden garden garden garden"
+            sensitive_ids = [
+                self.run_json(
+                    [
+                        "input",
+                        "add",
+                        "--kind",
+                        "note",
+                        "--text",
+                        sensitive_text,
+                        "--sensitivity",
+                        "Sensitive",
+                    ],
+                    home,
+                )["input_id"]
+                for _index in range(20)
+            ]
+            private_id = self.run_json(
+                ["input", "add", "--kind", "note", "--text", "garden"],
+                home,
+            )["input_id"]
+
+            bundle = self.run_json(
+                ["bundle", sensitive_text, "--source", "manual-input", "--max-slices", "5"],
+                home,
+            )
+
+            self.assertIn(private_id, [item["provenance"]["input_id"] for item in bundle["slices"]])
+            self.assertTrue(
+                any(
+                    item["input_id"] in sensitive_ids
+                    and item["reason"] == "sensitivity_cap_exceeded"
+                    for item in bundle["excluded_sources"]
+                )
+            )
+
+    def test_bundle_assembler_rejects_candidates_above_sensitivity_cap(self) -> None:
+        candidate = ContextCandidate(
+            slice_data={
+                "slice_id": "mi1",
+                "evidence_role": "raw",
+                "provenance": {
+                    "source": "manual-input",
+                    "input_id": "mi_sensitive",
+                    "status": "active",
+                },
+                "citation_status": "current",
+                "sensitivity": "Sensitive",
+                "content": "sensitive content",
+            },
+            source="manual-input",
+            layer="source-reference",
+            evidence_role="raw",
+            source_rank=1,
+            source_score=1.0,
+            citation_status="current",
+            sensitivity="Sensitive",
+        )
+
+        bundle = BundleAssembler().assemble(
+            task="test",
+            allowed_sources=["manual-input"],
+            sensitivity_cap="Private",
+            max_slices=1,
+            candidates=[candidate],
+        )
+
+        self.assertEqual(bundle["slices"], [])
+        self.assertEqual(
+            bundle["excluded_sources"],
+            [{"source": "manual-input", "input_id": "mi_sensitive", "reason": "sensitivity_cap_exceeded"}],
+        )
+
     def test_missing_manual_config_degrades_to_empty_list(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             home = Path(tmp) / "home"
@@ -297,6 +451,27 @@ class ManualInputCliTest(unittest.TestCase):
 
             self.assertEqual(result.returncode, 0)
             self.assertEqual(json.loads(result.stdout), [])
+
+    def test_missing_lmstudio_config_degrades_add_search_and_bundle_to_fts(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            home = Path(tmp) / "home"
+
+            added = self.run_json(
+                ["input", "add", "--kind", "note", "--text", "garden no config"],
+                home,
+                patch_backend=False,
+            )
+            hits = self.run_json(["input", "search", "garden"], home, patch_backend=False)
+            bundle = self.run_json(
+                ["bundle", "garden", "--source", "manual-input"],
+                home,
+                patch_backend=False,
+            )
+
+            self.assertEqual(added["embedding_status"], "failed")
+            self.assertIn("embedding_error", added["audit_events"][-1]["payload"])
+            self.assertEqual(hits[0]["input_id"], added["input_id"])
+            self.assertEqual(bundle["slices"][0]["provenance"]["input_id"], added["input_id"])
 
     def test_sqlite_vec_load_failure_degrades_to_fts(self) -> None:
         with tempfile.TemporaryDirectory() as tmp, FakeLMStudio() as lm:

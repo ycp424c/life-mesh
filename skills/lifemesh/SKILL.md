@@ -7,49 +7,78 @@ description: Use LifeMesh when a task needs the user's personal information acro
 
 Use this skill when the task needs the user's personal information or long-lived context across connected sources. Do not limit use to Obsidian; Obsidian is only the first Source Adapter.
 
+This is the global skill. It can be used from any working directory.
+
+## Local Paths
+
+- LifeMesh repo: `/Users/justynchen/Documents/code/life-mesh`
+- CLI: `/Users/justynchen/Documents/code/life-mesh/bin/lifemesh`
+- Runtime config: `/Users/justynchen/.lifemesh/config.json`
+- Local DB: `/Users/justynchen/.lifemesh/lifemesh.db`
+- Raw assets: `/Users/justynchen/.lifemesh/raw-assets/manual-input`
+
+Current local config includes:
+
+- `obsidian_vault`: `/Users/justynchen/Documents/docs/obsidian-default`
+- `lmstudio_base_url`: `http://localhost:1234/v1`
+- `embedding_model`: `text-embedding-qwen3-embedding-0.6b`
+- `vlm_model`: `qwen/qwen3-vl-8b`
+- `sqlite_vec_extension`: `/Users/justynchen/.lifemesh/extensions/sqlite-vec/0.1.9/vec0.dylib`
+
+The Codex terminal should load Homebrew from `~/.zshenv`, so `python3` should be `/opt/homebrew/bin/python3`. If sqlite-vec reports `enable_load_extension` is missing, run `source ~/.zshenv` or prefix the command with `PATH=/opt/homebrew/bin:$PATH`.
+
 ## Current Capability
 
-The current implementation supports the Obsidian bundle path:
+The implementation supports Obsidian Context Bundle:
 
 ```bash
-bin/lifemesh bundle "<task>" --source obsidian --vault /path/to/vault --out /tmp/lifemesh-bundle.json
+/Users/justynchen/Documents/code/life-mesh/bin/lifemesh bundle "<task>" --source obsidian --out /tmp/lifemesh-bundle.json
 ```
 
-You can also set the vault path explicitly with an environment variable:
-
-```bash
-LIFEMESH_OBSIDIAN_VAULT=/path/to/vault bin/lifemesh bundle "<task>" --source obsidian --out /tmp/lifemesh-bundle.json
-```
-
-The command returns a JSON Context Bundle. It does not answer the user directly.
+The vault path is configured globally, so `--vault` is normally unnecessary. If a different vault is needed, pass `--vault /path/to/vault`.
 
 It also supports Manual Input as a local inbox and retrieval source:
 
 ```bash
-bin/lifemesh input add --kind note --text "..."
-bin/lifemesh input search "<query>"
-bin/lifemesh input show <input-id>
-bin/lifemesh input update <input-id> ...
-bin/lifemesh input revoke <input-id>
-bin/lifemesh input delete <input-id>
-bin/lifemesh input promote <input-id> --to task|event|memory|fact|candidate ...
-bin/lifemesh bundle "<task>" --source all --vault /path/to/vault
+/Users/justynchen/Documents/code/life-mesh/bin/lifemesh input add --kind note --text "..."
+/Users/justynchen/Documents/code/life-mesh/bin/lifemesh input search "<query>"
+/Users/justynchen/Documents/code/life-mesh/bin/lifemesh input show <input-id>
+/Users/justynchen/Documents/code/life-mesh/bin/lifemesh input update <input-id> ...
+/Users/justynchen/Documents/code/life-mesh/bin/lifemesh input revoke <input-id>
+/Users/justynchen/Documents/code/life-mesh/bin/lifemesh input delete <input-id>
+/Users/justynchen/Documents/code/life-mesh/bin/lifemesh input promote <input-id> --to task|event|memory|fact|candidate ...
+/Users/justynchen/Documents/code/life-mesh/bin/lifemesh bundle "<task>" --source all --out /tmp/lifemesh-bundle.json
 ```
 
-Manual Input is backed by `~/.lifemesh/lifemesh.db`, SQLite FTS, optional sqlite-vec, local LM Studio embeddings, and local LM Studio VLM extraction for screenshots. Local model/vector configuration lives in `~/.lifemesh/config.json`, environment variables, or CLI args:
+Manual Input is backed by `~/.lifemesh/lifemesh.db`, SQLite FTS, sqlite-vec, local LM Studio embeddings, and local LM Studio VLM extraction for screenshots.
 
-```json
-{
-  "lmstudio_base_url": "http://localhost:1234/v1",
-  "embedding_model": "<local-embedding-model>",
-  "vlm_model": "<local-vlm-model>",
-  "sqlite_vec_extension": "/path/to/vec0"
-}
+## Quick Checks
+
+Use these before relying on LifeMesh in a task:
+
+```bash
+/Users/justynchen/.lmstudio/bin/lms server status
+/Users/justynchen/.lmstudio/bin/lms ps
+/Users/justynchen/Documents/code/life-mesh/bin/lifemesh input list
+sqlite3 /Users/justynchen/.lifemesh/lifemesh.db "select key, value from lifemesh_meta where key like 'vector_%' order by key;"
 ```
 
-Manual Input rules:
+Expected vector state:
 
-- If config is missing, sqlite-vec cannot load, or LM Studio calls fail, Manual Input degrades to SQLite/FTS or metadata-only; inspect the returned `embedding_status`, `extraction_status`, audit payload, and Bundle result before claiming searchability.
+```text
+vector_error|
+vector_status|ready
+```
+
+If LM Studio is stopped, start it:
+
+```bash
+/Users/justynchen/.lmstudio/bin/lms server start
+```
+
+## Manual Input Rules
+
+- If config is missing, sqlite-vec cannot load, or LM Studio calls fail, Manual Input degrades to SQLite/FTS or metadata-only. Inspect `embedding_status`, `extraction_status`, audit payload, and Bundle result before claiming searchability.
 - Agent may auto-capture non-sensitive personal data that is worth remembering into Inbox, but must use `--auto-captured`.
 - After auto-capture, the response must state input id, kind, summary, sensitivity, and Bundle availability.
 - `auto_captured` records are not facts. They may enter Bundle only as `lead`.
@@ -67,6 +96,7 @@ Manual Input rules:
 - Treat `freshness_report` entries with `stale`, `missing`, `revoked`, or deleted tombstones as warnings; do not use old content as evidence for a new factual answer.
 - Do not treat `context` or `lead` slices as facts.
 - When a `lead` came from `auto_captured` Manual Input, explicitly say it is unreviewed.
+- Do not print raw bundle content unless the user asks; summarize findings and cite provenance.
 
 ## Boundaries
 

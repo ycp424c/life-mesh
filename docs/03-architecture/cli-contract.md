@@ -16,7 +16,9 @@
 - Obsidian Source Revision、raw slice、路径排除、sensitivity cap、stale / missing 检测。
 - Manual Input Inbox：`input add/search/list/show/update/revoke/delete/promote`。
 - Manual Input SQLite 主库、FTS、sqlite-vec 向量检索、LM Studio embedding 和截图 VLM extraction。
-- `lifemesh bundle --source manual-input` 与 `lifemesh bundle --source all`。
+- `lifemesh bundle --source manual-input`。
+- `lifemesh bundle --source all` 通过 source-neutral `BundleAssembler` 统一组装 Obsidian 与 Manual Input candidates，不拼接两个已完成 Bundle。
+- JSON Bundle 包含 `assembly_report` 诊断字段，用于解释候选、准入和选择策略。
 
 兼容性说明：`lifemesh bundle` 默认仍为 `--source obsidian`，避免旧的只读原型被 Manual Input 本地依赖状态影响；跨源合并必须显式使用 `--source all`。
 
@@ -37,7 +39,7 @@ lifemesh bundle "<task>" \
 ```
 
 - `<task>`（必填）：自然语言任务描述。
-- `--source`：Source Adapter，默认 `obsidian`；显式 `all` 会合并 Obsidian 和 Manual Input；也可筛选 `manual-input`。
+- `--source`：Source Adapter，默认 `obsidian`；显式 `all` 会让 Obsidian 和 Manual Input 各自返回 source-backed candidates，再由 `BundleAssembler` 统一准入、分层、去重和选择；也可筛选 `manual-input`。
 - `--vault <path>`：Obsidian vault 路径；fallback 为 `LIFEMESH_OBSIDIAN_VAULT`，再到 config `obsidian_vault`。
 - `--out <path>`：写 JSON 到文件（默认写 stdout）。
 - `--max-slices`：Bundle 大小上限，防爆上下文。
@@ -307,7 +309,13 @@ lifemesh fact revoke <fact-id>
   ],
   "freshness_report": [
     { "slice_id": "...", "citation_status": "stale", "note": "来源已修改，建议复核" }
-  ]
+  ],
+  "assembly_report": {
+    "selection_policy": "layered-diversified-v1",
+    "candidate_counts": { "obsidian": 12, "manual-input": 1 },
+    "admitted_counts": { "source-reference": 13 },
+    "selected_counts": { "obsidian": 10, "manual-input": 1 }
+  }
 }
 ```
 
@@ -322,6 +330,7 @@ lifemesh fact revoke <fact-id>
 - `revoked` 和 deleted tombstone 不进入新 Bundle。
 - `Sensitive` 默认被 `--sensitivity-cap Private` 排除。
 - `excluded_sources` / `freshness_report` 即使为空也要在。
+- `assembly_report` 只用于调试和验收，不是事实证据；Agent 不能用它支撑事实性回答。
 
 ## Skill 契约
 

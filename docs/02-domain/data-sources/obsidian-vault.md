@@ -1,7 +1,7 @@
 # Data Source Intake: Obsidian Vault
 
 状态：draft
-最后更新：2026-06-26
+最后更新：2026-06-29
 职责边界：记录 LifeMesh 首个验证适配器的范围、风险、接入边界和待确认问题。
 
 ## Source
@@ -20,6 +20,7 @@ Obsidian Vault 不是产品中心。它用于验证可编辑静态知识源的 s
 
 - Source Adapter
 - Source Revision
+- ContextCandidate metadata
 - Citation Status
 - 路径排除
 - 删除级联
@@ -32,6 +33,7 @@ Obsidian Vault 不是产品中心。它用于验证可编辑静态知识源的 s
 - 系统能否区分原始事实、摘要和推断。
 - 删除或排除某些笔记后，索引和派生结果是否不再影响回答。
 - Agent 是否只拿到当前问题需要的最小上下文。
+- Obsidian adapter 是否只负责只读扫描、revision、candidate metadata 和 source diagnostics，而不承担最终跨源排序或 Bundle 准入。
 
 ## Data Scope
 

@@ -2,7 +2,7 @@
 
 LifeMesh 是一个面向个人的 Personal Data OS：把分散在生活、工作、关系、文件、日程和决策中的个人数据，逐步整理成可检索、可理解、可授权、可审计，并能被 AI Agent 安全使用的上下文基础设施。
 
-当前阶段已从文档结构和静态 Web 项目看板，进入第 1 阶段本地 CLI 原型。已实现 Obsidian 只读 Context Bundle，以及 ADR-0008 的 Manual Input Inbox：本地 SQLite、FTS、sqlite-vec、LM Studio embedding/VLM、update/revoke/delete 和 inbox-derived promote 闭环。
+当前阶段已从文档结构和静态 Web 项目看板，进入第 1 阶段本地 CLI 原型。已实现 Obsidian 只读 Context Bundle、source-neutral BundleAssembler，以及 ADR-0008 的 Manual Input Inbox：本地 SQLite、FTS、sqlite-vec、LM Studio embedding/VLM、update/revoke/delete 和 inbox-derived promote 闭环。
 
 ## 项目原则
 
@@ -34,7 +34,7 @@ LifeMesh 是一个面向个人的 Personal Data OS：把分散在生活、工作
 
 ## 当前状态
 
-文档基线和静态项目看板已建立。第 1 阶段已收敛为 Personal Context Layer，CLI 原型已提供 `lifemesh bundle`、Obsidian Source Adapter、JSON Context Bundle、stale/missing 链路、agent skill，以及 Manual Input Inbox 的本地记录、语义检索、截图 VLM extraction、`--source manual-input/all` Bundle、update/revoke/delete 和 promote 到 inbox-derived 最小 task/event/memory/fact/candidate。
+文档基线和静态项目看板已建立。第 1 阶段已收敛为 Personal Context Layer，CLI 原型已提供 `lifemesh bundle`、Obsidian Source Adapter、source-neutral BundleAssembler、JSON Context Bundle、stale/missing 链路、agent skill，以及 Manual Input Inbox 的本地记录、语义检索、截图 VLM extraction、`--source manual-input/all` Bundle、update/revoke/delete 和 promote 到 inbox-derived 最小 task/event/memory/fact/candidate。
 
 ## 本地 CLI 原型
 
@@ -63,6 +63,8 @@ bin/lifemesh input add --kind note --text "需要记住的内容"
 bin/lifemesh input search "需要找什么"
 bin/lifemesh bundle "需要什么上下文" --source all --vault tests/fixtures/obsidian-vault
 ```
+
+`--source all` 会让 Obsidian 和 Manual Input 各自返回 candidates，再由 BundleAssembler 统一执行准入、来源层级、去重、多样性选择和 `assembly_report` 诊断。
 
 使用测试 vault：
 

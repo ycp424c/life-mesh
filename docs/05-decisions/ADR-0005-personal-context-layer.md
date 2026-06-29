@@ -68,6 +68,8 @@ Context Bundle 与 Agent 消费：
 - 事实性回答只能是 Source-Backed Answer，基于 `fact` + `raw`；`context` 和 `lead` 不得进入事实陈述位；`lead` 不得单独支撑结论。
 - Context Bundle 的逻辑结构为 `task + permission_scope + slices[] + excluded_sources[] + freshness_report[]`，第一版不锁死序列化格式或传输协议。
 
+实现澄清：Personal Context Layer 内部应包含 source-neutral `BundleAssembler`。Source Adapter / Retriever 只返回带 provenance、sensitivity、evidence_role、source rank 和 citation status 的 candidates；BundleAssembler 统一执行 permission / sensitivity / status / freshness 准入、来源层级、去重、多样性选择和诊断。`--source all` 不应拼接多个已完成 Bundle。
+
 ## Consequences
 
 正向影响：

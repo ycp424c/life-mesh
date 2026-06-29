@@ -16,7 +16,9 @@ from pathlib import Path
 from typing import Any, Protocol
 from urllib import error, request
 
+from .assembler import BundleAssembler
 from .config import LifemeshConfig
+from .context_types import ContextCandidate, RetrievalResult
 
 SENSITIVITY_LEVELS = ["Public", "Internal", "Private", "Sensitive", "Restricted"]
 SENSITIVITY_RANK = {name.lower(): index for index, name in enumerate(SENSITIVITY_LEVELS)}
@@ -25,6 +27,7 @@ INPUT_STATUSES = {"active", "auto_captured", "promoted", "revoked", "deleted"}
 SOURCE_TYPES = {"manual_cli", "agent_auto_capture", "agent_delegated"}
 PROMOTE_TARGETS = {"task", "event", "memory", "fact", "candidate"}
 CANDIDATE_TYPES = {"fact", "preference", "relationship", "task", "decision"}
+VECTOR_SEARCH_CANDIDATE_LIMIT = 200
 
 
 class ManualInputError(RuntimeError):
@@ -169,18 +172,20 @@ class LMStudioClient:
         return content.strip(), 1.0
 
     def _post_json(self, path: str, payload: dict[str, Any]) -> dict[str, Any]:
+        if not self.base_url:
+            raise ManualInputError("LM Studio base URL is not configured")
         url = f"{self.base_url}{path}"
         body = json.dumps(payload).encode("utf-8")
-        req = request.Request(
-            url,
-            data=body,
-            headers={"Content-Type": "application/json"},
-            method="POST",
-        )
         try:
+            req = request.Request(
+                url,
+                data=body,
+                headers={"Content-Type": "application/json"},
+                method="POST",
+            )
             with request.urlopen(req, timeout=30) as response:
                 return json.loads(response.read().decode("utf-8"))
-        except (OSError, error.HTTPError, json.JSONDecodeError) as exc:
+        except (OSError, error.HTTPError, json.JSONDecodeError, ValueError) as exc:
             raise ManualInputError(f"LM Studio request failed for {path}: {exc}") from exc
 
 
@@ -361,6 +366,7 @@ class ManualInputStore:
         until: str | None = None,
         sensitivity_cap: str = "Private",
         limit: int = 20,
+        include_promoted: bool = True,
     ) -> list[SearchHit]:
         normalized_cap = _require_sensitivity(sensitivity_cap)
         if kind is not None:
@@ -378,7 +384,8 @@ class ManualInputStore:
             vector_scores: dict[str, float] = {}
             if vector is not None and self._vector_available:
                 try:
-                    vector_hits = self.vector_backend.search(con, vector, max(limit * 4, 20))
+                    vector_limit = min(max(limit * 4, 20), VECTOR_SEARCH_CANDIDATE_LIMIT)
+                    vector_hits = self.vector_backend.search(con, vector, vector_limit)
                 except (ManualInputError, sqlite3.Error):
                     vector_hits = []
                 for rowid, distance in vector_hits:
@@ -404,7 +411,15 @@ class ManualInputStore:
                 if row is None:
                     continue
                 record = _row_to_record(row)
-                if not _record_matches(record, normalized_cap, kind, status, since, until, include_promoted=True):
+                if not _record_matches(
+                    record,
+                    normalized_cap,
+                    kind,
+                    status,
+                    since,
+                    until,
+                    include_promoted=include_promoted,
+                ):
                     continue
                 record["extraction_text"] = _extraction_text(con, record["input_id"])
                 score = (
@@ -635,45 +650,65 @@ class ManualInputStore:
 
     def bundle(self, *, task: str, max_slices: int, sensitivity_cap: str) -> dict[str, Any]:
         normalized_cap = _require_sensitivity(sensitivity_cap)
-        hits = self.search(task, sensitivity_cap="Restricted", limit=max(max_slices * 4, 20))
-        slices = []
-        excluded_sources = []
-        excluded_ids: set[str] = set()
-        for hit in hits:
+        result = self.retrieve_candidates(
+            task=task,
+            max_candidates=max(max_slices * 4, 20),
+            sensitivity_cap=normalized_cap,
+        )
+        return BundleAssembler().assemble(
+            task=task,
+            allowed_sources=["manual-input"],
+            sensitivity_cap=normalized_cap,
+            max_slices=max_slices,
+            candidates=result.candidates,
+            excluded_sources=result.excluded_sources,
+            freshness_report=result.freshness_report,
+        )
+
+    def retrieve_candidates(self, *, task: str, max_candidates: int, sensitivity_cap: str) -> RetrievalResult:
+        if max_candidates < 1:
+            raise ManualInputError("--max-slices must be at least 1")
+        normalized_cap = _require_sensitivity(sensitivity_cap)
+        exclusion_hits = self.search(
+            task,
+            sensitivity_cap="Restricted",
+            limit=max(max_candidates * 4, 20),
+            include_promoted=True,
+        )
+        hits = self.search(
+            task,
+            sensitivity_cap=normalized_cap,
+            limit=max_candidates,
+            include_promoted=False,
+        )
+        candidates: list[ContextCandidate] = []
+        excluded_sources = _manual_exclusions(exclusion_hits, normalized_cap)
+        for hit_index, hit in enumerate(hits, start=1):
             record = hit.record
-            if record["status"] == "promoted":
-                continue
             if record["status"] in {"revoked", "deleted"}:
-                excluded_sources.append({"source": "manual-input", "input_id": record["input_id"], "reason": record["status"]})
-                excluded_ids.add(record["input_id"])
                 continue
             if _sensitivity_rank(record["sensitivity"]) > _sensitivity_rank(normalized_cap):
-                if record["input_id"] not in excluded_ids:
-                    excluded_sources.append(
-                        {
-                            "source": "manual-input",
-                            "input_id": record["input_id"],
-                            "reason": "sensitivity_cap_exceeded",
-                        }
-                    )
-                    excluded_ids.add(record["input_id"])
                 continue
-            slices.append(self._record_to_slice(record, len(slices) + 1, hit.score))
-            if len(slices) >= max_slices:
-                break
-        return {
-            "schema_version": "1",
-            "bundle_id": str(uuid.uuid4()),
-            "task": {"description": task, "agent_capability": "search"},
-            "permission_scope": {
-                "allowed_sources": ["manual-input"],
-                "sensitivity_cap": normalized_cap,
-            },
-            "assembled_at": _utc_now(),
-            "slices": slices,
-            "excluded_sources": excluded_sources,
-            "freshness_report": [],
-        }
+            slice_data = self._record_to_slice(record, len(candidates) + 1, hit.score)
+            candidates.append(
+                ContextCandidate(
+                    slice_data=slice_data,
+                    source="manual-input",
+                    layer="source-reference",
+                    evidence_role=slice_data["evidence_role"],
+                    source_rank=hit_index,
+                    source_score=hit.score,
+                    citation_status=slice_data["citation_status"],
+                    sensitivity=record["sensitivity"],
+                    retrieval_mode="hybrid",
+                )
+            )
+        return RetrievalResult(
+            candidates=candidates,
+            excluded_sources=excluded_sources,
+            freshness_report=[],
+            diagnostics={"candidate_count": len(candidates), "source": "manual-input"},
+        )
 
     def _record_to_slice(self, record: dict[str, Any], index: int, score: float) -> dict[str, Any]:
         return {
@@ -967,6 +1002,26 @@ def _record_matches(
     if since and timestamp < since:
         return False
     return not (until and timestamp > until)
+
+
+def _manual_exclusions(hits: list[SearchHit], sensitivity_cap: str) -> list[dict[str, Any]]:
+    excluded: list[dict[str, Any]] = []
+    seen_ids: set[str] = set()
+    for hit in hits:
+        record = hit.record
+        input_id = record["input_id"]
+        if input_id in seen_ids:
+            continue
+        if record["status"] in {"active", "auto_captured"} and _sensitivity_rank(record["sensitivity"]) > _sensitivity_rank(sensitivity_cap):
+            excluded.append(
+                {
+                    "source": "manual-input",
+                    "input_id": input_id,
+                    "reason": "sensitivity_cap_exceeded",
+                }
+            )
+            seen_ids.add(input_id)
+    return excluded
 
 
 def _row_to_record(row: sqlite3.Row | None) -> dict[str, Any]:

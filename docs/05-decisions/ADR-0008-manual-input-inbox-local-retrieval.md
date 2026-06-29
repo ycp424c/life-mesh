@@ -161,7 +161,8 @@ Promote 必须带明确字段。Agent 可以辅助提取字段，但缺关键字
 ## Implementation Notes And Follow-ups
 
 - CLI 已覆盖 `input add/search/list/show/update/revoke/delete/promote`。
-- `lifemesh bundle` 支持 `--source all|obsidian|manual-input`；为兼容旧只读原型，默认仍为 `obsidian`，跨源合并需显式 `--source all`。
+- `lifemesh bundle` 支持 `--source all|obsidian|manual-input`；为兼容旧只读原型，默认仍为 `obsidian`，跨源组装需显式 `--source all`。
+- Manual Input adapter 负责返回带 input record、content_hash、status、sensitivity 和检索排序的 candidates；最终 raw/lead 准入、与 Obsidian 等来源的跨源选择、以及 `assembly_report` 诊断由 BundleAssembler 执行。
 - 配置统一走 `~/.lifemesh/config.json`、环境变量和 CLI 参数；Obsidian vault 同样使用该 fallback 链。
 - 测试使用脱敏/虚构 fixture 和 mocked LM Studio HTTP，不写入真实个人数据。
 - 后续仍需用真实本机 LM Studio 模型和真实 sqlite-vec 扩展做手工验收，并记录模型 identifier、维度和性能边界。

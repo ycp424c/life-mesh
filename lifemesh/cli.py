@@ -1,15 +1,15 @@
 from __future__ import annotations
 
 import argparse
-from datetime import datetime, timezone
 import json
 import sys
 from pathlib import Path
 from typing import Any
 
+from .assembler import BundleAssembler
 from .config import load_config
 from .manual_input import MANUAL_KINDS, PROMOTE_TARGETS, ManualInputError, ManualInputStore
-from .obsidian import build_bundle
+from .obsidian import build_bundle, retrieve_candidates as retrieve_obsidian_candidates
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -134,20 +134,35 @@ def _add_input_parsers(input_subparsers: argparse._SubParsersAction[argparse.Arg
 
 
 def _handle_bundle(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int:
+    if args.max_slices < 1:
+        raise ValueError("--max-slices must be at least 1")
     config = _load_config_from_args(args, obsidian_vault=args.vault)
     if args.source == "obsidian":
         bundle = _build_obsidian_bundle(args, config, parser)
     elif args.source == "manual-input":
         bundle = _build_manual_bundle(args, config)
     else:
-        obsidian_bundle = _build_obsidian_bundle(args, config, parser)
-        manual_bundle = _build_manual_bundle(args, config)
-        bundle = _merge_bundles(
+        candidate_limit = max(args.max_slices * 4, 20)
+        obsidian_result = _retrieve_obsidian_candidates(args, config, parser, candidate_limit)
+        manual_result = ManualInputStore(config).retrieve_candidates(
             task=args.task,
+            max_candidates=candidate_limit,
+            sensitivity_cap=args.sensitivity_cap,
+        )
+        bundle = BundleAssembler().assemble(
+            task=args.task,
+            allowed_sources=["obsidian", "manual-input"],
             sensitivity_cap=args.sensitivity_cap,
             max_slices=args.max_slices,
-            obsidian_bundle=obsidian_bundle,
-            manual_bundle=manual_bundle,
+            candidates=[*obsidian_result.candidates, *manual_result.candidates],
+            excluded_sources=[
+                *obsidian_result.excluded_sources,
+                *manual_result.excluded_sources,
+            ],
+            freshness_report=[
+                *obsidian_result.freshness_report,
+                *manual_result.freshness_report,
+            ],
         )
     _emit_json(bundle, Path(args.out) if args.out else None)
     return 0
@@ -169,49 +184,29 @@ def _build_obsidian_bundle(
     )
 
 
+def _retrieve_obsidian_candidates(
+    args: argparse.Namespace,
+    config: Any,
+    parser: argparse.ArgumentParser,
+    max_candidates: int,
+) -> Any:
+    if config.obsidian_vault is None:
+        parser.error("--vault is required unless LIFEMESH_OBSIDIAN_VAULT or config obsidian_vault is set")
+    return retrieve_obsidian_candidates(
+        task=args.task,
+        vault_path=config.obsidian_vault,
+        max_candidates=max_candidates,
+        sensitivity_cap=args.sensitivity_cap,
+        state_path=Path(args.state) if args.state else None,
+    )
+
+
 def _build_manual_bundle(args: argparse.Namespace, config: Any) -> dict[str, Any]:
     return ManualInputStore(config).bundle(
         task=args.task,
         max_slices=args.max_slices,
         sensitivity_cap=args.sensitivity_cap,
     )
-
-
-def _merge_bundles(
-    *,
-    task: str,
-    sensitivity_cap: str,
-    max_slices: int,
-    obsidian_bundle: dict[str, Any],
-    manual_bundle: dict[str, Any],
-) -> dict[str, Any]:
-    scored_slices: list[dict[str, Any]] = []
-    for index, item in enumerate(obsidian_bundle.get("slices", []), start=1):
-        copied = dict(item)
-        copied.setdefault("score", max(0.0, 1.0 - index / 1000))
-        scored_slices.append(copied)
-    scored_slices.extend(dict(item) for item in manual_bundle.get("slices", []))
-    scored_slices.sort(key=lambda item: (-float(item.get("score", 0.0)), item.get("slice_id", "")))
-
-    return {
-        "schema_version": "1",
-        "bundle_id": manual_bundle.get("bundle_id") or obsidian_bundle.get("bundle_id"),
-        "task": {"description": task, "agent_capability": "search"},
-        "permission_scope": {
-            "allowed_sources": ["obsidian", "manual-input"],
-            "sensitivity_cap": sensitivity_cap,
-        },
-        "assembled_at": _utc_now(),
-        "slices": scored_slices[:max_slices],
-        "excluded_sources": [
-            *obsidian_bundle.get("excluded_sources", []),
-            *manual_bundle.get("excluded_sources", []),
-        ],
-        "freshness_report": [
-            *obsidian_bundle.get("freshness_report", []),
-            *manual_bundle.get("freshness_report", []),
-        ],
-    }
 
 
 def _handle_input(args: argparse.Namespace) -> int:
@@ -326,7 +321,3 @@ def _emit_json(data: Any, out_path: Path | None = None) -> None:
         out_path.write_text(output, encoding="utf-8")
     else:
         sys.stdout.write(output)
-
-
-def _utc_now() -> str:
-    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")

@@ -33,7 +33,8 @@ Source Adapters
 
 - Source Adapter 接入具体数据源，但核心语义保持 source-neutral。
 - Source Revision 负责 Obsidian 等可编辑外部来源的版本身份；Manual Input 不使用 SourceRevision，而以 input record、content_hash、状态和 audit event 作为 source reference。
-- Personal Context Layer 产出 Context Bundle，而不是裸检索结果。
+- Personal Context Layer 通过 BundleAssembler 产出 Context Bundle，而不是裸检索结果或 adapter 级拼接结果。
+- Source Adapter / Retriever 产出 source-backed candidates；最终准入、来源优先级、去重、多样性和 `assembly_report` 由 BundleAssembler 执行。
 - Knowledge Candidate 在确认或策略接受前不能成为 Canonical Fact 或 Memory。
 - Canonical Fact 可以作为 Context Bundle 来源，但必须可追溯、可复核、可撤销。
 - Agent Access 在第 1 阶段通过 CLI + skill 获取授权后的 JSON Context Bundle；只读原型验收后，ADR-0008 定义 Manual Input Inbox 作为 Phase 1 后续 milestone。
@@ -49,6 +50,8 @@ Source Adapters
 5. 被排除或失效的来源只进入 `excluded_sources` / `freshness_report`，不进入可用上下文
 
 失效来源不静默丢弃：依赖失效 source reference 且没有其他 current supporting source 的 Canonical Fact 标记为 `needs_review`，不能继续作为"已核实"使用。
+
+跨源 Bundle 由 BundleAssembler 执行该优先级。`bundle --source all` 不拼接多个已完成 Bundle，而是把 Obsidian、Manual Input 和后续 source 的候选放入同一组装策略。
 
 ## Manual Input Inbox
 

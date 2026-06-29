@@ -22,6 +22,8 @@
        - 知识图谱
        - 事件时间线
   -> Personal Context Layer
+       - Source-backed Candidate Retrieval
+       - BundleAssembler
        - Context Slice
        - Context Bundle
        - Knowledge Candidate
@@ -53,6 +55,7 @@
 - Canonical Store 保存可解释、可追溯的事实。
 - Index 和 Graph 用于检索与关联，但不能替代来源。
 - Personal Context Layer 负责把不同来源的材料组装成任务级上下文，而不是把检索结果直接交给 Agent。
+- Source Adapter 不直接产出最终 Bundle；它们产出带来源、权限和检索排序的 candidates，BundleAssembler 统一执行准入、分层、去重、多样性和诊断。
 - Canonical Fact 和 Memory 可以进入 Context Bundle，但 Canonical Fact 必须保留 provenance、复核/撤销路径和风险级别，并通过 current source 支撑检查。
 - Agent Access Layer 只暴露授权后的工具和资源。
 - Audit Layer 记录读取、写入、删除、授权和动作执行。

@@ -27,7 +27,7 @@
 第一阶段要证明 LifeMesh 能把一个个人数据源转成任务级上下文：
 
 - Context Slice：最小、可追溯、带权限和新鲜度的上下文单元。
-- Context Bundle：为某个 Agent 任务组装的上下文包，按来源优先级组装（Canonical Fact > Memory > 当前任务相关 Source Reference > 当前任务生成的 Knowledge Candidate），失效来源只进入 `excluded_sources` / `freshness_report`。
+- Context Bundle：为某个 Agent 任务组装的上下文包；Source Adapter / Retriever 先返回 candidates，再由 BundleAssembler 按来源优先级组装（Canonical Fact > Memory > 当前任务相关 Source Reference > 当前任务生成的 Knowledge Candidate），失效来源只进入 `excluded_sources` / `freshness_report`。
 - Knowledge Candidate：候选事实、偏好、关系、任务或决策。
 - User Confirmation：确认后才进入 Canonical Store 或 Memory。
 - Canonical Fact Review：依赖来源 stale / missing / revoked 后，事实进入复核、撤销或 tombstone 级联，而不是继续作为已核实事实使用。

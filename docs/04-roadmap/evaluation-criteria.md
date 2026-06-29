@@ -34,11 +34,13 @@
 - Obsidian 相关实现没有污染通用 Source Adapter、Source Revision、权限和审计模型。
 - 能为一个任务生成 Context Bundle，而不是只返回检索片段。
 - Context Bundle 按来源优先级组装：Canonical Fact > Memory > 当前任务相关 Source Reference > 当前任务生成的 Knowledge Candidate。
+- Source Adapter / Retriever 只返回 candidates；source-neutral BundleAssembler 统一执行准入、来源层级、去重、多样性选择、失效来源报告和诊断。`--source all` 不能只是拼接两个已完成 Bundle。
 - stale / missing / revoked 来源不进入可用上下文，只进入 `excluded_sources` / `freshness_report`；依赖失效来源的 Canonical Fact 被标记为需要复核。
 - Canonical Fact 只有 `validity=valid`、`revocation_status=active`、且有 current supporting source reference 时，才能作为 `fact` slice 使用。
 - Canonical Fact 复核支持 revalidate、revise、invalidate、revoke；Source Tombstone / Fact Tombstone 能阻止旧 revision 或旧 fact 被新 Bundle 使用。
 - Context Bundle 内的每个 Context Slice 都有来源、权限、新鲜度和 Citation Status。
 - 每个 Context Slice 带 `evidence_role`（fact / raw / context / lead）。
+- JSON Bundle 可包含 `assembly_report`，用于验收和调试候选/准入/选择策略；该字段不能作为事实证据。
 - 事实性回答是 Source-Backed Answer，只基于 `fact` + `raw`；`context` 和 `lead` 不进入事实陈述位；`lead` 不单独支撑结论且带"未核实"标注。
 - stale / missing / revoked 来源不进入证据，只进入报告区。
 - Context Bundle 作为可序列化 JSON 产物交付（薄 CLI + skill），第 1 阶段不引入运行时 server，不绑定 MCP。
@@ -71,7 +73,7 @@ Phase 1 后续 Manual Input milestone 通过条件：
 - Manual Input 不使用 SourceRevision；input record、content_hash、状态和 audit event 足以支撑 Bundle provenance、撤销和复核。
 - `input add/search/list/show/update/revoke/delete/promote` 最小 CLI 路径可运行。
 - 本地 SQLite、FTS、embedding、Raw Vault managed assets 和模型/向量失败降级路径有最小测试。
-- `bundle --source all` 能按权限合并 Obsidian 和 Manual Input。
+- `bundle --source all` 能按权限统一组装 Obsidian 和 Manual Input candidates。
 - `active` input 可作为 raw，`auto_captured` input 最多作为 lead，`Sensitive` 默认不进入普通 Bundle。
 - promote 只创建 inbox-derived 最小 Task/Event/Memory/Canonical Fact/Candidate 对象；系统日历、提醒事项和外部任务应用同步不属于该 milestone。
 - revoke/delete 后相关 input、extraction、embedding 和派生对象不再进入新 Bundle，依赖事实进入复核或停止使用。

@@ -2,22 +2,22 @@ window.LIFEMESH_PROJECT_STATE = {
   lastUpdated: "2026-06-29",
   state: "Personal Context Layer",
   currentPhase: "第 1 阶段：Personal Context Layer",
-  overallProgress: 36,
+  overallProgress: 38,
   summary:
-    "LifeMesh 第 1 阶段已进入本地 CLI 原型：只读 Obsidian bundle 已完成第一轮；ADR-0008 Manual Input Inbox 已落地 SQLite + FTS + sqlite-vec + LM Studio embedding/VLM + inbox-derived promote 闭环。",
+    "LifeMesh 第 1 阶段已进入本地 CLI 原型：只读 Obsidian bundle、Manual Input Inbox 和 source-neutral BundleAssembler 已落地；跨源 Bundle 现在由统一候选准入、分层选择和 assembly_report 诊断支撑。",
   metrics: [
     { label: "文档基线", value: "active", detail: "Manual Input 实现已同步", tone: "green" },
     { label: "Web 看板", value: "active", detail: "静态页面，无构建链", tone: "blue" },
-    { label: "Context Layer", value: "phase 1", detail: "source-neutral validation", tone: "blue" },
+    { label: "Context Layer", value: "phase 1", detail: "BundleAssembler 已落地", tone: "blue" },
     { label: "关键风险", value: "11", detail: "含自动捕获和本地模型风险", tone: "red" }
   ],
   work: [
     {
       lane: "Now",
       items: [
+        "用真实 Obsidian + Manual Input 验收 BundleAssembler 跨源组装",
         "用真实 vault 完成 Q20 手工验收记录",
-        "定义来源引用展示格式",
-        "用真实 LM Studio 和 sqlite-vec 路径验收 Manual Input CLI"
+        "定义来源引用展示格式"
       ]
     },
     {
@@ -58,8 +58,8 @@ window.LIFEMESH_PROJECT_STATE = {
       id: "1",
       title: "Personal Context Layer",
       status: "active",
-      progress: 74,
-      focus: "只读 bundle 原型、Manual Input 本地写入检索、LM Studio embedding/VLM、inbox-derived promote",
+      progress: 78,
+      focus: "只读 bundle 原型、Manual Input 本地写入检索、source-neutral BundleAssembler、inbox-derived promote",
       docs: ["phase-1-delivery-plan.md", "cli-contract.md", "ADR-0005", "ADR-0006", "ADR-0008"]
     },
     {
@@ -174,8 +174,10 @@ window.LIFEMESH_PROJECT_STATE = {
         subtitle: "第一阶段核心能力",
         tone: "context",
         nodes: [
+          { title: "ContextCandidate", detail: "adapter 返回 source-backed 候选材料" },
+          { title: "BundleAssembler", detail: "准入、来源层级、去重、多样性、assembly_report" },
           { title: "Context Slice", detail: "带 evidence_role：fact / raw / context / lead" },
-          { title: "Context Bundle", detail: "显式 --source all 时组装 Obsidian + Manual Input" },
+          { title: "Context Bundle", detail: "由 assembler 统一组装 candidates" },
           { title: "Knowledge Candidate", detail: "fact / preference / relationship / task / decision" }
         ]
       },
@@ -195,7 +197,7 @@ window.LIFEMESH_PROJECT_STATE = {
         subtitle: "最小权限调用",
         tone: "agent",
         nodes: [
-          { title: "CLI + Skill", detail: "bundle JSON、受限写入、fact review、agent 消费规则" },
+          { title: "CLI + Skill", detail: "bundle JSON、assembly_report、受限写入、agent 消费规则" },
           { title: "Source-Backed Answer", detail: "引用来源和 Citation Status" },
           { title: "User Confirmation", detail: "持久化或高风险写入前确认" }
         ]
@@ -216,8 +218,8 @@ window.LIFEMESH_PROJECT_STATE = {
     { name: "Vision", path: "docs/00-vision/", status: "draft", signal: "方向已建立" },
     { name: "Governance", path: "docs/01-governance/", status: "draft", signal: "需细化删除和授权" },
     { name: "Domain", path: "docs/02-domain/", status: "draft", signal: "Manual Input 数据源已落地到原型" },
-    { name: "Architecture", path: "docs/03-architecture/", status: "draft", signal: "Manual Input CLI 已实现" },
-    { name: "Roadmap", path: "docs/04-roadmap/", status: "active", signal: "下一步是真实本机验收" },
+    { name: "Architecture", path: "docs/03-architecture/", status: "draft", signal: "BundleAssembler 已同步" },
+    { name: "Roadmap", path: "docs/04-roadmap/", status: "active", signal: "下一步是真实跨源验收" },
     { name: "ADR", path: "docs/05-decisions/", status: "active", signal: "8 条 accepted" },
     { name: "Security", path: "docs/07-security/", status: "draft", signal: "补充自动捕获和本地模型风险" },
     { name: "Dashboard", path: "docs/08-dashboard/", status: "active", signal: "同步规则已落地" }
@@ -449,8 +451,13 @@ window.LIFEMESH_PROJECT_STATE = {
   recentChanges: [
     {
       date: "2026-06-29",
+      title: "落地 source-neutral BundleAssembler",
+      detail: "新增 ContextCandidate / BundleAssembler 实现：Obsidian 与 Manual Input 先返回 candidates，再统一执行准入、来源层级、去重、多样性选择和 assembly_report 诊断；bundle --source all 不再拼接两个已完成 Bundle。"
+    },
+    {
+      date: "2026-06-29",
       title: "落地 Manual Input 本地 CLI 原型",
-      detail: "新增 ~/.lifemesh 配置层、SQLite 主库、FTS、sqlite-vec 加载、LM Studio embedding/VLM 调用、input add/search/list/show/update/revoke/delete/promote，以及 bundle --source manual-input/all；测试覆盖 mocked LM Studio、模型/向量失败降级和 Obsidian 兼容。"
+      detail: "新增 ~/.lifemesh 配置层、SQLite 主库、FTS、sqlite-vec 加载、LM Studio embedding/VLM 调用、input add/search/list/show/update/revoke/delete/promote，以及 bundle --source manual-input/all；后续由 BundleAssembler 统一跨源组装。"
     },
     {
       date: "2026-06-29",
@@ -515,7 +522,7 @@ window.LIFEMESH_PROJECT_STATE = {
     {
       date: "2026-06-26",
       title: "确定 Context Bundle 来源优先级",
-      detail: "组装优先级为 Canonical Fact > Memory > 当前任务相关 Source Reference > 当前任务生成的 Knowledge Candidate；失效来源只进入 excluded_sources / freshness_report。"
+      detail: "组装优先级为 Canonical Fact > Memory > 当前任务相关 Source Reference > 当前任务生成的 Knowledge Candidate；失效来源只进入 excluded_sources / freshness_report；当前实现由 BundleAssembler 执行该优先级。"
     },
     {
       date: "2026-06-26",

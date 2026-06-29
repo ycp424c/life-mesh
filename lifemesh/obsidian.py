@@ -4,11 +4,13 @@ import hashlib
 import json
 import os
 import re
-import uuid
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+
+from .assembler import BundleAssembler
+from .context_types import ContextCandidate, RetrievalResult
 
 EXCLUDED_DIRS = {".git", ".obsidian", "_attachments", "Trash", "_archives", "tmp"}
 SENSITIVITY_LEVELS = ["Public", "Internal", "Private", "Sensitive", "Restricted"]
@@ -39,6 +41,12 @@ class Section:
     revision: SourceRevision
 
 
+@dataclass(frozen=True)
+class ScoredSection:
+    section: Section
+    score: float
+
+
 def build_bundle(
     *,
     task: str,
@@ -47,7 +55,36 @@ def build_bundle(
     sensitivity_cap: str,
     state_path: Path | None = None,
 ) -> dict[str, Any]:
-    if max_slices < 1:
+    result = retrieve_candidates(
+        task=task,
+        vault_path=vault_path,
+        max_candidates=max_slices,
+        sensitivity_cap=sensitivity_cap,
+        state_path=state_path,
+    )
+    normalized_cap = _normalize_sensitivity(sensitivity_cap)
+    if normalized_cap is None:
+        raise ValueError(f"Unknown sensitivity cap: {sensitivity_cap}")
+    return BundleAssembler().assemble(
+        task=task,
+        allowed_sources=["obsidian"],
+        sensitivity_cap=normalized_cap,
+        max_slices=max_slices,
+        candidates=result.candidates,
+        excluded_sources=result.excluded_sources,
+        freshness_report=result.freshness_report,
+    )
+
+
+def retrieve_candidates(
+    *,
+    task: str,
+    vault_path: Path,
+    max_candidates: int,
+    sensitivity_cap: str,
+    state_path: Path | None = None,
+) -> RetrievalResult:
+    if max_candidates < 1:
         raise ValueError("--max-slices must be at least 1")
     normalized_cap = _normalize_sensitivity(sensitivity_cap)
     if normalized_cap is None:
@@ -62,28 +99,31 @@ def build_bundle(
     sections, revisions, excluded_sources = _scan_vault(vault_path, assembled_at, normalized_cap)
     freshness_report = _build_freshness_report(previous_state, revisions)
     scored_sections = _rank_sections(task, sections)
-
-    slices = [
-        _section_to_slice(index, section)
-        for index, section in enumerate(scored_sections[:max_slices], start=1)
+    limited_sections = scored_sections[:max_candidates]
+    candidates = [
+        ContextCandidate(
+            slice_data=_section_to_slice(index, item.section),
+            source="obsidian",
+            layer="source-reference",
+            evidence_role="raw",
+            source_rank=index,
+            source_score=item.score,
+            citation_status="current",
+            sensitivity=item.section.sensitivity,
+            retrieval_mode="term",
+        )
+        for index, item in enumerate(limited_sections, start=1)
     ]
 
     if state_path:
         _save_state(state_path, revisions, assembled_at)
 
-    return {
-        "schema_version": "1",
-        "bundle_id": str(uuid.uuid4()),
-        "task": {"description": task, "agent_capability": "search"},
-        "permission_scope": {
-            "allowed_sources": ["obsidian"],
-            "sensitivity_cap": normalized_cap,
-        },
-        "assembled_at": assembled_at,
-        "slices": slices,
-        "excluded_sources": excluded_sources,
-        "freshness_report": freshness_report,
-    }
+    return RetrievalResult(
+        candidates=candidates,
+        excluded_sources=excluded_sources,
+        freshness_report=freshness_report,
+        diagnostics={"candidate_count": len(candidates), "source": "obsidian"},
+    )
 
 
 def _scan_vault(
@@ -184,7 +224,7 @@ def _extract_sections(
     return sections
 
 
-def _rank_sections(task: str, sections: list[Section]) -> list[Section]:
+def _rank_sections(task: str, sections: list[Section]) -> list[ScoredSection]:
     terms = _query_terms(task)
     ranked: list[tuple[float, str, int, Section]] = []
     for order, section in enumerate(sections):
@@ -200,7 +240,7 @@ def _rank_sections(task: str, sections: list[Section]) -> list[Section]:
         if score > 0:
             ranked.append((score, section.note_path, order, section))
     ranked.sort(key=lambda item: (-item[0], item[1], item[2]))
-    return [item[3] for item in ranked]
+    return [ScoredSection(section=item[3], score=item[0]) for item in ranked]
 
 
 def _query_terms(task: str) -> list[str]:
