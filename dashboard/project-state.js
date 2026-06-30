@@ -1,10 +1,10 @@
 window.LIFEMESH_PROJECT_STATE = {
-  lastUpdated: "2026-06-29",
+  lastUpdated: "2026-06-30",
   state: "Personal Context Layer",
   currentPhase: "第 1 阶段：Personal Context Layer",
   overallProgress: 38,
   summary:
-    "LifeMesh 第 1 阶段已进入本地 CLI 原型：只读 Obsidian bundle、Manual Input Inbox 和 source-neutral BundleAssembler 已落地；跨源 Bundle 现在由统一候选准入、分层选择和 assembly_report 诊断支撑。",
+    "LifeMesh 第 1 阶段已进入本地 CLI 原型：只读 Obsidian bundle、Manual Input Inbox 和 source-neutral BundleAssembler 已落地；Manual Input 已通过首次真实本机 LM Studio / sqlite-vec 验收，跨源 Bundle 由统一候选准入、分层选择和 assembly_report 诊断支撑。",
   metrics: [
     { label: "文档基线", value: "active", detail: "Manual Input 实现已同步", tone: "green" },
     { label: "Web 看板", value: "active", detail: "静态页面，无构建链", tone: "blue" },
@@ -15,17 +15,17 @@ window.LIFEMESH_PROJECT_STATE = {
     {
       lane: "Now",
       items: [
-        "用真实 Obsidian + Manual Input 验收 BundleAssembler 跨源组装",
         "用真实 vault 完成 Q20 手工验收记录",
-        "定义来源引用展示格式"
+        "定义来源引用展示格式",
+        "明确 Manual Input 语义检索 score threshold / 空结果展示策略"
       ]
     },
     {
       lane: "Next",
       items: [
-        "记录本机 embedding 模型 identifier、维度和性能边界",
         "完善 Candidate inbox 批量确认体验",
-        "补 Fact Review 对 Manual Input tombstone 的级联验收"
+        "补 Fact Review 对 Manual Input tombstone 的级联验收",
+        "补 Manual Input 长期性能边界和真实任务场景验收"
       ]
     },
     {
@@ -449,6 +449,11 @@ window.LIFEMESH_PROJECT_STATE = {
     }
   ],
   recentChanges: [
+    {
+      date: "2026-06-30",
+      title: "完成 Manual Input 真实本机验收",
+      detail: "使用真实本机 LM Studio 和 sqlite-vec 验证 note add/search/show/update/revoke/delete、candidate promote、截图 VLM extraction、auto_captured lead-only Bundle、bundle --source all；当前 embedding 模型为 text-embedding-qwen3-embedding-0.6b（1024 维），截图 VLM 为 qwen/qwen3-vl-8b。观察到无精确命中时语义检索仍会返回近邻，后续需定义 score threshold / 空结果展示策略。"
+    },
     {
       date: "2026-06-29",
       title: "落地 source-neutral BundleAssembler",

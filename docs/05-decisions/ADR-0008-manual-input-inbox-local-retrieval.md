@@ -165,4 +165,4 @@ Promote 必须带明确字段。Agent 可以辅助提取字段，但缺关键字
 - Manual Input adapter 负责返回带 input record、content_hash、status、sensitivity 和检索排序的 candidates；最终 raw/lead 准入、与 Obsidian 等来源的跨源选择、以及 `assembly_report` 诊断由 BundleAssembler 执行。
 - 配置统一走 `~/.lifemesh/config.json`、环境变量和 CLI 参数；Obsidian vault 同样使用该 fallback 链。
 - 测试使用脱敏/虚构 fixture 和 mocked LM Studio HTTP，不写入真实个人数据。
-- 后续仍需用真实本机 LM Studio 模型和真实 sqlite-vec 扩展做手工验收，并记录模型 identifier、维度和性能边界。
+- 2026-06-30 已用真实本机 LM Studio 模型和真实 sqlite-vec 扩展完成首次手工验收：embedding 模型为 `text-embedding-qwen3-embedding-0.6b`，维度 1024；截图 VLM 为 `qwen/qwen3-vl-8b`。后续仍需补充长期性能边界、检索 score threshold 和空结果展示策略。
