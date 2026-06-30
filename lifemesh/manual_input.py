@@ -28,6 +28,8 @@ SOURCE_TYPES = {"manual_cli", "agent_auto_capture", "agent_delegated"}
 PROMOTE_TARGETS = {"task", "event", "memory", "fact", "candidate"}
 CANDIDATE_TYPES = {"fact", "preference", "relationship", "task", "decision"}
 VECTOR_SEARCH_CANDIDATE_LIMIT = 200
+VECTOR_EVIDENCE_THRESHOLD = 0.75
+VECTOR_LEAD_THRESHOLD = 0.45
 
 
 class ManualInputError(RuntimeError):
@@ -39,6 +41,13 @@ class SearchHit:
     input_id: str
     score: float
     record: dict[str, Any]
+    vector_score: float
+    fts_score: float
+    recency_score: float
+    kind_score: float
+    match_status: str
+    match_reason: str
+    evidence_eligible: bool
 
 
 class VectorBackend(Protocol):
@@ -422,13 +431,28 @@ class ManualInputStore:
                 ):
                     continue
                 record["extraction_text"] = _extraction_text(con, record["input_id"])
-                score = (
-                    vector_scores.get(record["input_id"], 0.0)
-                    + fts_scores.get(record["input_id"], 0.0)
-                    + _recency_boost(record)
-                    + _kind_boost(record, kind)
+                vector_score = vector_scores.get(record["input_id"], 0.0)
+                fts_score = fts_scores.get(record["input_id"], 0.0)
+                match_status, match_reason, evidence_eligible = _classify_match(vector_score, fts_score)
+                if match_status == "none":
+                    continue
+                recency_score = _recency_boost(record)
+                kind_score = _kind_boost(record, kind)
+                score = vector_score + fts_score + recency_score + kind_score
+                hits.append(
+                    SearchHit(
+                        record["input_id"],
+                        score,
+                        record,
+                        vector_score,
+                        fts_score,
+                        recency_score,
+                        kind_score,
+                        match_status,
+                        match_reason,
+                        evidence_eligible,
+                    )
                 )
-                hits.append(SearchHit(record["input_id"], score, record))
             hits.sort(key=lambda hit: (-hit.score, hit.record.get("created_at") or "", hit.input_id))
             return hits[:limit]
 
@@ -689,7 +713,7 @@ class ManualInputStore:
                 continue
             if _sensitivity_rank(record["sensitivity"]) > _sensitivity_rank(normalized_cap):
                 continue
-            slice_data = self._record_to_slice(record, len(candidates) + 1, hit.score)
+            slice_data = self._record_to_slice(record, len(candidates) + 1, hit)
             candidates.append(
                 ContextCandidate(
                     slice_data=slice_data,
@@ -710,10 +734,13 @@ class ManualInputStore:
             diagnostics={"candidate_count": len(candidates), "source": "manual-input"},
         )
 
-    def _record_to_slice(self, record: dict[str, Any], index: int, score: float) -> dict[str, Any]:
+    def _record_to_slice(self, record: dict[str, Any], index: int, hit: SearchHit) -> dict[str, Any]:
+        evidence_role = "raw"
+        if record["status"] == "auto_captured" or not hit.evidence_eligible:
+            evidence_role = "lead"
         return {
             "slice_id": f"mi{index}",
-            "evidence_role": "lead" if record["status"] == "auto_captured" else "raw",
+            "evidence_role": evidence_role,
             "provenance": {
                 "source": "manual-input",
                 "input_id": record["input_id"],
@@ -723,9 +750,11 @@ class ManualInputStore:
                 "extraction_status": record["extraction_status"],
             },
             "citation_status": "current",
+            "citation": _manual_input_citation(record, "current"),
             "sensitivity": record["sensitivity"],
             "content": _display_content(record),
-            "score": score,
+            "score": hit.score,
+            "retrieval": _retrieval_metadata(hit),
         }
 
     def _connect(self) -> sqlite3.Connection:
@@ -1022,6 +1051,57 @@ def _manual_exclusions(hits: list[SearchHit], sensitivity_cap: str) -> list[dict
             )
             seen_ids.add(input_id)
     return excluded
+
+
+def _classify_match(vector_score: float, fts_score: float) -> tuple[str, str, bool]:
+    if fts_score > 0 and vector_score >= VECTOR_EVIDENCE_THRESHOLD:
+        return "strong", "fts+vector", True
+    if fts_score > 0:
+        return "strong", "fts", True
+    if vector_score >= VECTOR_EVIDENCE_THRESHOLD:
+        return "strong", "vector", True
+    if vector_score >= VECTOR_LEAD_THRESHOLD:
+        return "weak", "weak_vector", False
+    return "none", "below_threshold", False
+
+
+def _retrieval_metadata(hit: SearchHit) -> dict[str, Any]:
+    item: dict[str, Any] = {
+        "match_status": hit.match_status,
+        "match_reason": hit.match_reason,
+        "evidence_eligible": hit.evidence_eligible,
+        "score": hit.score,
+        "vector_score": hit.vector_score,
+        "fts_score": hit.fts_score,
+        "recency_score": hit.recency_score,
+        "kind_score": hit.kind_score,
+        "thresholds": {
+            "vector_evidence": VECTOR_EVIDENCE_THRESHOLD,
+            "vector_lead": VECTOR_LEAD_THRESHOLD,
+        },
+    }
+    if hit.match_status == "weak":
+        item["note"] = "弱相关近邻，仅作为未核实线索，不能支撑事实回答。"
+    return item
+
+
+def _manual_input_citation(record: dict[str, Any], citation_status: str) -> dict[str, Any]:
+    content_hash = record.get("content_hash") or "content_hash:none"
+    short_hash = content_hash.split(":", 1)[-1][:12] if content_hash else "none"
+    label = (
+        f"Manual Input {record['input_id']} · {record['kind']} · {record['status']} · "
+        f"hash:{short_hash} · citation_status: {citation_status}"
+    )
+    return {
+        "format": "manual-input-v1",
+        "source": "manual-input",
+        "input_id": record["input_id"],
+        "kind": record["kind"],
+        "status": record["status"],
+        "content_hash": record.get("content_hash"),
+        "citation_status": citation_status,
+        "label": label,
+    }
 
 
 def _row_to_record(row: sqlite3.Row | None) -> dict[str, Any]:

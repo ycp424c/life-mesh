@@ -272,10 +272,25 @@ def _section_to_slice(index: int, section: Section) -> dict[str, Any]:
             "indexed_at": revision.indexed_at,
         },
         "citation_status": "current",
+        "citation": _obsidian_citation(section, "current"),
         "sensitivity": section.sensitivity,
         "heading": section.heading,
         "line_range": [section.line_range[0], section.line_range[1]],
         "content": section.content,
+    }
+
+
+def _obsidian_citation(section: Section, citation_status: str) -> dict[str, Any]:
+    start, end = section.line_range
+    label = f"{section.note_path} › {section.heading} (L{start}-L{end}) · citation_status: {citation_status}"
+    return {
+        "format": "obsidian-note-line-range-v1",
+        "source": "obsidian",
+        "note_path": section.note_path,
+        "heading": section.heading,
+        "line_range": [start, end],
+        "citation_status": citation_status,
+        "label": label,
     }
 
 

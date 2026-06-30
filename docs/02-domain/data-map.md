@@ -1,7 +1,7 @@
 # Personal Data Map
 
 状态：draft
-最后更新：2026-06-29
+最后更新：2026-06-30
 职责边界：定义 LifeMesh 管理的个人数据类型、优先级和接入顺序。
 
 ## 数据类型
@@ -48,12 +48,13 @@
 
 ## Manual Input 状态
 
-Manual Input 已进入第 1 阶段本地 CLI 原型，下一步重点是真实本机配置验收。它直接验证：
+Manual Input 已进入第 1 阶段本地 CLI 原型，并已通过首次真实本机 LM Studio / sqlite-vec 验收。它直接验证：
 
 - 用户和 Agent 能否安全写入个人上下文。
 - 记录是否能通过本地 embedding + FTS 被检索。
 - `lifemesh bundle` 是否能把 Obsidian 与 Manual Input 一起组装。
 - 撤销、删除、敏感级别和 promote 是否能形成闭环。
+- 强命中是否能作为 `raw` 证据，弱语义近邻是否只能作为 `lead` 线索。
 
 Manual Input 不等同于系统日历、后台截屏或活动追踪器接入；这些仍需要后续独立 Source Adapter 评估。
 

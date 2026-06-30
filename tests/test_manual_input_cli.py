@@ -164,6 +164,10 @@ class ManualInputCliTest(unittest.TestCase):
             hits = self.run_json(["input", "search", "garden"], home)
             self.assertEqual(hits[0]["input_id"], input_id)
             self.assertEqual(hits[0]["record"]["kind"], "note")
+            self.assertEqual(hits[0]["match_status"], "strong")
+            self.assertTrue(hits[0]["evidence_eligible"])
+            self.assertGreater(hits[0]["score_breakdown"]["fts"], 0)
+            self.assertIn("vector_evidence", hits[0]["score_breakdown"]["thresholds"])
 
             shown = self.run_json(["input", "show", input_id], home)
             self.assertEqual(shown["text"], "garden manual note")
@@ -308,7 +312,7 @@ class ManualInputCliTest(unittest.TestCase):
             self.assertIn("obsidian", sources)
             self.assertIn("manual-input", sources)
 
-    def test_bundle_all_keeps_manual_input_when_obsidian_has_many_matches(self) -> None:
+    def test_bundle_all_keeps_weak_manual_input_as_lead_when_obsidian_has_many_matches(self) -> None:
         with tempfile.TemporaryDirectory() as tmp, FakeLMStudio() as lm:
             home = Path(tmp) / "home"
             self.write_config(home, lm.base_url)
@@ -346,7 +350,9 @@ class ManualInputCliTest(unittest.TestCase):
                 if item["provenance"].get("source") == "manual-input"
             ]
             self.assertEqual([item["provenance"]["input_id"] for item in manual_hits], [manual_id])
-            self.assertEqual(manual_hits[0]["evidence_role"], "raw")
+            self.assertEqual(manual_hits[0]["evidence_role"], "lead")
+            self.assertEqual(manual_hits[0]["retrieval"]["match_status"], "weak")
+            self.assertFalse(manual_hits[0]["retrieval"]["evidence_eligible"])
             self.assertIn("assembly_report", bundle)
 
     def test_manual_bundle_large_max_slices_uses_stable_candidate_window(self) -> None:
@@ -366,6 +372,55 @@ class ManualInputCliTest(unittest.TestCase):
             )
 
             self.assertEqual(bundle["slices"][0]["provenance"]["input_id"], input_id)
+            self.assertEqual(bundle["slices"][0]["evidence_role"], "lead")
+            self.assertEqual(bundle["slices"][0]["retrieval"]["match_status"], "weak")
+
+    def test_manual_bundle_strong_hit_is_raw_with_citation(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp, FakeLMStudio() as lm:
+            home = Path(tmp) / "home"
+            self.write_config(home, lm.base_url)
+            input_id = self.run_json(
+                ["input", "add", "--kind", "note", "--text", "garden source backed answer citation marker"],
+                home,
+            )["input_id"]
+
+            bundle = self.run_json(["bundle", "garden citation marker", "--source", "manual-input"], home)
+
+            first = bundle["slices"][0]
+            self.assertEqual(first["provenance"]["input_id"], input_id)
+            self.assertEqual(first["evidence_role"], "raw")
+            self.assertEqual(first["retrieval"]["match_status"], "strong")
+            self.assertTrue(first["retrieval"]["evidence_eligible"])
+            self.assertEqual(first["citation"]["format"], "manual-input-v1")
+            self.assertEqual(first["citation"]["source"], "manual-input")
+            self.assertEqual(first["citation"]["citation_status"], "current")
+            self.assertIn(input_id, first["citation"]["label"])
+            self.assertIn("note", first["citation"]["label"])
+
+    def test_manual_bundle_weak_vector_hit_is_lead_not_raw(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp, FakeLMStudio() as lm:
+            home = Path(tmp) / "home"
+            self.write_config(home, lm.base_url)
+            input_id = self.run_json(
+                ["input", "add", "--kind", "note", "--text", "LifeMesh current primary investment"],
+                home,
+                backend=LowScoreVectorBackend,
+            )["input_id"]
+
+            hits = self.run_json(["input", "search", "project focus"], home, backend=LowScoreVectorBackend)
+            bundle = self.run_json(
+                ["bundle", "project focus", "--source", "manual-input"],
+                home,
+                backend=LowScoreVectorBackend,
+            )
+
+            self.assertEqual(hits[0]["input_id"], input_id)
+            self.assertEqual(hits[0]["match_status"], "weak")
+            self.assertFalse(hits[0]["evidence_eligible"])
+            self.assertEqual(bundle["slices"][0]["provenance"]["input_id"], input_id)
+            self.assertEqual(bundle["slices"][0]["evidence_role"], "lead")
+            self.assertEqual(bundle["slices"][0]["retrieval"]["match_reason"], "weak_vector")
+            self.assertIn("弱相关", bundle["slices"][0]["retrieval"]["note"])
 
     def test_sensitive_hits_do_not_displace_private_bundle_candidates(self) -> None:
         with tempfile.TemporaryDirectory() as tmp, FakeLMStudio() as lm:

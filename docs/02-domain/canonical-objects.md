@@ -1,7 +1,7 @@
 # Canonical Objects
 
 状态：draft
-最后更新：2026-06-29
+最后更新：2026-06-30
 职责边界：定义规范化事实库中的核心对象，供后续数据模型和接口设计使用。
 
 ## 核心对象
@@ -58,7 +58,7 @@
 - CanonicalFact 只有在 `validity=valid`、`revocation_status=active` 且有 current supporting source reference 时，才能作为 `fact` slice 使用。source reference 可以是 SourceRevision，也可以是 Manual Input record/extraction。
 - 依赖失效来源的 CanonicalFact 先进入 `needs_review`，复核后 revalidate、revise、invalidate 或 revoke；撤销和失效通过 tombstone 阻止后续使用。
 - Context Bundle 按来源优先级组装：Canonical Fact > Memory > 当前任务相关 Source Reference > 当前任务生成的 Knowledge Candidate；失效来源只进入 excluded_sources / freshness_report。
-- Manual Input 通过显式 `bundle --source all` 或 `bundle --source manual-input` 参与检索；`active` 可作为 raw slice，`auto_captured` 可作为 lead，`revoked` 和 deleted tombstone 不进入新 Bundle。
+- Manual Input 通过显式 `bundle --source all` 或 `bundle --source manual-input` 参与检索；`active` 只有 strong 命中可作为 raw slice，weak 近邻和 `auto_captured` 可作为 lead，`revoked` 和 deleted tombstone 不进入新 Bundle。
 - CanonicalFact 第一版只允许通过用户确认、用户手动创建、低风险策略接受三条路径生成。
 - UserConfirmation 只应用于持久化或高风险写入，不应阻塞普通回答生成。
 - 派生对象应记录抽取方式和置信度。

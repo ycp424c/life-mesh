@@ -1,7 +1,7 @@
 # Evaluation Criteria
 
 状态：draft
-最后更新：2026-06-29
+最后更新：2026-06-30
 职责边界：定义 LifeMesh 每个阶段如何判断“做得对”，避免只按功能数量推进。
 
 ## 基础评估维度
@@ -38,7 +38,7 @@
 - stale / missing / revoked 来源不进入可用上下文，只进入 `excluded_sources` / `freshness_report`；依赖失效来源的 Canonical Fact 被标记为需要复核。
 - Canonical Fact 只有 `validity=valid`、`revocation_status=active`、且有 current supporting source reference 时，才能作为 `fact` slice 使用。
 - Canonical Fact 复核支持 revalidate、revise、invalidate、revoke；Source Tombstone / Fact Tombstone 能阻止旧 revision 或旧 fact 被新 Bundle 使用。
-- Context Bundle 内的每个 Context Slice 都有来源、权限、新鲜度和 Citation Status。
+- Context Bundle 内的每个 Context Slice 都有来源、权限、新鲜度、Citation Status 和可展示的 `citation`。
 - 每个 Context Slice 带 `evidence_role`（fact / raw / context / lead）。
 - JSON Bundle 可包含 `assembly_report`，用于验收和调试候选/准入/选择策略；该字段不能作为事实证据。
 - 事实性回答是 Source-Backed Answer，只基于 `fact` + `raw`；`context` 和 `lead` 不进入事实陈述位；`lead` 不单独支撑结论且带"未核实"标注。
@@ -66,7 +66,7 @@
 - 第一版索引遵守默认排除规则，不读取 `.git/`、`.obsidian/`、附件二进制、`Trash/`、`_archives/`、`tmp/`。
 - 修改 Vault Note 后，对应索引片段和派生事实能通过 Vault Note Revision 失效或重建。
 - 旧回答遇到 stale 或 missing 来源时不自动重写，而是展示来源状态并提供重新生成动作。
-- 通过 [Obsidian 检索最小验收样例](../02-domain/data-sources/obsidian-retrieval-sample.md)：`bundle` 产出带 `note_path`+`revision_id`+`heading`+`line_range`+`citation_status` 的 slice，agent 事实回答引用来源与状态，stale 链路生效。
+- 通过 [Obsidian 检索最小验收样例](../02-domain/data-sources/obsidian-retrieval-sample.md)：`bundle` 产出带 `note_path`+`revision_id`+`heading`+`line_range`+`citation_status`+`citation` 的 slice，agent 事实回答引用来源与状态，stale 链路生效。
 
 Phase 1 后续 Manual Input milestone 通过条件：
 
@@ -74,7 +74,7 @@ Phase 1 后续 Manual Input milestone 通过条件：
 - `input add/search/list/show/update/revoke/delete/promote` 最小 CLI 路径可运行。
 - 本地 SQLite、FTS、embedding、Raw Vault managed assets 和模型/向量失败降级路径有最小测试。
 - `bundle --source all` 能按权限统一组装 Obsidian 和 Manual Input candidates。
-- `active` input 可作为 raw，`auto_captured` input 最多作为 lead，`Sensitive` 默认不进入普通 Bundle。
+- `active` input 只有 strong 命中可作为 raw；weak 语义近邻和 `auto_captured` input 最多作为 lead；`Sensitive` 默认不进入普通 Bundle。
 - promote 只创建 inbox-derived 最小 Task/Event/Memory/Canonical Fact/Candidate 对象；系统日历、提醒事项和外部任务应用同步不属于该 milestone。
 - revoke/delete 后相关 input、extraction、embedding 和派生对象不再进入新 Bundle，依赖事实进入复核或停止使用。
 

@@ -8,7 +8,14 @@ from typing import Any
 
 from .assembler import BundleAssembler
 from .config import load_config
-from .manual_input import MANUAL_KINDS, PROMOTE_TARGETS, ManualInputError, ManualInputStore
+from .manual_input import (
+    MANUAL_KINDS,
+    PROMOTE_TARGETS,
+    VECTOR_EVIDENCE_THRESHOLD,
+    VECTOR_LEAD_THRESHOLD,
+    ManualInputError,
+    ManualInputStore,
+)
 from .obsidian import build_bundle, retrieve_candidates as retrieve_obsidian_candidates
 
 
@@ -243,7 +250,27 @@ def _handle_input(args: argparse.Namespace) -> int:
             sensitivity_cap=args.sensitivity_cap,
             limit=args.limit,
         )
-        result = [{"input_id": hit.input_id, "score": hit.score, "record": hit.record} for hit in hits]
+        result = [
+            {
+                "input_id": hit.input_id,
+                "score": hit.score,
+                "match_status": hit.match_status,
+                "match_reason": hit.match_reason,
+                "evidence_eligible": hit.evidence_eligible,
+                "score_breakdown": {
+                    "vector": hit.vector_score,
+                    "fts": hit.fts_score,
+                    "recency": hit.recency_score,
+                    "kind": hit.kind_score,
+                    "thresholds": {
+                        "vector_evidence": VECTOR_EVIDENCE_THRESHOLD,
+                        "vector_lead": VECTOR_LEAD_THRESHOLD,
+                    },
+                },
+                "record": hit.record,
+            }
+            for hit in hits
+        ]
     elif command == "list":
         result = store.list_inputs(kind=args.kind, status=args.status, since=args.since)
     elif command == "show":

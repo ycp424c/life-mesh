@@ -87,6 +87,11 @@ class BundleCliTest(unittest.TestCase):
         self.assertTrue(first["provenance"]["content_hash"].startswith("sha256:"))
         self.assertEqual(first["heading"], "## Active Threads")
         self.assertEqual(first["line_range"], [7, 11])
+        self.assertEqual(first["citation"]["format"], "obsidian-note-line-range-v1")
+        self.assertEqual(first["citation"]["source"], "obsidian")
+        self.assertEqual(first["citation"]["citation_status"], "current")
+        self.assertIn("hot.md", first["citation"]["label"])
+        self.assertIn("L7-L11", first["citation"]["label"])
         self.assertIn("AI 对开源生态的结构性冲击", first["content"])
 
     def test_bundle_uses_note_sensitivity_instead_of_cap_label(self) -> None:

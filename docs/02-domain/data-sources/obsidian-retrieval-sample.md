@@ -1,7 +1,7 @@
 # Obsidian Retrieval Sample
 
 状态：draft
-最后更新：2026-06-26
+最后更新：2026-06-30
 职责边界：用真实 vault 数据定义第 1 阶段 Obsidian 检索的可验收样例，验证 `cli-contract.md` 的 `bundle` 命令、JSON Bundle schema 和 Citation Status 链路。
 
 ## 定位
@@ -35,6 +35,15 @@ lifemesh bundle "AI 对开源生态有什么结构性冲击？" --source obsidia
         "content_hash": "sha256:..."
       },
       "citation_status": "current",
+      "citation": {
+        "format": "obsidian-note-line-range-v1",
+        "source": "obsidian",
+        "note_path": "hot.md",
+        "heading": "## Active Threads",
+        "line_range": [16, 21],
+        "citation_status": "current",
+        "label": "hot.md › ## Active Threads (L16-L21) · citation_status: current"
+      },
       "sensitivity": "Private",
       "heading": "## Active Threads",
       "line_range": [16, 21],
@@ -45,6 +54,7 @@ lifemesh bundle "AI 对开源生态有什么结构性冲击？" --source obsidia
       "evidence_role": "raw",
       "provenance": { "source": "obsidian", "note_path": "hot.md", "revision_id": "rev#<content_hash>", "...": "..." },
       "citation_status": "current",
+      "citation": { "format": "obsidian-note-line-range-v1", "label": "hot.md › ## Key Takeaways (L23-L28) · citation_status: current" },
       "heading": "## Key Takeaways",
       "line_range": [23, 28],
       "content": "- 开源繁荣建立在脆弱的社会契约之上，AI 正在切断维护者与用户之间的最后连接 ..."
@@ -61,9 +71,9 @@ lifemesh bundle "AI 对开源生态有什么结构性冲击？" --source obsidia
 
 > AI 对开源生态的结构性冲击主要在维护者流失和"AI 中间层效应"：从 Tailwind CSS 收入崩溃到 xz 后门事件，核心线索是 AI 切断了维护者与用户之间的连接——开源繁荣建立在脆弱的社会契约之上。
 >
-> 来源：`hot.md` › `## Active Threads` (L16–21) · `## Key Takeaways` (L23–28) · citation_status: current
+> 来源：`hot.md › ## Active Threads (L16-L21) · citation_status: current`；`hot.md › ## Key Takeaways (L23-L28) · citation_status: current`
 
-agent 必须按 `evidence_role` 消费：事实回答只用 `raw`，并引用 `note_path` + `heading` + `line_range` + `citation_status`。
+agent 必须按 `evidence_role` 消费：事实回答只用 `raw`，并优先展示 `citation.label`；不能只说"根据你的笔记"。
 
 ## stale 场景（第二幕）
 
@@ -77,14 +87,14 @@ agent 必须按 `evidence_role` 消费：事实回答只用 `raw`，并引用 `n
 
 通过条件：
 
-- `bundle` 返回的每个 slice 带真实 `note_path` + `revision_id` + `heading` + `line_range` + `citation_status`。
-- agent 的事实回答引用了 `note_path` + `line_range` + `citation_status`，不只说"根据你的笔记"。
+- `bundle` 返回的每个 slice 带真实 `note_path` + `revision_id` + `heading` + `line_range` + `citation_status` + `citation.label`。
+- agent 的事实回答引用了 `citation.label`，不只说"根据你的笔记"。
 - `excluded_sources` / `freshness_report` 即使为空也在 JSON 里，表示"已检查"而非"未检查"。
 - 来源被编辑后，stale 链路生效：旧内容不当事实、进 `freshness_report`、新问题不命中 stale revision。
 
 失败条件：
 
-- 回答引用了来源但没给 `line_range` / `citation_status`。
+- 回答引用了来源但没给 `citation.label`、`line_range` 或 `citation_status`。
 - stale 来源被当事实用，或新问题命中 stale revision。
 - `excluded_sources` / `freshness_report` 字段缺失。
 

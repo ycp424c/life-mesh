@@ -89,6 +89,7 @@ If LM Studio is stopped, start it:
 ## How To Consume The Bundle
 
 - Use only `slices[]` with `evidence_role: "raw"` or `"fact"` for factual claims.
+- Prefer `slice.citation.label` when showing sources. If `citation.label` is absent, fall back to source-specific provenance.
 - Cite source-specific provenance:
   - Obsidian: `provenance.note_path`, `heading`, `line_range`, and `citation_status`.
   - Manual Input: `provenance.input_id`, `kind`, `status`, `content_hash`, and `citation_status`.
@@ -96,6 +97,7 @@ If LM Studio is stopped, start it:
 - Treat `freshness_report` entries with `stale`, `missing`, `revoked`, or deleted tombstones as warnings; do not use old content as evidence for a new factual answer.
 - Do not treat `context` or `lead` slices as facts.
 - When a `lead` came from `auto_captured` Manual Input, explicitly say it is unreviewed.
+- When a Manual Input slice has `retrieval.match_status: "weak"`, describe it as a weakly related lead only; do not call it an exact hit or use it as evidence.
 - Do not print raw bundle content unless the user asks; summarize findings and cite provenance.
 
 ## Boundaries

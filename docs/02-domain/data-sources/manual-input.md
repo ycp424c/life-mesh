@@ -1,7 +1,7 @@
 # Manual Input
 
 状态：draft
-最后更新：2026-06-29
+最后更新：2026-06-30
 职责边界：定义 Phase 1 后续 milestone 中，用户和 Agent 主动提交的截图、日程、心情、活动、待办和备注如何进入 LifeMesh Inbox、索引、Bundle 和 promote 流程。不定义后台截屏、系统日历同步、活动追踪器接入或远程 embedding 默认策略。
 
 ## Source
@@ -37,12 +37,12 @@ Manual Input 不使用 SourceRevision。它的来源身份由 input record、可
 
 | kind | 说明 | 默认状态 | 默认 Bundle role |
 |---|---|---|---|
-| `note` | 泛用备注、事实材料、临时信息 | `active` 或 `auto_captured` | `raw` 或 `lead` |
-| `screenshot` | 图片或截图文件 | `active` 或 `auto_captured` | extraction 作为 `raw` 或 `lead` |
-| `event` | 手动日程、会议、约定、DDL | `active` | `raw`，promote 后进入 Event |
-| `mood` | 心情、状态、主观感受 | `active` 或 `auto_captured` | `raw` 或 `lead`，通常不作为事实 |
-| `activity` | 活动记录、运动、出行、工作片段 | `active` 或 `auto_captured` | `raw` 或 `lead` |
-| `task` | 待办或行动项 | `active` | `raw`，promote 后进入 Task |
+| `note` | 泛用备注、事实材料、临时信息 | `active` 或 `auto_captured` | strong 可作 `raw`，weak / auto_captured 作 `lead` |
+| `screenshot` | 图片或截图文件 | `active` 或 `auto_captured` | extraction strong 可作 `raw`，weak / auto_captured 作 `lead` |
+| `event` | 手动日程、会议、约定、DDL | `active` | strong 可作 `raw`，promote 后进入 Event |
+| `mood` | 心情、状态、主观感受 | `active` 或 `auto_captured` | strong 可作 `raw`，weak / auto_captured 作 `lead`，通常不作为事实 |
+| `activity` | 活动记录、运动、出行、工作片段 | `active` 或 `auto_captured` | strong 可作 `raw`，weak / auto_captured 作 `lead` |
+| `task` | 待办或行动项 | `active` | strong 可作 `raw`，promote 后进入 Task |
 
 高敏语义如 health、location、finance、relationship 不作为第一版顶级 kind。只有用户明确提交时，才可通过基础 kind + `sensitivity=Sensitive` + tags 表达；这不等同于正式接入高敏数据源。
 
@@ -93,6 +93,7 @@ Manual Input 第一版必须可检索：
 - Vector store：通过配置路径加载用户提供的 `sqlite-vec` 扩展；第一版不 vendoring 二进制，扩展不可用时降级为 FTS-only。
 - Embedding 粒度：每条 Manual Input 至少一个主 embedding，覆盖用户文本和可检索 extraction 内容。
 - 排序：向量相似度 + FTS 匹配 + 时间新鲜度 + kind boost。
+- 命中分级：FTS 命中或向量分数达到 `vector_evidence=0.75` 才是 `strong`；向量分数达到 `vector_lead=0.45` 但低于证据阈值时是 `weak`，只能作为低置信线索。
 
 每条 embedding 至少记录：
 
@@ -162,7 +163,8 @@ Manual Input adapter 的职责是返回 input record / extraction / content_hash
 
 Manual Input 准入规则：
 
-- `active`：可按权限作为 `raw` slice。
+- `active` + `retrieval.match_status=strong`：可按权限作为 `raw` slice。
+- `active` + `retrieval.match_status=weak`：最多作为 `lead`，必须标注弱相关近邻，不能支撑事实回答。
 - `auto_captured`：可检索；进入 Bundle 时最多作为 `lead`，回答必须标注未复核。
 - `promoted`：通过目标对象进入对应层，原 input 只作 provenance。
 - `revoked` / deleted tombstone：不进入检索或 Bundle。

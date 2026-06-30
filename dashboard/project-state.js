@@ -4,7 +4,7 @@ window.LIFEMESH_PROJECT_STATE = {
   currentPhase: "第 1 阶段：Personal Context Layer",
   overallProgress: 38,
   summary:
-    "LifeMesh 第 1 阶段已进入本地 CLI 原型：只读 Obsidian bundle、Manual Input Inbox 和 source-neutral BundleAssembler 已落地；Manual Input 已通过首次真实本机 LM Studio / sqlite-vec 验收，跨源 Bundle 由统一候选准入、分层选择和 assembly_report 诊断支撑。",
+    "LifeMesh 第 1 阶段已进入本地 CLI 原型：只读 Obsidian bundle、Manual Input Inbox 和 source-neutral BundleAssembler 已落地；Manual Input 已通过首次真实本机 LM Studio / sqlite-vec 验收，并已加入 citation 字段与强/弱检索命中策略。",
   metrics: [
     { label: "文档基线", value: "active", detail: "Manual Input 实现已同步", tone: "green" },
     { label: "Web 看板", value: "active", detail: "静态页面，无构建链", tone: "blue" },
@@ -16,8 +16,8 @@ window.LIFEMESH_PROJECT_STATE = {
       lane: "Now",
       items: [
         "用真实 vault 完成 Q20 手工验收记录",
-        "定义来源引用展示格式",
-        "明确 Manual Input 语义检索 score threshold / 空结果展示策略"
+        "用真实回答样例验证 citation label 和 weak lead 展示",
+        "验证 stale / missing 引用提示和重新生成动作"
       ]
     },
     {
@@ -343,15 +343,15 @@ window.LIFEMESH_PROJECT_STATE = {
       name: "Vault Note",
       phase: "第 1 阶段",
       sensitivity: "Private",
-      status: "planned",
-      next: "定义来源引用格式"
+      status: "prototype",
+      next: "验证 stale / missing 引用提示"
     },
     {
       name: "Manual Input",
       phase: "第 1 阶段",
       sensitivity: "Private / Sensitive",
       status: "prototype",
-      next: "用真实 LM Studio 模型和 sqlite-vec 扩展做本机验收"
+      next: "补长期性能边界和真实任务场景验收"
     },
     {
       name: "日历与任务",
@@ -374,7 +374,7 @@ window.LIFEMESH_PROJECT_STATE = {
       phase: "第 1 阶段",
       risk: "low-medium",
       status: "prototype",
-      guardrail: "必须返回 note_path、line_range、citation_status"
+      guardrail: "必须返回 citation.label、note_path、line_range、citation_status"
     },
     {
       name: "摘要与事实抽取",
@@ -428,8 +428,8 @@ window.LIFEMESH_PROJECT_STATE = {
   ],
   openQuestions: [
     {
-      title: "来源引用格式",
-      detail: "回答应如何展示 Vault Note Revision、heading、line range 和 current/stale/missing 状态？"
+      title: "stale / missing 引用交互",
+      detail: "首版 citation label 已落地；仍需用真实回答样例验证来源变更后的提示、复核和重新生成动作。"
     },
     {
       title: "Obsidian 白名单目录",
@@ -441,7 +441,7 @@ window.LIFEMESH_PROJECT_STATE = {
     },
     {
       title: "LM Studio 模型配置",
-      detail: "需要用真实本机配置确认 embedding 模型 identifier、维度、VLM 调用方式和性能边界。"
+      detail: "首次真实本机验收已确认 embedding 模型 identifier、维度和 VLM 调用方式；仍需记录长期性能边界。"
     },
     {
       title: "MCP 重新评估触发条件",
@@ -451,8 +451,13 @@ window.LIFEMESH_PROJECT_STATE = {
   recentChanges: [
     {
       date: "2026-06-30",
+      title: "落地 Source-Backed Answer 引用与检索命中策略",
+      detail: "Bundle slice 新增 citation 字段：Obsidian 使用 obsidian-note-line-range-v1，Manual Input 使用 manual-input-v1；Manual Input search 返回 match_status、match_reason、evidence_eligible 和 score_breakdown。FTS 或 vector >= 0.75 为 strong，可作 raw；0.45 <= vector < 0.75 为 weak，只能作为 lead。"
+    },
+    {
+      date: "2026-06-30",
       title: "完成 Manual Input 真实本机验收",
-      detail: "使用真实本机 LM Studio 和 sqlite-vec 验证 note add/search/show/update/revoke/delete、candidate promote、截图 VLM extraction、auto_captured lead-only Bundle、bundle --source all；当前 embedding 模型为 text-embedding-qwen3-embedding-0.6b（1024 维），截图 VLM 为 qwen/qwen3-vl-8b。观察到无精确命中时语义检索仍会返回近邻，后续需定义 score threshold / 空结果展示策略。"
+      detail: "使用真实本机 LM Studio 和 sqlite-vec 验证 note add/search/show/update/revoke/delete、candidate promote、截图 VLM extraction、auto_captured lead-only Bundle、bundle --source all；当前 embedding 模型为 text-embedding-qwen3-embedding-0.6b（1024 维），截图 VLM 为 qwen/qwen3-vl-8b。后续需补长期性能边界。"
     },
     {
       date: "2026-06-29",
@@ -497,7 +502,7 @@ window.LIFEMESH_PROJECT_STATE = {
     {
       date: "2026-06-26",
       title: "定义 Obsidian 检索最小验收样例",
-      detail: "用真实 vault 的 hot.md 定义可验收样例：bundle 产出带 note_path/revision_id/heading/line_range/citation_status 的 raw slice，agent 给 Source-Backed Answer，stale 链路生效。见 obsidian-retrieval-sample.md。"
+      detail: "用真实 vault 的 hot.md 定义可验收样例：bundle 产出带 note_path/revision_id/heading/line_range/citation_status/citation.label 的 raw slice，agent 给 Source-Backed Answer，stale 链路生效。见 obsidian-retrieval-sample.md。"
     },
     {
       date: "2026-06-26",

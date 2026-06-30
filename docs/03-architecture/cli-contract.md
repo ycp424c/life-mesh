@@ -1,7 +1,7 @@
 # CLI Contract
 
 状态：draft
-最后更新：2026-06-29
+最后更新：2026-06-30
 职责边界：定义第 1 阶段 LifeMesh CLI 的命令、JSON Bundle schema 和配套 skill 契约。实现状态以本文件的“当前实现”段落、README 和测试为准。
 
 ## 定位
@@ -19,6 +19,7 @@
 - `lifemesh bundle --source manual-input`。
 - `lifemesh bundle --source all` 通过 source-neutral `BundleAssembler` 统一组装 Obsidian 与 Manual Input candidates，不拼接两个已完成 Bundle。
 - JSON Bundle 包含 `assembly_report` 诊断字段，用于解释候选、准入和选择策略。
+- Bundle slice 包含 `citation` 展示字段；Manual Input 检索结果包含 `match_status`、`match_reason`、`evidence_eligible` 和 `score_breakdown`。
 
 兼容性说明：`lifemesh bundle` 默认仍为 `--source obsidian`，避免旧的只读原型被 Manual Input 本地依赖状态影响；跨源合并必须显式使用 `--source all`。
 
@@ -96,6 +97,9 @@ lifemesh input search "<query>" \
 行为：
 
 - 使用向量相似度 + FTS + 时间新鲜度 + kind boost 混合排序；向量不可用时使用 FTS-only。
+- `match_status=strong` 表示可作为证据候选：FTS 命中，或向量分数达到 `vector_evidence=0.75`。
+- `match_status=weak` 表示低置信语义近邻：向量分数达到 `vector_lead=0.45` 但低于证据阈值；它只可作为线索，不能作为事实证据。
+- 返回项必须带 `evidence_eligible` 和 `score_breakdown`，避免把近邻误读为精确命中。
 - 默认排除 `revoked` 和 deleted tombstone。
 - 默认 `sensitivity-cap=Private`，排除 `Sensitive`。
 
@@ -300,8 +304,29 @@ lifemesh fact revoke <fact-id>
         "content_hash": "sha256:..."
       },
       "citation_status": "current",
+      "citation": {
+        "format": "manual-input-v1",
+        "source": "manual-input",
+        "input_id": "mi_...",
+        "kind": "mood",
+        "status": "active",
+        "content_hash": "sha256:...",
+        "citation_status": "current",
+        "label": "Manual Input mi_... · mood · active · hash:... · citation_status: current"
+      },
       "sensitivity": "Private",
-      "content": "...用户记录..."
+      "content": "...用户记录...",
+      "retrieval": {
+        "match_status": "strong",
+        "match_reason": "fts",
+        "evidence_eligible": true,
+        "score": 10.2,
+        "vector_score": 0.7,
+        "fts_score": 9.3,
+        "recency_score": 0.2,
+        "kind_score": 0,
+        "thresholds": { "vector_evidence": 0.75, "vector_lead": 0.45 }
+      }
     }
   ],
   "excluded_sources": [
@@ -321,10 +346,11 @@ lifemesh fact revoke <fact-id>
 
 约束：
 
-- 每个 slice 必带 `evidence_role` + `provenance` + `citation_status`。
-- Obsidian raw slice 带 `note_path`、`revision_id`、`heading`、`line_range`。
-- Manual Input raw slice 带 `input_id`、`kind`、`status`、`content_hash`。
-- `active` Manual Input 默认可作为 `raw`。
+- 每个 slice 必带 `evidence_role` + `provenance` + `citation_status` + `citation`。
+- Obsidian raw slice 带 `note_path`、`revision_id`、`heading`、`line_range`，并使用 `citation.format=obsidian-note-line-range-v1`。
+- Manual Input raw slice 带 `input_id`、`kind`、`status`、`content_hash`，并使用 `citation.format=manual-input-v1`。
+- `active` Manual Input 只有 `retrieval.match_status=strong` 且 `evidence_eligible=true` 时可作为 `raw`。
+- 低置信向量近邻只能作为 `lead`，必须带 `retrieval.match_status=weak` 和提示，不得支撑事实回答。
 - `auto_captured` Manual Input 最多作为 `lead`，回答必须标注未复核。
 - `promoted` input 通过目标对象进入对应层，原 input 只作为 provenance。
 - `revoked` 和 deleted tombstone 不进入新 Bundle。
@@ -341,7 +367,7 @@ skill 随仓库版本化（如 `skills/lifemesh/SKILL.md`），内容契约：
 3. **怎么写**：Manual Input 走 `input add`；Agent 自动捕获必须 `--auto-captured` 并透明说明。
 4. **怎么检索**：`input search` 可直接查 Inbox，`bundle` 可跨 Obsidian + Manual Input 组装上下文。
 5. **怎么 promote**：只有用户明确确认时才 `input promote` 到 task/event/memory/fact/candidate。
-6. **怎么消费**：事实回答只用 `fact` + `raw`；`lead` 标未复核；`context` 只调语气；stale/missing/revoked 必须提示。
+6. **怎么消费**：事实回答只用 `fact` + `raw` 并展示 `citation.label`；`lead` 标未复核；`context` 只调语气；stale/missing/revoked 必须提示。
 7. **边界**：Agent 不能自动 promote，不能把 `auto_captured` 当事实，不能引用失效来源。
 
 ## 非目标
