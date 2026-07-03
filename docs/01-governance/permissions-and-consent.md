@@ -1,7 +1,7 @@
 # Permissions And Consent
 
 状态：draft
-最后更新：2026-06-29
+最后更新：2026-07-03
 职责边界：定义 Agent、工具、连接器访问数据和执行动作的授权模型。
 
 ## 授权应覆盖的范围
@@ -21,6 +21,7 @@
 - 自动执行动作必须有单独授权。
 - Agent 自动捕获非高敏个人相关信息到 Manual Input Inbox 是允许的，但必须透明说明，且不能自动 promote；明显高敏信息必须由用户明确提交。
 - `auto_captured` 记录默认只作为未复核 lead，不能被当作事实、任务、日程或长期记忆。
+- RumorClaim 自动处理必须先经过 source adapter `rumor_policy` 和 pipeline 门槛；未验证 claim 不能直接写成 Candidate、Fact、Memory、Task 或 Event。
 - Promote 到 Task、Event、Memory、Canonical Fact 或 Knowledge Candidate 需要用户明确确认。
 
 ## 撤销与过期
@@ -41,3 +42,10 @@
 - `input update`、`input revoke`、`input delete` 和 `input promote` 需要用户明确指令。
 - `Sensitive` input 默认不进入 Bundle；只有用户显式提高 sensitivity cap 时才可用。
 - 本地 embedding 和 VLM extraction 默认走本机 LM Studio；远程 provider 必须单独 opt-in。
+
+## RumorClaim 权限边界
+
+- 普通 Agent 只能把 RumorClaim 当未验证 lead 消费。
+- `include_unverified` 必须由任务意图或用户明确请求触发，不能成为默认 Bundle 行为。
+- `sensitive_review` 内容默认不展示正文，只展示数量和状态，除非用户显式进入受控查看。
+- RumorClaim promote 只到 Knowledge Candidate；后续升级仍走用户确认或显式策略。

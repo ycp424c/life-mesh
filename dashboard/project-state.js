@@ -1,15 +1,15 @@
 window.LIFEMESH_PROJECT_STATE = {
-  lastUpdated: "2026-06-30",
+  lastUpdated: "2026-07-03",
   state: "Personal Context Layer",
   currentPhase: "第 1 阶段：Personal Context Layer",
-  overallProgress: 38,
+  overallProgress: 40,
   summary:
-    "LifeMesh 第 1 阶段已进入本地 CLI 原型：只读 Obsidian bundle、Manual Input Inbox 和 source-neutral BundleAssembler 已落地；Manual Input 已通过首次真实本机 LM Studio / sqlite-vec 验收，并已加入 citation 字段与强/弱检索命中策略。",
+    "LifeMesh 第 1 阶段已进入本地 CLI 原型：只读 Obsidian bundle、Manual Input Inbox、source-neutral BundleAssembler 和 RumorClaim 本地结构化 CLI MVP 已落地；Manual Input 已通过首次真实本机验收，并已加入 citation 字段与强/弱检索命中策略。RumorClaim 当前只保存结构化 claim、mentions 和最小 source envelope，自动 source adapter 与 review UI 尚未实现。",
   metrics: [
     { label: "文档基线", value: "active", detail: "Manual Input 实现已同步", tone: "green" },
     { label: "Web 看板", value: "active", detail: "静态页面，无构建链", tone: "blue" },
     { label: "Context Layer", value: "phase 1", detail: "BundleAssembler 已落地", tone: "blue" },
-    { label: "关键风险", value: "11", detail: "含自动捕获和本地模型风险", tone: "red" }
+    { label: "关键风险", value: "13", detail: "含自动捕获、本地模型和流言污染风险", tone: "red" }
   ],
   work: [
     {
@@ -24,6 +24,7 @@ window.LIFEMESH_PROJECT_STATE = {
       lane: "Next",
       items: [
         "完善 Candidate inbox 批量确认体验",
+        "评估第一个自动 RumorClaim source adapter 和 rumor_policy",
         "补 Fact Review 对 Manual Input tombstone 的级联验收",
         "补 Manual Input 长期性能边界和真实任务场景验收"
       ]
@@ -32,6 +33,7 @@ window.LIFEMESH_PROJECT_STATE = {
       lane: "Later",
       items: [
         "完善 Candidate inbox 批量确认体验",
+        "接入 RumorClaim 自动 source adapter 和 review UI",
         "接入系统日历和提醒事项 Source Adapter",
         "建立长期记忆查看和删除流程"
       ]
@@ -58,9 +60,9 @@ window.LIFEMESH_PROJECT_STATE = {
       id: "1",
       title: "Personal Context Layer",
       status: "active",
-      progress: 78,
-      focus: "只读 bundle 原型、Manual Input 本地写入检索、source-neutral BundleAssembler、inbox-derived promote",
-      docs: ["phase-1-delivery-plan.md", "cli-contract.md", "ADR-0005", "ADR-0006", "ADR-0008"]
+      progress: 82,
+      focus: "只读 bundle 原型、Manual Input 本地写入检索、source-neutral BundleAssembler、RumorClaim 结构化 CLI MVP",
+      docs: ["phase-1-delivery-plan.md", "cli-contract.md", "ADR-0005", "ADR-0006", "ADR-0008", "ADR-0009"]
     },
     {
       id: "2",
@@ -154,6 +156,7 @@ window.LIFEMESH_PROJECT_STATE = {
         tone: "vault",
         nodes: [
           { title: "Source Reference", detail: "SourceRevision 或 Manual Input record / extraction" },
+          { title: "Source Envelope", detail: "RumorClaim 的最小来源外壳，不默认保存 raw material" },
           { title: "Manual Input State", detail: "active / auto_captured / promoted / revoked / deleted" },
           { title: "Citation Status", detail: "current / stale / missing" },
           { title: "Tombstone", detail: "Source / Manual Input / Fact 的失效标记" }
@@ -178,6 +181,7 @@ window.LIFEMESH_PROJECT_STATE = {
           { title: "BundleAssembler", detail: "准入、来源层级、去重、多样性、assembly_report" },
           { title: "Context Slice", detail: "带 evidence_role：fact / raw / context / lead" },
           { title: "Context Bundle", detail: "由 assembler 统一组装 candidates" },
+          { title: "RumorClaim", detail: "未验证 claim，只能作为 lead 或 promote 到 Knowledge Candidate" },
           { title: "Knowledge Candidate", detail: "fact / preference / relationship / task / decision" }
         ]
       },
@@ -211,17 +215,18 @@ window.LIFEMESH_PROJECT_STATE = {
     feedback: [
       "User Confirmation -> Canonical Fact / Memory",
       "Source changes -> Source Reference -> Citation Status",
-      "Revocation -> Tombstone -> Context Bundle cleanup"
+      "Revocation -> Tombstone -> Context Bundle cleanup",
+      "Unverified material -> RumorClaim -> Knowledge Candidate"
     ]
   },
   docs: [
     { name: "Vision", path: "docs/00-vision/", status: "draft", signal: "方向已建立" },
     { name: "Governance", path: "docs/01-governance/", status: "draft", signal: "需细化删除和授权" },
-    { name: "Domain", path: "docs/02-domain/", status: "draft", signal: "Manual Input 数据源已落地到原型" },
-    { name: "Architecture", path: "docs/03-architecture/", status: "draft", signal: "BundleAssembler 已同步" },
-    { name: "Roadmap", path: "docs/04-roadmap/", status: "active", signal: "下一步是真实跨源验收" },
-    { name: "ADR", path: "docs/05-decisions/", status: "active", signal: "8 条 accepted" },
-    { name: "Security", path: "docs/07-security/", status: "draft", signal: "补充自动捕获和本地模型风险" },
+    { name: "Domain", path: "docs/02-domain/", status: "draft", signal: "RumorClaim 结构化 CLI MVP 已补充" },
+    { name: "Architecture", path: "docs/03-architecture/", status: "draft", signal: "BundleAssembler 与 Rumor lead 准入已同步" },
+    { name: "Roadmap", path: "docs/04-roadmap/", status: "active", signal: "RumorClaim follow-on MVP 已落地" },
+    { name: "ADR", path: "docs/05-decisions/", status: "active", signal: "9 条 accepted" },
+    { name: "Security", path: "docs/07-security/", status: "draft", signal: "补充自动捕获、本地模型和流言污染风险" },
     { name: "Dashboard", path: "docs/08-dashboard/", status: "active", signal: "同步规则已落地" }
   ],
   risks: [
@@ -279,6 +284,16 @@ window.LIFEMESH_PROJECT_STATE = {
       title: "本地个人数据库泄露",
       severity: "high",
       control: "~/.lifemesh 0700，数据库和 raw asset 0600，后续评估加密"
+    },
+    {
+      title: "流言污染事实层",
+      severity: "high",
+      control: "RumorClaim 只能作为未验证 lead；只可 promote 到 Knowledge Candidate"
+    },
+    {
+      title: "流言原始物料污染本地仓库",
+      severity: "medium",
+      control: "原始物料默认只进 temporary parsing sandbox，长期保留最小 source envelope"
     }
   ],
   decisions: [
@@ -329,6 +344,12 @@ window.LIFEMESH_PROJECT_STATE = {
       title: "Manual Input Inbox With Local Retrieval",
       status: "accepted",
       path: "../docs/05-decisions/ADR-0008-manual-input-inbox-local-retrieval.md"
+    },
+    {
+      id: "ADR-0009",
+      title: "Unverified Rumor Claims",
+      status: "accepted",
+      path: "../docs/05-decisions/ADR-0009-unverified-rumor-claims.md"
     }
   ],
   dataSources: [
@@ -352,6 +373,13 @@ window.LIFEMESH_PROJECT_STATE = {
       sensitivity: "Private / Sensitive",
       status: "prototype",
       next: "补长期性能边界和真实任务场景验收"
+    },
+    {
+      name: "RumorClaim",
+      phase: "第 1 阶段 follow-on",
+      sensitivity: "Private / Sensitive",
+      status: "prototype",
+      next: "决定首个允许自动产出 RumorClaim 的 source adapter 和 rumor_policy"
     },
     {
       name: "日历与任务",
@@ -412,6 +440,13 @@ window.LIFEMESH_PROJECT_STATE = {
       guardrail: "extraction 带 provider/model/confidence，不直接成为 fact"
     },
     {
+      name: "RumorClaim 未验证线索处理",
+      phase: "第 1 阶段 follow-on",
+      risk: "medium-high",
+      status: "prototype",
+      guardrail: "结构化 CLI MVP；默认不进普通 Bundle；只能作为 lead；promote 只到 Knowledge Candidate"
+    },
+    {
       name: "记忆写入",
       phase: "第 4 阶段",
       risk: "medium-high",
@@ -426,6 +461,52 @@ window.LIFEMESH_PROJECT_STATE = {
       guardrail: "必须人工确认"
     }
   ],
+  rumorReview: {
+    status: "prototype",
+    ruleVersion: "rumor-claim-v1",
+    summary:
+      "结构化 CLI MVP 已落地：RumorClaim 默认不进普通 Bundle，显式包含时只作为未验证 lead；静态看板不直接读取本机 ~/.lifemesh/lifemesh.db，实时数量必须由后续只读同步脚本填充。",
+    queues: [
+      {
+        name: "general_review",
+        count: "Needs live query",
+        detail: "普通 parked claims；仅在 --source rumor 或 --include-unverified 时以 lead 展示。"
+      },
+      {
+        name: "conflict_review",
+        count: "Needs live query",
+        detail: "contradicted evidence 默认排除出可用 slices；不自动触发正式 Fact Review。"
+      },
+      {
+        name: "sensitive_review",
+        count: "Needs live query",
+        detail: "Sensitive / Restricted RumorClaim 默认受 sensitivity cap 隔离。"
+      }
+    ],
+    stats: [
+      {
+        label: "最近高影响 claims",
+        value: "Needs live query",
+        detail: "静态数据不得伪造 claim 内容或数量。"
+      },
+      {
+        label: "过期 / 丢弃",
+        value: "Needs live query",
+        detail: "expired / dismissed 只读统计待同步脚本填充。"
+      },
+      {
+        label: "Promotion handoff",
+        value: "local link",
+        detail: "当前仅写 rumor_candidate_links，完整 Candidate inbox 仍未完成。"
+      }
+    ],
+    highImpact: [
+      {
+        title: "实时队列取数",
+        detail: "下一步需要只读同步命令从 lifemesh rumor list 聚合 queue count、高影响 claim 摘要、expired/dismissed 统计和规则版本。"
+      }
+    ]
+  },
   openQuestions: [
     {
       title: "stale / missing 引用交互",
@@ -441,7 +522,11 @@ window.LIFEMESH_PROJECT_STATE = {
     },
     {
       title: "LM Studio 模型配置",
-      detail: "首次真实本机验收已确认 embedding 模型 identifier、维度和 VLM 调用方式；仍需记录长期性能边界。"
+      detail: "首次真实本机验收已确认 embedding 模型 identifier、维度和 VLM 调用方式；当前截图 OCR/VLM 配置已切到 ornith-1.0-9b，仍需记录长期性能边界。"
+    },
+    {
+      title: "RumorClaim 首个 source adapter",
+      detail: "结构化 CLI MVP 已落地；自动来源实现前仍需决定第一个允许产出 RumorClaim 的 source adapter、rumor_policy，以及 dashboard 只读同步脚本。"
     },
     {
       title: "MCP 重新评估触发条件",
@@ -450,6 +535,26 @@ window.LIFEMESH_PROJECT_STATE = {
   ],
   recentChanges: [
     {
+      date: "2026-07-03",
+      title: "收紧 RumorClaim 准入、过期和看板边界",
+      detail: "RumorClaim add 现在要求显式 user_relevance 和 impact；默认可信度从 unknown/unverified 起步；contradicted 和 expired claims 不进入可用 Bundle slices；dashboard 新增 review queue 摘要区，并将本机实时数量标记为 Needs live query。"
+    },
+    {
+      date: "2026-07-03",
+      title: "落地 RumorClaim 本地结构化 CLI MVP",
+      detail: "实现 rumor add/list/show/dismiss/expire/promote、持久化门槛、review queue、最小 source envelope、审计事件、bundle --source rumor 和 --include-unverified 的 lead-only 准入；自动 source adapter、截图/图片自动抽取和 review UI 仍未实现。"
+    },
+    {
+      date: "2026-07-03",
+      title: "定义 RumorClaim / UnverifiedClaim 契约",
+      detail: "新增 ADR-0009 和 rumor-claims 领域文档：可信度未知的文本、截图和图片先抽取为 RumorClaim，不作为 Manual Input kind，不默认保存原始物料，默认不进普通 Bundle，只能作为 lead，并且只能 promote 到 Knowledge Candidate。"
+    },
+    {
+      date: "2026-07-03",
+      title: "切换本机截图 OCR/VLM 模型",
+      detail: "将 ~/.lifemesh/config.json 和全局 LifeMesh skill 的 vlm_model 切换为 ornith-1.0-9b；模型输出仍按 provider/model/confidence 记录，2026-06-30 的 qwen/qwen3-vl-8b 首次验收记录保留为历史证据。"
+    },
+    {
       date: "2026-06-30",
       title: "落地 Source-Backed Answer 引用与检索命中策略",
       detail: "Bundle slice 新增 citation 字段：Obsidian 使用 obsidian-note-line-range-v1，Manual Input 使用 manual-input-v1；Manual Input search 返回 match_status、match_reason、evidence_eligible 和 score_breakdown。FTS 或 vector >= 0.75 为 strong，可作 raw；0.45 <= vector < 0.75 为 weak，只能作为 lead。"
@@ -457,7 +562,7 @@ window.LIFEMESH_PROJECT_STATE = {
     {
       date: "2026-06-30",
       title: "完成 Manual Input 真实本机验收",
-      detail: "使用真实本机 LM Studio 和 sqlite-vec 验证 note add/search/show/update/revoke/delete、candidate promote、截图 VLM extraction、auto_captured lead-only Bundle、bundle --source all；当前 embedding 模型为 text-embedding-qwen3-embedding-0.6b（1024 维），截图 VLM 为 qwen/qwen3-vl-8b。后续需补长期性能边界。"
+      detail: "使用真实本机 LM Studio 和 sqlite-vec 验证 note add/search/show/update/revoke/delete、candidate promote、截图 VLM extraction、auto_captured lead-only Bundle、bundle --source all；验收时 embedding 模型为 text-embedding-qwen3-embedding-0.6b（1024 维），截图 VLM 为 qwen/qwen3-vl-8b。后续需补长期性能边界。"
     },
     {
       date: "2026-06-29",

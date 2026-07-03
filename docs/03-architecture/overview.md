@@ -1,7 +1,7 @@
 # Architecture Overview
 
 状态：draft
-最后更新：2026-06-29
+最后更新：2026-07-03
 职责边界：描述 LifeMesh 的高层架构，不绑定具体技术栈。
 
 ## 一句话架构
@@ -63,6 +63,8 @@
 - Manual Input 是用户或 Agent 主动提交的数据源入口，不等同于后台自动采集。它不使用 SourceRevision，而通过 input record、extraction、content_hash、状态和 audit event 表达 source reference。截图、心情、活动、待办和手动日程必须先保留 provenance、敏感级别、用途和撤销路径，再进入事实、记忆、任务或候选流程。
 - Manual Input 第一版使用用户级本地存储：`~/.lifemesh/lifemesh.db` + Raw Vault managed assets。检索层包含 FTS、本地 embedding 和 SQLite 向量索引；LM Studio 作为默认本地 embedding/VLM provider。
 - Agent 可以自动捕获非高敏个人相关信息进入 Inbox，但必须透明说明，且不能自动 promote 到长期层或正式对象；明显高敏信息必须由用户明确提交。
+- RumorClaim 是处理可信度未知材料的 Phase 1 follow-on 契约：它不是独立架构层，也不是 Manual Input kind；主资产是抽取出的 claim、entity mention 和 relation mention，原始物料默认只进 temporary parsing sandbox。
+- RumorClaim 默认不进入普通 Context Bundle，明确请求未验证线索时只能作为 `lead`，且只能 promote 到 Knowledge Candidate。
 
 ## 可视化边界
 

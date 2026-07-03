@@ -1,7 +1,7 @@
 # Security And Audit
 
 状态：draft
-最后更新：2026-06-29
+最后更新：2026-07-03
 职责边界：定义安全、审计、撤销和确认机制的架构要求。
 
 ## 必备能力
@@ -29,6 +29,8 @@
 - 用户是否确认、撤销或纠错
 - Canonical Fact 是否进入复核、被重新确认、替代、失效或撤销
 - Source Tombstone / Fact Tombstone 的触发原因和影响范围
+- RumorClaim 是否由未验证材料生成、使用了哪个 processing_run_id、source envelope、assessment 和 review queue
+- Bundle 是否显式包含 `include_unverified`
 
 ## 确认机制
 
@@ -60,3 +62,14 @@
 - 对后续 Agent 访问的影响：是否从 `slices[]` 移除，是否进入 `freshness_report`。
 
 用户撤销事实时，不直接抹除历史审计，而是生成 Fact Tombstone，阻止后续 Bundle 使用该事实。
+
+## RumorClaim 审计
+
+RumorClaim 的审计重点不是长期保存原始材料，而是能解释为什么保留、为什么丢弃、为什么进入 review：
+
+- source adapter 和 `rumor_policy`。
+- temporary parsing sandbox 的 processing run。
+- 持久化门槛判断：user relevance、impact、assessment。
+- 是否进入 general/conflict/sensitive review。
+- 是否 promote 到 Knowledge Candidate。
+- 是否因 dismiss 或 expire 不再检索。

@@ -1,7 +1,7 @@
 # Data Classification
 
 状态：draft
-最后更新：2026-06-29
+最后更新：2026-07-03
 职责边界：定义个人数据的分类、敏感级别和默认处理策略。
 
 ## 敏感级别
@@ -42,3 +42,10 @@
 - `Sensitive` 默认可在本机保存、embedding 和索引，但不能在 `--sensitivity-cap Private` 下进入 Bundle。
 - 截图和 VLM extraction 的敏感级别按内容升级；含身份、金融、健康、位置或第三方隐私时升为 `Sensitive`。
 - 删除与撤销分开：撤销保留 tombstone，删除移除 managed raw asset 和索引，只保留最小 deletion tombstone。
+
+## RumorClaim 默认策略
+
+- RumorClaim 是未验证线索，不是事实、记忆、任务或日程。
+- 原始文字、截图或图片默认只进入 temporary parsing sandbox；长期只保留 claim、mentions 和最小 source envelope。
+- `Sensitive` 或 `Restricted` RumorClaim 可保存为受控 review 项，但默认不进入普通 Bundle 或 dashboard 内容展示。
+- 明确请求未验证线索时，RumorClaim 只能作为 `lead` 使用。

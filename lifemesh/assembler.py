@@ -24,6 +24,7 @@ class BundleAssembler:
         candidates: list[ContextCandidate],
         excluded_sources: list[dict[str, Any]] | None = None,
         freshness_report: list[dict[str, Any]] | None = None,
+        include_unverified: bool = False,
     ) -> dict[str, Any]:
         if max_slices < 1:
             raise ValueError("--max-slices must be at least 1")
@@ -34,7 +35,7 @@ class BundleAssembler:
         admitted: list[ContextCandidate] = []
         rejected: list[dict[str, Any]] = []
         for candidate in candidates:
-            rejection = _rejection_for(candidate, allowed_sources, normalized_cap)
+            rejection = _rejection_for(candidate, allowed_sources, normalized_cap, include_unverified)
             if rejection is None:
                 admitted.append(candidate)
             else:
@@ -49,6 +50,7 @@ class BundleAssembler:
             "permission_scope": {
                 "allowed_sources": allowed_sources,
                 "sensitivity_cap": sensitivity_cap,
+                "include_unverified": include_unverified,
             },
             "assembled_at": _utc_now(),
             "slices": slices,
@@ -130,6 +132,8 @@ def _dedupe_key(candidate: ContextCandidate) -> tuple[Any, ...]:
     provenance = candidate.slice_data.get("provenance", {})
     if candidate.source == "manual-input":
         return (candidate.source, provenance.get("input_id"))
+    if candidate.source == "rumor":
+        return (candidate.source, provenance.get("rumor_claim_id"))
     if candidate.source == "obsidian":
         return (
             candidate.source,
@@ -148,10 +152,13 @@ def _rejection_for(
     candidate: ContextCandidate,
     allowed_sources: list[str],
     sensitivity_cap: str,
+    include_unverified: bool,
 ) -> dict[str, Any] | None:
     provenance = candidate.slice_data.get("provenance", {})
     if candidate.source not in allowed_sources:
         return _exclusion(candidate, "source_not_allowed")
+    if candidate.source == "rumor" and not include_unverified:
+        return _exclusion(candidate, "unverified_not_requested")
     if candidate.layer not in LAYER_PRIORITIES:
         return _exclusion(candidate, "unsupported_layer")
     citation_status = candidate.citation_status or candidate.slice_data.get("citation_status")
@@ -172,7 +179,7 @@ def _rejection_for(
 def _exclusion(candidate: ContextCandidate, reason: str, **extra: Any) -> dict[str, Any]:
     provenance = candidate.slice_data.get("provenance", {})
     item: dict[str, Any] = {"source": candidate.source}
-    for key in ["input_id", "note_path", "path", "object_id", "id"]:
+    for key in ["input_id", "rumor_claim_id", "note_path", "path", "object_id", "id"]:
         if provenance.get(key):
             item[key] = provenance[key]
     item["reason"] = reason
@@ -186,7 +193,12 @@ def _dedupe_exclusions(exclusions: list[dict[str, Any]]) -> list[dict[str, Any]]
     for item in exclusions:
         key = (
             item.get("source"),
-            item.get("input_id") or item.get("note_path") or item.get("path") or item.get("object_id") or item.get("id"),
+            item.get("input_id")
+            or item.get("rumor_claim_id")
+            or item.get("note_path")
+            or item.get("path")
+            or item.get("object_id")
+            or item.get("id"),
             item.get("reason"),
         )
         if key in seen:

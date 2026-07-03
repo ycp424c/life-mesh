@@ -1,7 +1,7 @@
 # Manual Input
 
 状态：draft
-最后更新：2026-06-30
+最后更新：2026-07-03
 职责边界：定义 Phase 1 后续 milestone 中，用户和 Agent 主动提交的截图、日程、心情、活动、待办和备注如何进入 LifeMesh Inbox、索引、Bundle 和 promote 流程。不定义后台截屏、系统日历同步、活动追踪器接入或远程 embedding 默认策略。
 
 ## Source
@@ -45,6 +45,8 @@ Manual Input 不使用 SourceRevision。它的来源身份由 input record、可
 | `task` | 待办或行动项 | `active` | strong 可作 `raw`，promote 后进入 Task |
 
 高敏语义如 health、location、finance、relationship 不作为第一版顶级 kind。只有用户明确提交时，才可通过基础 kind + `sensitivity=Sensitive` + tags 表达；这不等同于正式接入高敏数据源。
+
+`rumor` 不作为 Manual Input 顶级 `kind`。可信度未知的文字片段、截图或图片应进入 RumorClaim / UnverifiedClaim pipeline，输出 claim、entity mention、relation mention 和最小 source envelope；Manual Input 只表达录入入口或载体，不表达“未验证流言”这种材料状态。
 
 ## Data Scope
 

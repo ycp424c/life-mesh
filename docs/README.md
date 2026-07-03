@@ -1,7 +1,7 @@
 # LifeMesh 文档地图
 
 状态：active
-最后更新：2026-06-29
+最后更新：2026-07-03
 职责边界：说明文档体系如何组织、维护和演进。
 
 ## 目录结构
@@ -32,12 +32,14 @@ docs/
 - [Obsidian Vault 数据源评估](02-domain/data-sources/obsidian-vault.md)
 - [Obsidian 检索最小验收样例](02-domain/data-sources/obsidian-retrieval-sample.md)
 - [Manual Input 数据源评估](02-domain/data-sources/manual-input.md)
+- [Rumor Claims](02-domain/rumor-claims.md)
 - [Knowledge Candidates](02-domain/knowledge-candidates.md)
 - [Canonical Facts](02-domain/canonical-facts.md)
 - [Context Bundle](02-domain/context-bundle.md)
 - [CLI Contract](03-architecture/cli-contract.md)
 - [ADR-0007 Canonical Fact Review And Revocation](05-decisions/ADR-0007-canonical-fact-review-and-revocation.md)
 - [ADR-0008 Manual Input Inbox With Local Retrieval](05-decisions/ADR-0008-manual-input-inbox-local-retrieval.md)
+- [ADR-0009 Unverified Rumor Claims](05-decisions/ADR-0009-unverified-rumor-claims.md)
 - [System Map](03-architecture/system-map.md)
 - [渐进式路线图](04-roadmap/phases.md)
 - [Phase 1 Delivery Plan](04-roadmap/phase-1-delivery-plan.md)

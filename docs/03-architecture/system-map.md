@@ -1,7 +1,7 @@
 # System Map
 
 状态：draft
-最后更新：2026-06-29
+最后更新：2026-07-03
 职责边界：说明 Web 看板中的 LifeMesh 系统架构图及其层级含义。
 
 ## 定位
@@ -33,6 +33,7 @@ Source Adapters
 
 - Source Adapter 接入具体数据源，但核心语义保持 source-neutral。
 - Source Revision 负责 Obsidian 等可编辑外部来源的版本身份；Manual Input 不使用 SourceRevision，而以 input record、content_hash、状态和 audit event 作为 source reference。
+- RumorClaim 不新增独立架构层，也不是 Manual Input kind；它是 Personal Context Layer 中从可信度未知材料抽取出的未验证 claim，默认只作为 review lead。
 - Personal Context Layer 通过 BundleAssembler 产出 Context Bundle，而不是裸检索结果或 adapter 级拼接结果。
 - Source Adapter / Retriever 产出 source-backed candidates；最终准入、来源优先级、去重、多样性和 `assembly_report` 由 BundleAssembler 执行。
 - Knowledge Candidate 在确认或策略接受前不能成为 Canonical Fact 或 Memory。
@@ -47,7 +48,8 @@ Source Adapters
 2. Memory（影响排序、语气和偏好，不替代事实证据）
 3. 当前任务相关的 Source Reference（Source Revision 或 Manual Input，新鲜证据，用于补充或复核）
 4. 当前任务生成的 Knowledge Candidate（只作为可能线索，不能伪装成事实）
-5. 被排除或失效的来源只进入 `excluded_sources` / `freshness_report`，不进入可用上下文
+5. 明确请求未验证线索时的 RumorClaim（只能作为 lead）
+6. 被排除或失效的来源只进入 `excluded_sources` / `freshness_report`，不进入可用上下文
 
 失效来源不静默丢弃：依赖失效 source reference 且没有其他 current supporting source 的 Canonical Fact 标记为 `needs_review`，不能继续作为"已核实"使用。
 
@@ -61,6 +63,17 @@ ADR-0008 将 Manual Input 定义为 Phase 1 后续 milestone：
 - 默认存储在用户级 `~/.lifemesh/`，以 SQLite、FTS、本地 embedding 和 Raw Vault managed assets 支撑检索。
 - Agent 可自动捕获非高敏信息到 `auto_captured` Inbox，但必须透明说明，且不得自动 promote。
 - `input promote` 只创建 inbox-derived 最小 Task / Event / Memory / Fact / Candidate 对象；系统日历、提醒事项和外部任务应用同步属于第 2 阶段。
+
+## RumorClaim / UnverifiedClaim
+
+ADR-0009 将 RumorClaim 定义为 Phase 1 follow-on 契约。当前已实现本地结构化 CLI MVP；自动 source adapter、截图/图片自动抽取、review UI 和外部 fact-check 尚未实现：
+
+- 输入可以是文字片段、截图或普通图片。
+- 原始物料默认只进入 temporary parsing sandbox，不长期保存。
+- 主资产是 `claim_text`、`entity_mentions[]` 和 `relation_mentions[]`。
+- 只有通过相关性或影响门槛的 claim 才持久化。
+- 默认不进入普通 Context Bundle；明确请求未验证线索时只能作为 `lead`。
+- 只能 promote 到 Knowledge Candidate。
 
 ## Canonical Fact 生成路径
 

@@ -52,6 +52,18 @@ _Avoid_: prompt context, retrieval result
 A possible fact, preference, relationship, task, or decision inferred from source-backed context. It is not canonical knowledge until confirmed or otherwise accepted by policy.
 _Avoid_: extracted fact, memory
 
+**RumorClaim**:
+An unverified claim extracted from low-trust text, screenshots, or images. It is not a Manual Input kind and not a Knowledge Candidate; it can become a Knowledge Candidate only after triage and promotion.
+_Avoid_: fact, memory, task, accepted candidate
+
+**Source Envelope**:
+A minimal provenance wrapper for RumorClaim-like material, including source adapter, capture time, optional material fingerprint, raw retention, and processing run. It is not a copy of the full raw material.
+_Avoid_: raw archive, attachment, source revision
+
+**Temporary Parsing Sandbox**:
+The short-lived processing boundary for noisy or untrusted materials before only selected structured outputs are kept. Raw rumor material should normally stop here.
+_Avoid_: permanent inbox, raw vault
+
 **Knowledge Candidate Type**:
 The category of a Knowledge Candidate. Initial types are fact, preference, relationship, task, and decision.
 _Avoid_: tag, label, entity type

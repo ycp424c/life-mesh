@@ -1,7 +1,7 @@
 # CLI Contract
 
 状态：draft
-最后更新：2026-06-30
+最后更新：2026-07-03
 职责边界：定义第 1 阶段 LifeMesh CLI 的命令、JSON Bundle schema 和配套 skill 契约。实现状态以本文件的“当前实现”段落、README 和测试为准。
 
 ## 定位
@@ -20,6 +20,11 @@
 - `lifemesh bundle --source all` 通过 source-neutral `BundleAssembler` 统一组装 Obsidian 与 Manual Input candidates，不拼接两个已完成 Bundle。
 - JSON Bundle 包含 `assembly_report` 诊断字段，用于解释候选、准入和选择策略。
 - Bundle slice 包含 `citation` 展示字段；Manual Input 检索结果包含 `match_status`、`match_reason`、`evidence_eligible` 和 `score_breakdown`。
+- RumorClaim / UnverifiedClaim 本地结构化 CLI MVP：`rumor add/list/show/dismiss/expire/promote`、持久化门槛、review queue、最小 source envelope、`bundle --source rumor` 和 `bundle --source all --include-unverified`。
+
+当前未实现但已进入后续契约：
+
+- 自动 source adapter 产出 RumorClaim 前的 `rumor_policy`、截图/图片自动抽取、来源融合、自动事实核查、review UI。
 
 兼容性说明：`lifemesh bundle` 默认仍为 `--source obsidian`，避免旧的只读原型被 Manual Input 本地依赖状态影响；跨源合并必须显式使用 `--source all`。
 
@@ -27,11 +32,12 @@
 
 ```bash
 lifemesh bundle "<task>" \
-  [--source all|obsidian|manual-input] \
+  [--source all|obsidian|manual-input|rumor] \
   [--vault <path>] \
   [--out <path>] \
   [--max-slices 20] \
   [--sensitivity-cap Private] \
+  [--include-unverified] \
   [--home <path>] \
   [--lmstudio-base-url <url>] \
   [--embedding-model <name>] \
@@ -40,11 +46,12 @@ lifemesh bundle "<task>" \
 ```
 
 - `<task>`（必填）：自然语言任务描述。
-- `--source`：Source Adapter，默认 `obsidian`；显式 `all` 会让 Obsidian 和 Manual Input 各自返回 source-backed candidates，再由 `BundleAssembler` 统一准入、分层、去重和选择；也可筛选 `manual-input`。
+- `--source`：Source Adapter，默认 `obsidian`；显式 `all` 会让 Obsidian 和 Manual Input 各自返回 source-backed candidates，再由 `BundleAssembler` 统一准入、分层、去重和选择；也可筛选 `manual-input` 或 `rumor`。
 - `--vault <path>`：Obsidian vault 路径；fallback 为 `LIFEMESH_OBSIDIAN_VAULT`，再到 config `obsidian_vault`。
 - `--out <path>`：写 JSON 到文件（默认写 stdout）。
 - `--max-slices`：Bundle 大小上限，防爆上下文。
 - `--sensitivity-cap`：允许的最高敏感级，默认 `Private`；`Sensitive` 记录默认排除。
+- `--include-unverified`：只在 `--source all` 时把 RumorClaim candidates 纳入组装；默认 false，避免未验证线索污染普通 Bundle。`--source rumor` 等价于专门查看 RumorClaim lead。
 - Manual Input 相关 source 会加载本地配置；缺 LM Studio、embedding/VLM 调用失败或 sqlite-vec 不可用时降级为 SQLite/FTS 路径，并在状态和审计中记录失败原因。
 
 不提供直接返回答案的命令，回答是 Agent 的职责，CLI 只交付 Bundle。
@@ -201,6 +208,64 @@ lifemesh candidate add "<statement>" --type fact|preference|relationship|task|de
 #   → Knowledge Candidate 进 inbox，lifecycle=confirm_required
 ```
 
+## RumorClaim 命令
+
+RumorClaim 是 Phase 1 follow-on 本地结构化 CLI MVP。它处理可信度未知的文字片段、截图和图片中抽取出的 claim，不作为 Manual Input `kind`，也不直接写入 Knowledge Candidate。当前实现要求调用方先提供结构化字段；自动 source adapter、截图/图片自动抽取、外部 fact-check 和 review UI 仍是后续能力。
+
+```bash
+lifemesh rumor add \
+  --claim-text "..." \
+  --claim-type factual_claim|relationship_claim|intent_or_plan_claim|risk_claim|preference_claim|unknown_claim \
+  --user-relevance none|low|medium|high \
+  --impact low|medium|high|critical \
+  [--entity-mention "..."] \
+  [--relation-mention "..."] \
+  [--relevance-reason "..."] \
+  [--impact-reason "..."] \
+  [--extraction-confidence low|medium|high] \
+  [--evidence-state unknown|single_source|corroborated|contradicted] \
+  [--claim-quality vague|specific|verifiable] \
+  [--assessment unverified|weak|plausible|supported|contradicted] \
+  [--sensitivity Public|Internal|Private|Sensitive|Restricted] \
+  [--review-queue general_review|conflict_review|sensitive_review] \
+  [--source-adapter <name>] \
+  [--source-item-id <id>] \
+  [--material-fingerprint <digest>] \
+  [--source-summary "..."] \
+  [--raw-retention none|temporary|user_saved] \
+  [--review-pointer <pointer>] \
+  [--expires-at <datetime>]
+
+lifemesh rumor list \
+  [--queue general_review|conflict_review|sensitive_review] \
+  [--status parked|candidate_created|dismissed|expired] \
+  [--sensitivity-cap Private] \
+  [--limit 20]
+
+lifemesh rumor show <rumor-claim-id>
+
+lifemesh rumor dismiss <rumor-claim-id> [--reason "..."]
+
+lifemesh rumor promote <rumor-claim-id> --to candidate \
+  --statement "..." --type fact|preference|relationship|task|decision \
+  [--confidence <0-1>] [--risk low|medium|high]
+
+lifemesh rumor expire <rumor-claim-id>
+```
+
+硬规则：
+
+- RumorClaim 主体是 `claim_text`、`claim_type`、`entity_mentions[]` 和 `relation_mentions[]`，不是原始材料归档。
+- 原始文字、截图或图片默认只进入 temporary parsing sandbox；长期只保留最小 `source_envelope`。
+- 第一版不做去重、合并或重复次数可信度提升。
+- `user_relevance` 和 `impact` 是必填初筛字段；只有通过最低初筛的 claim 才持久化：`user_relevance >= medium OR impact >= high`。
+- `assessment` 由规则派生为主；第一版不自动联网核查。
+- 未显式提供可信度字段时，`evidence_state=unknown`，`assessment=unverified`。
+- `promote` 只允许到 Knowledge Candidate，不允许直接到 Canonical Fact、Memory、Task、Event 或外部动作。
+- 与 Canonical Fact 冲突时，只生成 conflict lead，不自动触发正式 Fact Review。
+- Dashboard 只能只读展示 RumorClaim 队列摘要和统计。
+- 当前 `rumor add` 是结构化入口，不接收 raw material；raw material capture、自动抽取和 adapter `rumor_policy` 必须另行实现。
+
 ## Agent 写入规则
 
 - Agent 可以自主判断非高敏、个人相关且值得记录的信息，并调用 `input add --auto-captured`。
@@ -209,6 +274,7 @@ lifemesh candidate add "<statement>" --type fact|preference|relationship|task|de
 - Agent 不得自动 promote。
 - Agent 推断出的事实、待办、记忆和决策不得直接写入目标层，必须走 `input promote --to candidate` 或用户明确确认后的 promote。
 - 用户明确提交的高敏信息可写入 Inbox，但必须标记 `Sensitive`；Agent 不得自动捕获明显高敏信息。`Sensitive` 默认不进入 Bundle、长期记忆、事实层或模型上下文。
+- 后续自动 source adapter 如需产出 RumorClaim，必须声明 `rumor_policy`；Agent 不得绕过 pipeline 直接把未验证材料写成 Candidate 或 Fact。
 
 ## 本地模型与配置
 
@@ -289,7 +355,8 @@ lifemesh fact revoke <fact-id>
   "task": { "description": "...", "agent_capability": "search" },
   "permission_scope": {
     "allowed_sources": ["obsidian", "manual-input"],
-    "sensitivity_cap": "Private"
+    "sensitivity_cap": "Private",
+    "include_unverified": false
   },
   "assembled_at": "ISO-8601",
   "slices": [
@@ -352,9 +419,11 @@ lifemesh fact revoke <fact-id>
 - `active` Manual Input 只有 `retrieval.match_status=strong` 且 `evidence_eligible=true` 时可作为 `raw`。
 - 低置信向量近邻只能作为 `lead`，必须带 `retrieval.match_status=weak` 和提示，不得支撑事实回答。
 - `auto_captured` Manual Input 最多作为 `lead`，回答必须标注未复核。
+- RumorClaim 默认不进入普通 Bundle；`--source all --include-unverified` 或 `--source rumor` 时只能作为 `lead`，并必须标注未验证。
 - `promoted` input 通过目标对象进入对应层，原 input 只作为 provenance。
 - `revoked` 和 deleted tombstone 不进入新 Bundle。
 - `Sensitive` 默认被 `--sensitivity-cap Private` 排除。
+- `include_unverified` 默认 false；只有显式包含未验证线索时才为 true。
 - `excluded_sources` / `freshness_report` 即使为空也要在。
 - `assembly_report` 只用于调试和验收，不是事实证据；Agent 不能用它支撑事实性回答。
 

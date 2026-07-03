@@ -180,6 +180,48 @@
     `).join("");
   }
 
+  function renderRumorReview() {
+    const review = state.rumorReview;
+    if (!review) return;
+
+    const queues = review.queues.map((queue) => `
+      <article class="rumor-card">
+        <div class="plan-card-top">
+          <strong>${esc(queue.name)}</strong>
+          <em>${esc(queue.count)}</em>
+        </div>
+        <p>${esc(queue.detail)}</p>
+      </article>
+    `).join("");
+
+    const stats = review.stats.map((stat) => `
+      <article class="rumor-stat">
+        <span>${esc(stat.label)}</span>
+        <strong>${esc(stat.value)}</strong>
+        <small>${esc(stat.detail)}</small>
+      </article>
+    `).join("");
+
+    const highImpact = review.highImpact.map((item) => `
+      <article class="stack-item">
+        <div>
+          <strong>${esc(item.title)}</strong>
+          <span>${esc(item.detail)}</span>
+        </div>
+      </article>
+    `).join("");
+
+    byId("rumor-review").innerHTML = `
+      <div class="rumor-summary">
+        <strong>${esc(review.status)} · ${esc(review.ruleVersion)}</strong>
+        <p>${esc(review.summary)}</p>
+      </div>
+      <div class="rumor-grid">${queues}</div>
+      <div class="rumor-stats">${stats}</div>
+      <div class="stack-list">${highImpact}</div>
+    `;
+  }
+
   function renderOpenQuestions() {
     byId("open-questions").innerHTML = state.openQuestions.map((question) => `
       <article class="stack-item">
@@ -221,6 +263,7 @@
   renderDecisions();
   renderDataSources();
   renderCapabilities();
+  renderRumorReview();
   renderOpenQuestions();
   renderRecentChanges();
   renderSync();

@@ -17,6 +17,21 @@ from .manual_input import (
     ManualInputStore,
 )
 from .obsidian import build_bundle, retrieve_candidates as retrieve_obsidian_candidates
+from .rumor_claims import (
+    ASSESSMENTS,
+    CANDIDATE_TYPES,
+    CLAIM_QUALITIES,
+    CLAIM_TYPES,
+    EVIDENCE_STATES,
+    EXTRACTION_CONFIDENCE_LEVELS,
+    IMPACT_LEVELS,
+    RAW_RETENTION_VALUES,
+    REVIEW_QUEUES,
+    RUMOR_STATUSES,
+    USER_RELEVANCE_LEVELS,
+    RumorClaimError,
+    RumorClaimStore,
+)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -25,10 +40,15 @@ def main(argv: list[str] | None = None) -> int:
 
     bundle_parser = subparsers.add_parser("bundle", help="Build a JSON Context Bundle")
     bundle_parser.add_argument("task", help="Natural language task")
-    bundle_parser.add_argument("--source", default="obsidian", choices=["all", "obsidian", "manual-input"])
+    bundle_parser.add_argument("--source", default="obsidian", choices=["all", "obsidian", "manual-input", "rumor"])
     bundle_parser.add_argument("--out", help="Write bundle JSON to this path")
     bundle_parser.add_argument("--max-slices", type=int, default=20)
     bundle_parser.add_argument("--sensitivity-cap", default="Private")
+    bundle_parser.add_argument(
+        "--include-unverified",
+        action="store_true",
+        help="Allow unverified RumorClaim leads when source is all",
+    )
     _add_config_arguments(bundle_parser)
     bundle_parser.add_argument(
         "--vault",
@@ -44,6 +64,11 @@ def main(argv: list[str] | None = None) -> int:
     input_subparsers = input_parser.add_subparsers(dest="input_command", required=True)
     _add_input_parsers(input_subparsers)
 
+    rumor_parser = subparsers.add_parser("rumor", help="Manage unverified RumorClaim records")
+    _add_config_arguments(rumor_parser)
+    rumor_subparsers = rumor_parser.add_subparsers(dest="rumor_command", required=True)
+    _add_rumor_parsers(rumor_subparsers)
+
     args = parser.parse_args(argv)
 
     try:
@@ -51,7 +76,9 @@ def main(argv: list[str] | None = None) -> int:
             return _handle_bundle(args, bundle_parser)
         if args.command == "input":
             return _handle_input(args)
-    except (ManualInputError, ValueError, FileNotFoundError, NotADirectoryError) as exc:
+        if args.command == "rumor":
+            return _handle_rumor(args)
+    except (ManualInputError, RumorClaimError, ValueError, FileNotFoundError, NotADirectoryError) as exc:
         sys.stderr.write(f"lifemesh: error: {exc}\n")
         return 2
 
@@ -140,6 +167,56 @@ def _add_input_parsers(input_subparsers: argparse._SubParsersAction[argparse.Arg
     promote_parser.add_argument("--risk")
 
 
+def _add_rumor_parsers(rumor_subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
+    add_parser = rumor_subparsers.add_parser("add", help="Add a structured RumorClaim")
+    add_parser.add_argument("--claim-text", required=True)
+    add_parser.add_argument("--claim-type", required=True, choices=sorted(CLAIM_TYPES))
+    add_parser.add_argument("--entity-mention", dest="entity_mentions", action="append", default=[])
+    add_parser.add_argument("--relation-mention", dest="relation_mentions", action="append", default=[])
+    add_parser.add_argument("--user-relevance", required=True, choices=USER_RELEVANCE_LEVELS)
+    add_parser.add_argument("--relevance-reason", default="")
+    add_parser.add_argument("--impact", required=True, choices=IMPACT_LEVELS)
+    add_parser.add_argument("--impact-reason", default="")
+    add_parser.add_argument("--extraction-confidence", default="medium", choices=sorted(EXTRACTION_CONFIDENCE_LEVELS))
+    add_parser.add_argument("--evidence-state", default="unknown", choices=sorted(EVIDENCE_STATES))
+    add_parser.add_argument("--claim-quality", default="specific", choices=sorted(CLAIM_QUALITIES))
+    add_parser.add_argument("--assessment", choices=sorted(ASSESSMENTS))
+    add_parser.add_argument("--sensitivity", default="Private")
+    add_parser.add_argument("--review-queue", choices=sorted(REVIEW_QUEUES))
+    add_parser.add_argument("--source-adapter", default="manual_cli")
+    add_parser.add_argument("--source-item-id")
+    add_parser.add_argument("--material-fingerprint")
+    add_parser.add_argument("--source-summary")
+    add_parser.add_argument("--raw-retention", default="none", choices=sorted(RAW_RETENTION_VALUES))
+    add_parser.add_argument("--review-pointer")
+    add_parser.add_argument("--expires-at")
+
+    list_parser = rumor_subparsers.add_parser("list", help="List RumorClaims")
+    list_parser.add_argument("--status", choices=sorted(RUMOR_STATUSES))
+    list_parser.add_argument("--queue", choices=sorted(REVIEW_QUEUES))
+    list_parser.add_argument("--sensitivity-cap", default="Private")
+    list_parser.add_argument("--limit", type=int, default=20)
+
+    show_parser = rumor_subparsers.add_parser("show", help="Show one RumorClaim")
+    show_parser.add_argument("rumor_claim_id")
+
+    dismiss_parser = rumor_subparsers.add_parser("dismiss", help="Dismiss a parked RumorClaim")
+    dismiss_parser.add_argument("rumor_claim_id")
+    dismiss_parser.add_argument("--reason")
+
+    expire_parser = rumor_subparsers.add_parser("expire", help="Expire a parked RumorClaim")
+    expire_parser.add_argument("rumor_claim_id")
+
+    promote_parser = rumor_subparsers.add_parser("promote", help="Promote a RumorClaim into a Knowledge Candidate")
+    promote_parser.add_argument("rumor_claim_id")
+    promote_parser.add_argument("--to", dest="target_type", required=True, choices=["candidate"])
+    promote_parser.add_argument("--statement", required=True)
+    promote_parser.add_argument("--type", required=True, choices=sorted(CANDIDATE_TYPES))
+    promote_parser.add_argument("--confidence")
+    promote_parser.add_argument("--risk")
+    promote_parser.add_argument("--source-ref", action="append", default=[])
+
+
 def _handle_bundle(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int:
     if args.max_slices < 1:
         raise ValueError("--max-slices must be at least 1")
@@ -148,6 +225,8 @@ def _handle_bundle(args: argparse.Namespace, parser: argparse.ArgumentParser) ->
         bundle = _build_obsidian_bundle(args, config, parser)
     elif args.source == "manual-input":
         bundle = _build_manual_bundle(args, config)
+    elif args.source == "rumor":
+        bundle = _build_rumor_bundle(args, config)
     else:
         candidate_limit = max(args.max_slices * 4, 20)
         obsidian_result = _retrieve_obsidian_candidates(args, config, parser, candidate_limit)
@@ -156,20 +235,29 @@ def _handle_bundle(args: argparse.Namespace, parser: argparse.ArgumentParser) ->
             max_candidates=candidate_limit,
             sensitivity_cap=args.sensitivity_cap,
         )
+        candidates = [*obsidian_result.candidates, *manual_result.candidates]
+        excluded_sources = [*obsidian_result.excluded_sources, *manual_result.excluded_sources]
+        freshness_report = [*obsidian_result.freshness_report, *manual_result.freshness_report]
+        allowed_sources = ["obsidian", "manual-input"]
+        if args.include_unverified:
+            rumor_result = RumorClaimStore(config).retrieve_candidates(
+                task=args.task,
+                max_candidates=candidate_limit,
+                sensitivity_cap=args.sensitivity_cap,
+            )
+            candidates.extend(rumor_result.candidates)
+            excluded_sources.extend(rumor_result.excluded_sources)
+            freshness_report.extend(rumor_result.freshness_report)
+            allowed_sources.append("rumor")
         bundle = BundleAssembler().assemble(
             task=args.task,
-            allowed_sources=["obsidian", "manual-input"],
+            allowed_sources=allowed_sources,
             sensitivity_cap=args.sensitivity_cap,
             max_slices=args.max_slices,
-            candidates=[*obsidian_result.candidates, *manual_result.candidates],
-            excluded_sources=[
-                *obsidian_result.excluded_sources,
-                *manual_result.excluded_sources,
-            ],
-            freshness_report=[
-                *obsidian_result.freshness_report,
-                *manual_result.freshness_report,
-            ],
+            candidates=candidates,
+            excluded_sources=excluded_sources,
+            freshness_report=freshness_report,
+            include_unverified=args.include_unverified,
         )
     _emit_json(bundle, Path(args.out) if args.out else None)
     return 0
@@ -210,6 +298,14 @@ def _retrieve_obsidian_candidates(
 
 def _build_manual_bundle(args: argparse.Namespace, config: Any) -> dict[str, Any]:
     return ManualInputStore(config).bundle(
+        task=args.task,
+        max_slices=args.max_slices,
+        sensitivity_cap=args.sensitivity_cap,
+    )
+
+
+def _build_rumor_bundle(args: argparse.Namespace, config: Any) -> dict[str, Any]:
+    return RumorClaimStore(config).bundle(
         task=args.task,
         max_slices=args.max_slices,
         sensitivity_cap=args.sensitivity_cap,
@@ -297,6 +393,56 @@ def _handle_input(args: argparse.Namespace) -> int:
     return 0
 
 
+def _handle_rumor(args: argparse.Namespace) -> int:
+    store = RumorClaimStore(_load_config_from_args(args))
+    command = args.rumor_command
+    if command == "add":
+        result = store.add(
+            claim_text=args.claim_text,
+            claim_type=args.claim_type,
+            entity_mentions=args.entity_mentions,
+            relation_mentions=args.relation_mentions,
+            user_relevance=args.user_relevance,
+            relevance_reason=args.relevance_reason,
+            impact=args.impact,
+            impact_reason=args.impact_reason,
+            extraction_confidence=args.extraction_confidence,
+            evidence_state=args.evidence_state,
+            claim_quality=args.claim_quality,
+            assessment=args.assessment,
+            sensitivity=args.sensitivity,
+            review_queue=args.review_queue,
+            source_adapter=args.source_adapter,
+            source_item_id=args.source_item_id,
+            material_fingerprint=args.material_fingerprint,
+            source_summary=args.source_summary,
+            raw_retention=args.raw_retention,
+            review_pointer=args.review_pointer,
+            expires_at=args.expires_at,
+        )
+    elif command == "list":
+        result = store.list_claims(
+            status=args.status,
+            queue=args.queue,
+            sensitivity_cap=args.sensitivity_cap,
+            limit=args.limit,
+        )
+    elif command == "show":
+        result = store.show(args.rumor_claim_id)
+    elif command == "dismiss":
+        result = store.dismiss(args.rumor_claim_id, reason=args.reason)
+    elif command == "expire":
+        result = store.expire(args.rumor_claim_id)
+    elif command == "promote":
+        if args.target_type != "candidate":
+            raise RumorClaimError(f"Unsupported rumor promote target: {args.target_type}")
+        result = store.promote(args.rumor_claim_id, _rumor_promote_payload(args))
+    else:
+        raise RumorClaimError(f"Unsupported rumor command: {command}")
+    _emit_json(result)
+    return 0
+
+
 def _load_config_from_args(args: argparse.Namespace, *, obsidian_vault: str | None = None) -> Any:
     return load_config(
         home=args.home,
@@ -324,6 +470,20 @@ def _promote_payload(args: argparse.Namespace) -> dict[str, Any]:
         "type",
         "risk",
     ]:
+        value = getattr(args, key)
+        if value is not None:
+            payload[key] = value
+    if args.source_ref:
+        payload["source_refs"] = args.source_ref
+    return payload
+
+
+def _rumor_promote_payload(args: argparse.Namespace) -> dict[str, Any]:
+    payload: dict[str, Any] = {
+        "statement": args.statement,
+        "type": args.type,
+    }
+    for key in ["confidence", "risk"]:
         value = getattr(args, key)
         if value is not None:
             payload[key] = value

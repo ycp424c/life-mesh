@@ -1,7 +1,7 @@
 # Risk Register
 
 状态：draft
-最后更新：2026-06-29
+最后更新：2026-07-03
 职责边界：记录 LifeMesh 的主要风险、影响、缓解策略和待决问题。
 
 | 风险 | 影响 | 初始缓解策略 | 状态 |
@@ -15,5 +15,7 @@
 | 只做向量库导致语义混乱 | Agent 找得到但不可信 | 多层数据模型：原始、结构化、索引、图谱、时间线 | open |
 | Agent 自动捕获造成沉默记忆 | 用户不知道哪些对话内容被记录 | 每次自动捕获必须回复 id、kind、摘要、sensitivity、Bundle 可用性；默认仅进 Inbox | open |
 | 本地模型误读截图 | VLM/OCR 抽取错误进入长期层 | extraction 带 provider/model/confidence；promote 必须用户确认 | open |
+| 流言污染事实层 | 自动来源把未验证材料写成事实、记忆或任务 | RumorClaim 只能作为未验证 lead；只可 promote 到 Knowledge Candidate | open |
+| 流言原始物料污染本地仓库 | 广告、截图噪声或第三方隐私被长期保存 | 原始物料默认只进 temporary parsing sandbox；长期保留最小 source envelope | open |
 | 本地个人数据库泄露 | `~/.lifemesh` 被其他进程或备份读取 | 目录 0700、数据库和 raw asset 0600；后续评估加密 | open |
 | 看板与文档状态漂移 | 误导规划、架构或治理判断 | AGENTS.md 强制同步，看板以 docs 和 ADR 为事实源 | open |

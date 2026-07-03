@@ -9,6 +9,7 @@ LAYER_PRIORITIES = {
     "memory": 1,
     "source-reference": 2,
     "candidate": 3,
+    "rumor": 4,
 }
 
 
@@ -32,4 +33,3 @@ class RetrievalResult:
     excluded_sources: list[dict[str, Any]] = field(default_factory=list)
     freshness_report: list[dict[str, Any]] = field(default_factory=list)
     diagnostics: dict[str, Any] = field(default_factory=dict)
-

@@ -1,7 +1,7 @@
 # Data Layers
 
 状态：draft
-最后更新：2026-06-29
+最后更新：2026-07-03
 职责边界：定义 LifeMesh 数据层分层和各层职责。
 
 ## 分层
@@ -26,3 +26,5 @@
 - Source Adapter / Retriever 负责发现候选，Index Layer 只提供检索信号；最终 Bundle 准入、来源层级、去重、多样性和诊断由 Personal Context Layer 内的 BundleAssembler 执行。
 - Context Bundle 按来源优先级组装：Canonical Fact > Memory > 当前任务相关 Source Reference > 当前任务生成的 Knowledge Candidate；stale / missing / revoked / deleted 来源只进入 excluded_sources / freshness_report，不进入可用上下文。
 - Canonical Fact 进入 Bundle 前必须通过 `valid + active + current-supported` 准入检查；失效来源触发 Fact Review 和 tombstone 级联。Source Reference 可以是 SourceRevision，也可以是 Manual Input record / extraction。
+- RumorClaim 属于未验证线索契约，不新增独立数据层。它位于 source material 与 Knowledge Candidate 之间，默认不进入普通 Bundle；明确请求未验证线索时只能作为 `lead`。
+- RumorClaim 不直接写 Graph Layer。第一版只保存 entity_mentions / relation_mentions，确认或策略接受后才进入正式 Entity / Relation / Canonical Fact。

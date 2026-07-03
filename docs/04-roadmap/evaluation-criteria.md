@@ -1,7 +1,7 @@
 # Evaluation Criteria
 
 状态：draft
-最后更新：2026-06-30
+最后更新：2026-07-03
 职责边界：定义 LifeMesh 每个阶段如何判断“做得对”，避免只按功能数量推进。
 
 ## 基础评估维度
@@ -47,6 +47,7 @@
 - 配套 skill 存在，能指导 agent 调用 CLI 并按 `evidence_role` 消费 Bundle。
 - CLI 契约存在（`cli-contract.md`）：`bundle` 读 + Phase 1 后续 Manual Input `input add/search/list/show/update/revoke/delete/promote` + 传统 `fact add`/`task add`/`remember`/`candidate add` 写。
 - agent 自动捕获只能用于非高敏信息并进入 `auto_captured` Manual Input，必须透明说明；agent 推断不得直接 `fact add` 或自动 promote，只能走 candidate / auto_captured → 用户确认。
+- RumorClaim 本地 CLI MVP 存在时，必须明确它只保存结构化 claim/mentions/source envelope；未验证线索默认不进入普通 Bundle，显式包含时只能作为 `lead`。
 - candidate 确认按 type 升级：`fact`→Canonical Fact、`task`→Task、`preference`/`relationship`/`decision`→Memory。
 - 低风险事实可策略自动接受；普通回答不被候选确认阻塞。
 - 能产出 Knowledge Candidate，但不会在未确认前写入 Canonical Store 或 Memory。
@@ -77,6 +78,15 @@ Phase 1 后续 Manual Input milestone 通过条件：
 - `active` input 只有 strong 命中可作为 raw；weak 语义近邻和 `auto_captured` input 最多作为 lead；`Sensitive` 默认不进入普通 Bundle。
 - promote 只创建 inbox-derived 最小 Task/Event/Memory/Canonical Fact/Candidate 对象；系统日历、提醒事项和外部任务应用同步不属于该 milestone。
 - revoke/delete 后相关 input、extraction、embedding 和派生对象不再进入新 Bundle，依赖事实进入复核或停止使用。
+
+Phase 1 后续 RumorClaim milestone 通过条件：
+
+- RumorClaim 不作为 Manual Input kind，也不作为独立架构层。
+- RumorClaim 默认不保存完整原始物料；只保存通过初筛的 claim、entity mentions、relation mentions 和最小 source envelope。
+- `rumor add/list/show/dismiss/expire/promote`、持久化门槛、review queue、过期策略、Bundle lead 准入和 candidate promote 路径都有测试或人工验收。
+- 每个自动 source adapter 在产出 RumorClaim 前声明 `rumor_policy`；自动 adapter 不属于当前结构化 CLI MVP。
+- 第一版不做去重/合并，不因重复出现提升可信度。
+- 与 Canonical Fact 冲突的 RumorClaim 只生成 conflict lead，不自动打开正式 Fact Review。
 
 第 4 阶段通过条件：
 

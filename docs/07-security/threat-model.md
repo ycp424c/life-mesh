@@ -1,7 +1,7 @@
 # Threat Model
 
 状态：draft
-最后更新：2026-06-29
+最后更新：2026-07-03
 职责边界：识别 LifeMesh 的主要安全威胁，并记录初始缓解策略。
 
 ## 主要威胁
@@ -18,6 +18,8 @@
 | 过期事实复用 | 依赖 stale / missing / revoked 来源的 Canonical Fact 继续进入回答 | Fact Review、tombstone、Bundle 准入检查 |
 | Agent 沉默记忆 | Agent 自动把对话内容写入 Inbox 而用户不知情 | 自动捕获后必须透明说明记录 id、kind、摘要、sensitivity 和 Bundle 可用性 |
 | 本地 VLM 误读截图 | OCR/VLM 将截图误解为事实、日程或任务 | extraction 不等于 fact；promote 需要用户确认；记录 provider/model/confidence |
+| 流言污染事实层 | 自动来源把未验证片段、截图或图片误写为事实、记忆或任务 | RumorClaim 默认只作未验证 claim；规则初筛；只能 promote 到 Knowledge Candidate |
+| 流言原始物料污染 Raw Vault | 自动保存广告、转发、第三方隐私或截图噪声 | 原始物料默认只进 temporary parsing sandbox；长期只保留最小 source envelope |
 | 本地库文件泄露 | SQLite、raw assets 或 embeddings 被未授权读取 | `~/.lifemesh` 0700，数据库和 assets 0600；后续评估加密 |
 
 ## 早期默认防线
@@ -27,6 +29,8 @@
 - Agent 只通过工具接口访问数据。
 - 写入长期记忆需要来源。
 - Agent 自动捕获只适用于非高敏信息，只进 Manual Input Inbox，不能自动 promote。
+- RumorClaim 自动处理只保存通过初筛的 claim 和 mentions，默认不保存原始物料。
+- RumorClaim 默认不进普通 Bundle；明确请求未验证线索时只能作为 `lead`。
 - Sensitive 可本地记录，但默认不进普通 Bundle。
 - embedding 和截图 VLM 默认使用本机 LM Studio，不默认远程发送。
 - 高风险动作必须确认。
@@ -40,5 +44,7 @@
 - 撤销某个数据源后，旧向量索引仍返回相关片段。
 - Source Revision stale 或 Manual Input revoked/deleted 后，旧 Canonical Fact 未进入复核而继续支撑新回答。
 - Agent 自动捕获 Sensitive 内容后，被默认 Bundle 召回。
+- RumorClaim 与 Canonical Fact 冲突后是否应升级到正式 Fact Review。
+- 自动 source adapter 的 `rumor_policy` 是否足以约束 raw retention、sensitive auto-save 和 dashboard 展示。
 - LM Studio 未启动、模型未加载或 embedding 维度变化导致索引不一致。
 - 多个 Agent 共享同一记忆导致权限混淆。

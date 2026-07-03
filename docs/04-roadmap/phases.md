@@ -1,7 +1,7 @@
 # Roadmap Phases
 
 状态：draft
-最后更新：2026-06-29
+最后更新：2026-07-03
 职责边界：定义 LifeMesh 从文档基线到可行动 Agent 的渐进路线。
 
 ## 第 0 阶段：个人数据宪法
@@ -38,6 +38,7 @@
 - 写（受限）：只读原型验收后的 Phase 1 后续 milestone 是 Manual Input Inbox + promote 闭环；`fact add` / `task add` / `remember` 与底层目标对象表保持一致；`candidate add` 用于 agent 推断待确认。
 - 手动输入：`input add/search/list/show/update/revoke/delete/promote` 接收用户或 Agent 提交的截图、日程、心情、活动、待办和备注；默认本地 embedding，截图默认通过本地 LM Studio VLM 同步 extraction；Manual Input 不使用 SourceRevision。
 - Agent 自动捕获：Agent 可自主把非高敏个人相关信息写入 `auto_captured` Inbox，但必须在回复中说明；不得自动 promote。
+- 未验证流言：ADR-0009 将文本片段、截图和图片中的可信度未知材料建模为 RumorClaim；当前已有结构化 CLI MVP。它不是 Manual Input kind，默认不进普通 Bundle，只能作为 `lead`，且只能 promote 到 Knowledge Candidate；自动 source adapter 和截图/图片自动抽取仍是后续能力。
 - agent 推断禁止直接 `fact add`，只能走 candidate → 用户 CLI 确认 → 按 type 升级（fact→Canonical Fact、task→Task、preference/relationship/decision→Memory）。
 - fact 复核与撤销：`fact review` / `fact revoke` 处理 `needs_review`、superseded、invalid、revoked 和 tombstone。
 - Skill 指导 agent 调用与 `evidence_role` 消费，使用范围是用户的所有信息。
@@ -70,6 +71,7 @@
 - 重要邮件导出
 - 家庭文档
 - 用户或 Agent 主动提交的截图、日程、心情、活动、待办和备注
+- 后续自动来源产生的未验证 RumorClaim，不默认保存原始物料
 
 ## 第 2 阶段：系统日历/任务同步与高级调度
 

@@ -1,7 +1,7 @@
 # Glossary
 
 状态：draft
-最后更新：2026-06-29
+最后更新：2026-07-03
 职责边界：统一 LifeMesh 的核心术语，避免后续文档语义漂移。
 
 | 术语 | 含义 |
@@ -20,6 +20,8 @@
 | Source Revision | 可编辑外部来源中某个条目的版本化来源引用；Vault Note Revision 是它在 Obsidian 场景下的特例。 |
 | Source Reference | 支撑 Context Slice、Knowledge Candidate 或 Canonical Fact 的来源引用总称；可以是 Source Revision，也可以是 Manual Input record / extraction。 |
 | Manual Input | 用户或 Agent 主动提交的截图、日程、心情、活动、待办或备注；不使用 SourceRevision，以 input record、content_hash、状态和 audit event 表达来源身份。 |
+| RumorClaim | 从可信度未知的文字片段、截图或图片中抽取出的未验证 claim；不是 Manual Input kind，也不是 Knowledge Candidate，只有通过初筛和规则门槛后才可 promote 到 Knowledge Candidate。 |
+| Source Envelope | RumorClaim 等轻量派生材料的最小来源外壳，记录 source adapter、捕获时间、可选 material fingerprint 和 raw retention，不默认保存完整原始物料。 |
 | Personal Context Layer | 将个人数据源转成任务级、授权内、可追溯上下文的 source-neutral 层；第一阶段要验证的核心能力。 |
 | Context Slice | 为某个任务选出的最小上下文单元，携带来源版本、引用状态、敏感级别和新鲜度。 |
 | Context Bundle | 在特定权限边界下，为某个 Agent 任务组装的一组 Context Slice。 |

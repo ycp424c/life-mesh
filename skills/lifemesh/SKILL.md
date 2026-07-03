@@ -22,7 +22,7 @@ Current local config includes:
 - `obsidian_vault`: `/Users/justynchen/Documents/docs/obsidian-default`
 - `lmstudio_base_url`: `http://localhost:1234/v1`
 - `embedding_model`: `text-embedding-qwen3-embedding-0.6b`
-- `vlm_model`: `qwen/qwen3-vl-8b`
+- `vlm_model`: `ornith-1.0-9b`
 - `sqlite_vec_extension`: `/Users/justynchen/.lifemesh/extensions/sqlite-vec/0.1.9/vec0.dylib`
 
 The Codex terminal should load Homebrew from `~/.zshenv`, so `python3` should be `/opt/homebrew/bin/python3`. If sqlite-vec reports `enable_load_extension` is missing, run `source ~/.zshenv` or prefix the command with `PATH=/opt/homebrew/bin:$PATH`.
@@ -51,6 +51,19 @@ It also supports Manual Input as a local inbox and retrieval source:
 ```
 
 Manual Input is backed by `~/.lifemesh/lifemesh.db`, SQLite FTS, sqlite-vec, local LM Studio embeddings, and local LM Studio VLM extraction for screenshots.
+
+RumorClaim / UnverifiedClaim has a structured local CLI MVP:
+
+```bash
+/Users/justynchen/Documents/code/life-mesh/bin/lifemesh rumor add --claim-text "..." --claim-type factual_claim --user-relevance medium --impact medium
+/Users/justynchen/Documents/code/life-mesh/bin/lifemesh rumor list
+/Users/justynchen/Documents/code/life-mesh/bin/lifemesh rumor show <rumor-claim-id>
+/Users/justynchen/Documents/code/life-mesh/bin/lifemesh rumor dismiss <rumor-claim-id>
+/Users/justynchen/Documents/code/life-mesh/bin/lifemesh rumor promote <rumor-claim-id> --to candidate --statement "..." --type fact
+/Users/justynchen/Documents/code/life-mesh/bin/lifemesh bundle "<task>" --source all --include-unverified --out /tmp/lifemesh-bundle.json
+```
+
+This CLI stores only structured claim fields, mentions, minimal source envelope, status, and audit events. It does not ingest raw rumor material or run automatic source adapters yet.
 
 ## Quick Checks
 
@@ -98,11 +111,14 @@ If LM Studio is stopped, start it:
 - Do not treat `context` or `lead` slices as facts.
 - When a `lead` came from `auto_captured` Manual Input, explicitly say it is unreviewed.
 - When a Manual Input slice has `retrieval.match_status: "weak"`, describe it as a weakly related lead only; do not call it an exact hit or use it as evidence.
+- If a Bundle includes RumorClaim / UnverifiedClaim content, treat it only as `lead`, explicitly mark it unverified, and never use it as factual evidence.
 - Do not print raw bundle content unless the user asks; summarize findings and cite provenance.
 
 ## Boundaries
 
 - Do not call write-side commands unless the CLI supports them in the current checkout.
+- Do not use `rumor` commands to store raw material. They require already-extracted structured claims and must not be treated as fact storage.
+- Do not turn unverified rumor material directly into facts, memories, tasks, events, or external actions.
 - Do not promote or revoke records unless the user explicitly asks.
 - Do not use stale, missing, revoked, or deleted sources as evidence.
 - Do not hide uncertainty: if a bundle has no relevant slices, say that LifeMesh did not find source-backed context.

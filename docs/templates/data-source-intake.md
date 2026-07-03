@@ -30,6 +30,20 @@
 - 是否允许进入长期记忆：
 - 是否允许进入模型上下文：
 
+## Rumor Policy
+
+如果该 source adapter 可能产出可信度未知的片段、截图或图片线索，必须填写：
+
+- 是否允许产出 RumorClaim：
+- 支持的 material types：text / screenshot / image
+- 默认 sensitivity：
+- raw retention：none / temporary / user_saved
+- 默认 relevance scope：
+- 是否允许 sensitive auto-save：
+- 默认过期时间：
+- 是否允许 dashboard 摘要显示内容：
+- 是否允许自动 promote 到 Knowledge Candidate：
+
 ## Permissions
 
 - 默认可读主体：

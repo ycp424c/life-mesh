@@ -395,7 +395,8 @@ main {
   gap: 24px;
 }
 
-.planning-section > article {
+.planning-section > article,
+.rumor-section {
   border: 2px solid var(--ink);
   background: rgba(255, 250, 240, 0.82);
   box-shadow: var(--shadow);
@@ -742,6 +743,71 @@ main {
   line-height: 1.35;
 }
 
+.rumor-review {
+  display: grid;
+  gap: 14px;
+}
+
+.rumor-summary {
+  border: 2px solid var(--ink);
+  background: var(--ink);
+  color: var(--white);
+  padding: 16px;
+}
+
+.rumor-summary strong {
+  display: block;
+  margin-bottom: 8px;
+  font-family: "Iowan Old Style", Georgia, serif;
+  font-size: 24px;
+}
+
+.rumor-summary p {
+  color: rgba(255, 250, 240, 0.82);
+  line-height: 1.5;
+}
+
+.rumor-grid,
+.rumor-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.rumor-card,
+.rumor-stat {
+  border: 1px solid var(--line);
+  background: var(--white);
+  padding: 14px;
+}
+
+.rumor-card p {
+  color: #3e3b35;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.rumor-stat {
+  min-height: 132px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.rumor-stat span,
+.rumor-stat small {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.rumor-stat strong {
+  margin: 10px 0;
+  font-family: "Iowan Old Style", Georgia, serif;
+  font-size: 28px;
+  line-height: 1;
+}
+
 .severity-high em {
   color: var(--white);
   background: var(--red);
@@ -801,7 +867,9 @@ main {
   .split-section,
   .split-section.bottom,
   .planning-section,
-  .sync-section {
+  .sync-section,
+  .rumor-grid,
+  .rumor-stats {
     grid-template-columns: 1fr;
   }
 
@@ -835,7 +903,9 @@ main {
   .feedback-loop,
   .feedback-loop ul,
   .plan-grid,
-  .sync-checklist {
+  .sync-checklist,
+  .rumor-grid,
+  .rumor-stats {
     grid-template-columns: 1fr;
   }
 
@@ -845,6 +915,7 @@ main {
   .docs-panel,
   .risk-panel,
   .decision-panel,
+  .rumor-section,
   .sync-section {
     padding: 18px;
   }

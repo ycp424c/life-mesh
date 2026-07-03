@@ -1,7 +1,7 @@
 # Architecture Decision Records
 
 状态：active
-最后更新：2026-06-29
+最后更新：2026-07-03
 职责边界：保存 LifeMesh 的重要产品、架构、数据和治理决策。
 
 ## 什么时候写 ADR
@@ -27,3 +27,4 @@
 - [ADR-0006 Context Bundle as Artifact, Not Server](ADR-0006-bundle-as-artifact-not-server.md)
 - [ADR-0007 Canonical Fact Review And Revocation](ADR-0007-canonical-fact-review-and-revocation.md)
 - [ADR-0008 Manual Input Inbox With Local Retrieval](ADR-0008-manual-input-inbox-local-retrieval.md)
+- [ADR-0009 Unverified Rumor Claims](ADR-0009-unverified-rumor-claims.md)
