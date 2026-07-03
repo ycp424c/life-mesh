@@ -60,6 +60,7 @@ RumorClaim / UnverifiedClaim has a structured local CLI MVP:
 /Users/justynchen/Documents/code/life-mesh/bin/lifemesh rumor show <rumor-claim-id>
 /Users/justynchen/Documents/code/life-mesh/bin/lifemesh rumor dismiss <rumor-claim-id>
 /Users/justynchen/Documents/code/life-mesh/bin/lifemesh rumor promote <rumor-claim-id> --to candidate --statement "..." --type fact
+/Users/justynchen/Documents/code/life-mesh/bin/lifemesh bundle "<task>" --source rumor --out /tmp/lifemesh-bundle.json
 /Users/justynchen/Documents/code/life-mesh/bin/lifemesh bundle "<task>" --source all --include-unverified --out /tmp/lifemesh-bundle.json
 ```
 
@@ -98,6 +99,15 @@ If LM Studio is stopped, start it:
 - Agent must not auto-promote any record to Task, Event, Memory, Canonical Fact, or Knowledge Candidate.
 - Promote requires explicit user confirmation and explicit target fields.
 - Agent must not auto-capture clearly sensitive information. User-explicit Sensitive information may be captured locally, but must be marked `Sensitive` and is excluded from normal Bundle use unless the user explicitly authorizes that sensitivity cap.
+
+## RumorClaim Rules
+
+- `rumor add` requires explicit `--user-relevance` and `--impact`; do not omit the triage fields.
+- If credibility fields are not supplied, the CLI starts from `evidence_state=unknown` and `assessment=unverified`.
+- RumorClaim is never factual evidence. It can enter Bundle only as an unverified `lead` via `--source rumor` or `--source all --include-unverified`.
+- `evidence_state=contradicted` must use `assessment=contradicted`; contradicted claims are excluded from usable Bundle slices.
+- Expired, dismissed, Sensitive-over-cap, stale, missing, revoked, or deleted material must not be used as evidence.
+- `rumor promote --to candidate` currently creates a local `rumor_candidate_links` handoff and marks the claim `candidate_created`; it is not a complete Candidate inbox lifecycle.
 
 ## How To Consume The Bundle
 
