@@ -1,7 +1,7 @@
 # Obsidian Retrieval Sample
 
 状态：draft
-最后更新：2026-06-30
+最后更新：2026-07-09
 职责边界：用真实 vault 数据定义第 1 阶段 Obsidian 检索的可验收样例，验证 `cli-contract.md` 的 `bundle` 命令、JSON Bundle schema 和 Citation Status 链路。
 
 ## 定位
@@ -82,6 +82,32 @@ agent 必须按 `evidence_role` 消费：事实回答只用 `raw`，并优先展
 - 同一任务的 Bundle 里，s1/s2 的 `citation_status` 变成 `stale`，并进 `freshness_report`，`note` 提示"原文已修改，建议基于当前版本复核"。
 - agent 回答**不**用旧内容当事实，而是提示"来源已变更，建议基于当前版本重新生成"，并提供重新生成动作。
 - 新问题不得命中 stale revision。
+
+## 2026-07-09 手工验收记录
+
+命令：
+
+```bash
+/Users/justynchen/Documents/code/life-mesh/bin/lifemesh bundle "AI 对开源生态有什么结构性冲击？" --source obsidian --out /tmp/lifemesh-q20-bundle-2026-07-09.json
+```
+
+结果：
+
+- `schema_version=1`，`permission_scope.allowed_sources=["obsidian"]`，`include_unverified=false`。
+- 返回 20 个 `raw/current` slices，`excluded_sources` 返回 6 个默认排除目录，`freshness_report=[]`。
+- 第 1 个 slice 来自专题归档页 `归档/正在腐烂的开源世界：从理想主义的狂欢到AI时代的公地悲剧.md` 的 `## AI的冲击`，说明当前 vault 已有比 `hot.md` 更专门的来源。
+- `hot.md` 仍作为第 2 个 slice 返回，citation label 为 `hot.md › ## Active Threads (L16-L22) · citation_status: current`。
+- `--source all` 对同一 Q20 问题没有选入 Manual Input candidates，因此本轮只验证不会把 Manual Input weak lead 当成事实；独立 weak lead 展示仍需另选 Manual Input 真实任务样例。
+
+Source-Backed Answer 验收样例：
+
+> AI 对开源生态的结构性冲击不是“写代码更快”本身，而是 AI 在开发者和开源项目之间形成中间层：使用量上升时，文档访问、bug 报告、社区互动和维护者回报反而下降，维护成本与噪音负担继续增加。回答应引用 `归档/正在腐烂的开源世界：从理想主义的狂欢到AI时代的公地悲剧.md › ## AI的冲击 (L71-L94) · citation_status: current` 和 `hot.md › ## Active Threads (L16-L22) · citation_status: current`，不能只写“根据你的笔记”。
+
+stale / missing 验收使用真实 `hot.md` 的 `/tmp` 临时副本完成，没有修改真实 vault：
+
+- stale：修改临时副本后，旧 revision 进入 `freshness_report`，`citation_status=stale`，同时新 slice 使用 current revision。
+- missing：删除临时副本后，Bundle 返回 0 个 slices，旧 revision 进入 `freshness_report`，`citation_status=missing`。
+- stale 和 missing 来源没有进入可用事实证据；agent 应提示来源已变更或不可用，并建议基于当前来源重新生成。
 
 ## 验收标准
 

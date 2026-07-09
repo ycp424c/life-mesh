@@ -1,7 +1,7 @@
 # Phase 1 Delivery Plan
 
 状态：active
-最后更新：2026-07-03
+最后更新：2026-07-09
 职责边界：定义第 1 阶段 Personal Context Layer 的落地范围、验收方式，以及验收通过后的下一步。不替代 `phases.md`、`evaluation-criteria.md` 或 ADR。
 
 ## 定位
@@ -27,7 +27,7 @@ Manual Input 之后的 Phase 1 follow-on milestone 是 RumorClaim / UnverifiedCl
 
 ## 当前实现状态
 
-截至 2026-07-03，第 1 阶段本地 CLI 原型已开始落地：
+截至 2026-07-09，第 1 阶段本地 CLI 原型已开始落地：
 
 - `bin/lifemesh bundle` 可生成 JSON Context Bundle。
 - `lifemesh/` 包含 Obsidian 只读扫描、Source Revision、section 提取、简单检索排序、sensitivity cap 过滤、stale / missing state 检测。
@@ -39,6 +39,7 @@ Manual Input 之后的 Phase 1 follow-on milestone 是 RumorClaim / UnverifiedCl
 - 2026-07-03 本机运行时截图 OCR / VLM 模型配置已切换为 `ornith-1.0-9b`；历史验收记录仍保留 2026-06-30 使用的 `qwen/qwen3-vl-8b`。
 - 2026-06-30 已定义并实现第一版 Source-Backed Answer 引用字段和 Manual Input 检索命中策略：Bundle slice 带 `citation`；Obsidian 使用 `obsidian-note-line-range-v1`，Manual Input 使用 `manual-input-v1`；Manual Input `strong` 命中可作为 `raw`，`weak` 向量近邻只作为 `lead`。
 - 2026-07-03 已实现 RumorClaim 本地结构化 CLI MVP：`rumor add/list/show/keep/dismiss/expire/promote`、持久化门槛、review queue、最小 source envelope、审计事件、`bundle --source rumor` 和 `bundle --source all --include-unverified` 的 lead-only 准入。
+- 2026-07-09 已完成 Q20 真实 vault 手工验收记录：`bundle --source obsidian` 返回 20 个 `raw/current` slices，命中专题归档页和 `hot.md`，保留 `excluded_sources` / `freshness_report` 字段；基于真实 `hot.md` 临时副本验证 stale 和 missing 均只进入 `freshness_report`，新 Bundle slice 使用 current revision。`--source all` 对 Q20 未选入 Manual Input，因此这次只验证不会误用 weak lead；独立 Manual Input weak lead 真实任务样例仍可后续补充。
 
 仍未完成：
 
@@ -174,7 +175,7 @@ ADR-0009 对应第 1 阶段后续 milestone，不覆盖只读原型或 Manual In
 
 1. **收紧来源引用展示**
    - 首版已完成：Bundle slice 输出 `citation`，覆盖 Obsidian `note_path`、heading、line range、citation_status，以及 Manual Input `input_id`、kind、status、content_hash 摘要、citation_status。
-   - 后续仍需在真实回答样例中验证 stale / missing 提示和重新生成动作的用户体验。
+   - 2026-07-09 已用 Q20 真实 vault 样例验证 Obsidian `citation.label`、stale 和 missing 状态报告；后续如需 UI 级体验，仍需在回答渲染层补“基于当前来源重新生成”的交互。
 
 2. **Candidate inbox 最小实现**
    - 先支持 `candidate add/list/show/discard`，再支持 confirm / merge / edit。

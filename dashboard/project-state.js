@@ -1,29 +1,28 @@
 window.LIFEMESH_PROJECT_STATE = {
-  lastUpdated: "2026-07-03",
+  lastUpdated: "2026-07-09",
   state: "Personal Context Layer",
   currentPhase: "第 1 阶段：Personal Context Layer",
-  overallProgress: 40,
+  overallProgress: 42,
   summary:
-    "LifeMesh 第 1 阶段已进入本地 CLI 原型：只读 Obsidian bundle、Manual Input Inbox、source-neutral BundleAssembler 和 RumorClaim 本地结构化 CLI MVP 已落地；Manual Input 已通过首次真实本机验收，并已加入 citation 字段与强/弱检索命中策略。RumorClaim 当前只保存结构化 claim、mentions 和最小 source envelope，自动 source adapter 与 review UI 尚未实现。",
+    "LifeMesh 第 1 阶段已进入本地 CLI 原型：只读 Obsidian bundle、Manual Input Inbox、source-neutral BundleAssembler 和 RumorClaim 本地结构化 CLI MVP 已落地；Manual Input 已通过首次真实本机验收，并已加入 citation 字段与强/弱检索命中策略。2026-07-09 已完成 Q20 真实 vault 手工验收，确认 Obsidian citation label、stale 和 missing 状态链路可用。RumorClaim 当前只保存结构化 claim、mentions 和最小 source envelope，自动 source adapter 与 review UI 尚未实现。",
   metrics: [
     { label: "文档基线", value: "active", detail: "Manual Input 实现已同步", tone: "green" },
     { label: "Web 看板", value: "active", detail: "静态页面，无构建链", tone: "blue" },
-    { label: "Context Layer", value: "phase 1", detail: "BundleAssembler 已落地", tone: "blue" },
+    { label: "Context Layer", value: "phase 1", detail: "Q20 真实验收已记录", tone: "blue" },
     { label: "关键风险", value: "13", detail: "含自动捕获、本地模型和流言污染风险", tone: "red" }
   ],
   work: [
     {
       lane: "Now",
       items: [
-        "用真实 vault 完成 Q20 手工验收记录",
-        "用真实回答样例验证 citation label 和 weak lead 展示",
-        "验证 stale / missing 引用提示和重新生成动作"
+        "实现 Candidate inbox 最小 add/list/show/discard",
+        "补 Manual Input weak lead 的独立真实任务样例",
+        "定义 candidate confirm / merge / edit 的后续边界"
       ]
     },
     {
       lane: "Next",
       items: [
-        "完善 Candidate inbox 批量确认体验",
         "评估第一个自动 RumorClaim source adapter 和 rumor_policy",
         "补 Fact Review 对 Manual Input tombstone 的级联验收",
         "补 Manual Input 长期性能边界和真实任务场景验收"
@@ -60,8 +59,8 @@ window.LIFEMESH_PROJECT_STATE = {
       id: "1",
       title: "Personal Context Layer",
       status: "active",
-      progress: 82,
-      focus: "只读 bundle 原型、Manual Input 本地写入检索、source-neutral BundleAssembler、RumorClaim 结构化 CLI MVP",
+      progress: 84,
+      focus: "只读 bundle 原型、Q20 真实验收、Manual Input 本地写入检索、source-neutral BundleAssembler、RumorClaim 结构化 CLI MVP",
       docs: ["phase-1-delivery-plan.md", "cli-contract.md", "ADR-0005", "ADR-0006", "ADR-0008", "ADR-0009"]
     },
     {
@@ -222,9 +221,9 @@ window.LIFEMESH_PROJECT_STATE = {
   docs: [
     { name: "Vision", path: "docs/00-vision/", status: "draft", signal: "方向已建立" },
     { name: "Governance", path: "docs/01-governance/", status: "draft", signal: "需细化删除和授权" },
-    { name: "Domain", path: "docs/02-domain/", status: "draft", signal: "RumorClaim 结构化 CLI MVP 已补充" },
+    { name: "Domain", path: "docs/02-domain/", status: "draft", signal: "Q20 真实验收记录已补充" },
     { name: "Architecture", path: "docs/03-architecture/", status: "draft", signal: "BundleAssembler 与 Rumor lead 准入已同步" },
-    { name: "Roadmap", path: "docs/04-roadmap/", status: "active", signal: "RumorClaim follow-on MVP 已落地" },
+    { name: "Roadmap", path: "docs/04-roadmap/", status: "active", signal: "下一步转向 Candidate inbox" },
     { name: "ADR", path: "docs/05-decisions/", status: "active", signal: "9 条 accepted" },
     { name: "Security", path: "docs/07-security/", status: "draft", signal: "补充自动捕获、本地模型和流言污染风险" },
     { name: "Dashboard", path: "docs/08-dashboard/", status: "active", signal: "同步规则已落地" }
@@ -358,14 +357,14 @@ window.LIFEMESH_PROJECT_STATE = {
       phase: "第 1 阶段",
       sensitivity: "Private",
       status: "prototype",
-      next: "完成 Q20 真实 vault 手工验收记录"
+      next: "保持 Q20 验收样例作为回归；下一步转向 Candidate inbox"
     },
     {
       name: "Vault Note",
       phase: "第 1 阶段",
       sensitivity: "Private",
       status: "prototype",
-      next: "验证 stale / missing 引用提示"
+      next: "后续回答渲染层补基于当前来源重新生成动作"
     },
     {
       name: "Manual Input",
@@ -510,7 +509,11 @@ window.LIFEMESH_PROJECT_STATE = {
   openQuestions: [
     {
       title: "stale / missing 引用交互",
-      detail: "首版 citation label 已落地；仍需用真实回答样例验证来源变更后的提示、复核和重新生成动作。"
+      detail: "2026-07-09 已用真实 hot.md 的临时副本验证 CLI stale/missing freshness_report；UI 或回答渲染层仍需实现重新生成动作。"
+    },
+    {
+      title: "Manual Input weak lead 真实样例",
+      detail: "Q20 的 --source all 未选入 Manual Input candidates；weak lead 不作为事实的规则已有本机验收，仍可补一个独立真实任务样例。"
     },
     {
       title: "Obsidian 白名单目录",
@@ -534,6 +537,11 @@ window.LIFEMESH_PROJECT_STATE = {
     }
   ],
   recentChanges: [
+    {
+      date: "2026-07-09",
+      title: "完成 Q20 真实 vault 手工验收记录",
+      detail: "运行 lifemesh bundle Q20 真实 vault 样例，返回 20 个 raw/current slices，命中专题归档页和 hot.md，保留 excluded_sources/freshness_report 字段；用真实 hot.md 的 /tmp 临时副本验证 stale 和 missing 只进入 freshness_report，新回答只能使用 current revision。"
+    },
     {
       date: "2026-07-09",
       title: "新增 RumorClaim 已检视保留状态",
