@@ -62,6 +62,6 @@
 - 看板展示的是当前事实，不展示未确认愿望。
 - 长期事实以 `docs/**` 和 ADR 为准；看板只是可视化入口。
 - 不确定状态必须标记为 `Needs review`。
-- 静态页无法直接读取本机 SQLite；RumorClaim 队列数量、高影响 claim 摘要和 expired/dismissed 统计在没有只读同步脚本前必须标记为 `Needs live query`，不得手写猜测数量。
+- 静态页无法直接读取本机 SQLite；RumorClaim 队列数量、高影响 claim 摘要和 reviewed_parked/expired/dismissed 统计在没有只读同步脚本前必须标记为 `Needs live query`，不得手写猜测数量。
 - 页面内容变化应优先改 `dashboard/project-state.js`，结构变化才改 HTML/CSS/JS。
 - 每次交付前必须确认看板和文档没有冲突。

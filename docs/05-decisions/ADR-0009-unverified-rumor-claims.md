@@ -135,13 +135,14 @@ RumorClaim 使用薄状态机：
 | 状态 | 含义 |
 |---|---|
 | `parked` | 通过最低初筛，保留为未验证线索 |
+| `reviewed_parked` | 已人工检视并决定继续保留为未验证线索；默认复审列表跳过，但显式请求 rumor lead 时仍可进入 Bundle |
 | `candidate_created` | 已生成 Knowledge Candidate，RumorClaim 只作来源线索 |
 | `dismissed` | 用户或规则判定无价值，保留最小 tombstone 或统计 |
 | `expired` | 到期未复核，默认不再检索或进入 Bundle |
 
 默认过期：
 
-- 普通 parked claim：60 天
+- 普通 parked / reviewed_parked claim：60 天
 - 高影响或用户订阅主题：180 天
 - `candidate_created`：当前 MVP 仅保留本地 candidate link；完整 Candidate inbox 落地后跟随 Knowledge Candidate 生命周期
 - 用户显式 pin/save：不自动过期，但仍是未验证线索
@@ -223,7 +224,7 @@ RumorClaim 默认不进入普通 Context Bundle。
 
 ## Implementation Notes And Follow-ups
 
-- 本 ADR 已有本地结构化 CLI MVP：`rumor add/list/show/dismiss/promote/expire`、Bundle lead 准入和 candidate promote 边界。
+- 本 ADR 已有本地结构化 CLI MVP：`rumor add/list/show/keep/dismiss/promote/expire`、Bundle lead 准入和 candidate promote 边界。
 - 后续自动来源实现前仍必须先声明对应 `rumor_policy`。
 - Dashboard 只读展示队列摘要、统计和风险状态，不写回。
 - 第 2 阶段以后再评估外部通知、自动 fact-check、系统提醒、任务或日历同步。

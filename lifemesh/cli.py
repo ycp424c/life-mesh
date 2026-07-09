@@ -200,6 +200,10 @@ def _add_rumor_parsers(rumor_subparsers: argparse._SubParsersAction[argparse.Arg
     show_parser = rumor_subparsers.add_parser("show", help="Show one RumorClaim")
     show_parser.add_argument("rumor_claim_id")
 
+    keep_parser = rumor_subparsers.add_parser("keep", help="Mark a parked RumorClaim as reviewed and kept")
+    keep_parser.add_argument("rumor_claim_id")
+    keep_parser.add_argument("--reason")
+
     dismiss_parser = rumor_subparsers.add_parser("dismiss", help="Dismiss a parked RumorClaim")
     dismiss_parser.add_argument("rumor_claim_id")
     dismiss_parser.add_argument("--reason")
@@ -429,6 +433,8 @@ def _handle_rumor(args: argparse.Namespace) -> int:
         )
     elif command == "show":
         result = store.show(args.rumor_claim_id)
+    elif command == "keep":
+        result = store.keep(args.rumor_claim_id, reason=args.reason)
     elif command == "dismiss":
         result = store.dismiss(args.rumor_claim_id, reason=args.reason)
     elif command == "expire":

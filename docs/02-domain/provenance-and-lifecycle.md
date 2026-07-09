@@ -96,13 +96,14 @@ RumorClaim 处理可信度未知的文字片段、截图和图片材料。它不
 | 状态 | 触发 | 默认行为 |
 |---|---|---|
 | parked | 通过最低初筛 | 可在 rumor review 中查看；普通 Bundle 默认不含 |
+| reviewed_parked | 人工检视后决定继续保留 parked 线索 | 默认复审列表跳过；明确请求未验证线索时仍可作为 lead 进入 Bundle |
 | candidate_created | 用户或规则把 claim promote 到 Knowledge Candidate | 当前 MVP 只保留本地 candidate link；完整 Candidate inbox 落地后跟随 Candidate 生命周期 |
 | dismissed | 用户或规则判定无价值 | 不检索，不进 Bundle，仅保留最小 tombstone / 统计 |
 | expired | 到期未复核 | 不检索，不进 Bundle，默认只保留审计摘要 |
 
 默认过期策略：
 
-- 普通 parked claim：60 天。
+- 普通 parked / reviewed_parked claim：60 天。
 - 高影响或用户订阅主题：180 天。
 - candidate_created：当前 MVP 只保留本地 candidate link；完整 Candidate inbox 落地后跟随 Knowledge Candidate 生命周期。
 - 用户显式 pin/save：不自动过期，但仍是未验证线索。

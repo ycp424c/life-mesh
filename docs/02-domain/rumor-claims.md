@@ -1,7 +1,7 @@
 # Rumor Claims
 
 状态：draft
-最后更新：2026-07-03
+最后更新：2026-07-09
 职责边界：定义 LifeMesh 如何处理可信度未知的自动来源材料，尤其是文字片段、截图和图片中抽取出的未验证 claim。当前覆盖本地结构化 CLI MVP；不定义自动 source adapter、外部事实核查，不把原始流言材料默认长期保存。
 
 ## 定位
@@ -13,7 +13,7 @@ incoming material
   -> temporary parsing sandbox
   -> RumorClaim extraction
   -> relevance / impact / credibility triage
-  -> parked / dismissed / expired
+  -> parked / reviewed_parked / dismissed / expired
   -> optional Knowledge Candidate
 ```
 
@@ -135,13 +135,14 @@ user_relevance >= medium OR impact >= high
 | 状态 | 说明 |
 |---|---|
 | `parked` | 通过最低初筛，保留为未验证线索 |
+| `reviewed_parked` | 已人工检视并决定继续保留为未验证线索；默认复审列表跳过，但显式请求 rumor lead 时仍可进入 Bundle |
 | `candidate_created` | 已生成 Knowledge Candidate |
 | `dismissed` | 用户或规则判定无价值 |
 | `expired` | 到期未复核，默认不再检索或进入 Bundle |
 
 默认过期：
 
-- 普通 `parked`：60 天
+- 普通 `parked` / `reviewed_parked`：60 天
 - 高影响或用户订阅主题：180 天
 - `candidate_created`：当前 MVP 仅保留本地 candidate link；完整 Candidate inbox 落地后跟随 Knowledge Candidate 生命周期
 - 用户显式 pin/save：不自动过期，但仍是未验证线索
@@ -217,9 +218,10 @@ lifemesh rumor add \
 
 lifemesh rumor list \
   [--queue general_review|conflict_review|sensitive_review] \
-  [--status parked|candidate_created|dismissed|expired]
+  [--status parked|reviewed_parked|candidate_created|dismissed|expired]
 
 lifemesh rumor show <rumor-claim-id>
+lifemesh rumor keep <rumor-claim-id> [--reason "..."]
 lifemesh rumor dismiss <rumor-claim-id>
 lifemesh rumor promote <rumor-claim-id> --to candidate
 lifemesh rumor expire <rumor-claim-id>

@@ -32,7 +32,9 @@ EXTRACTION_CONFIDENCE_LEVELS = {"low", "medium", "high"}
 EVIDENCE_STATES = {"unknown", "single_source", "corroborated", "contradicted"}
 CLAIM_QUALITIES = {"vague", "specific", "verifiable"}
 ASSESSMENTS = {"unverified", "weak", "plausible", "supported", "contradicted"}
-RUMOR_STATUSES = {"parked", "candidate_created", "dismissed", "expired"}
+RUMOR_STATUSES = {"parked", "reviewed_parked", "candidate_created", "dismissed", "expired"}
+DEFAULT_LIST_STATUSES = {"parked", "candidate_created"}
+BUNDLE_ELIGIBLE_STATUSES = {"parked", "reviewed_parked"}
 REVIEW_QUEUES = {"general_review", "conflict_review", "sensitive_review"}
 RAW_RETENTION_VALUES = {"none", "temporary", "user_saved"}
 CANDIDATE_TYPES = {"fact", "preference", "relationship", "task", "decision"}
@@ -175,7 +177,7 @@ class RumorClaimStore:
             query += " AND status = ?"
             params.append(status)
         else:
-            query += " AND status IN ('parked', 'candidate_created')"
+            query += _status_in_clause(DEFAULT_LIST_STATUSES)
         if queue:
             query += " AND review_queue = ?"
             params.append(queue)
@@ -216,6 +218,25 @@ class RumorClaimStore:
 
     def expire(self, rumor_claim_id: str) -> dict[str, Any]:
         return self._set_terminal_status(rumor_claim_id, "expired", "expired")
+
+    def keep(self, rumor_claim_id: str, *, reason: str | None = None) -> dict[str, Any]:
+        now = _utc_now()
+        review_reason = reason or "reviewed and kept parked"
+        with self._connect() as con:
+            claim = _row_to_claim(self._require_existing(con, rumor_claim_id))
+            if claim["status"] in {"candidate_created", "dismissed", "expired"}:
+                raise RumorClaimError(f"Cannot keep {claim['status']} RumorClaim: {rumor_claim_id}")
+            con.execute(
+                "UPDATE rumor_claims SET status = 'reviewed_parked', updated_at = ? WHERE rumor_claim_id = ?",
+                (now, rumor_claim_id),
+            )
+            self._audit(
+                con,
+                rumor_claim_id,
+                "keep",
+                {"status": "reviewed_parked", "reason": review_reason},
+            )
+        return self.show(rumor_claim_id)
 
     def promote(self, rumor_claim_id: str, payload: dict[str, Any]) -> dict[str, Any]:
         _validate_candidate_payload(payload)
@@ -275,7 +296,9 @@ class RumorClaimStore:
         candidates: list[ContextCandidate] = []
         excluded: list[dict[str, Any]] = []
         with self._connect() as con:
-            rows = con.execute("SELECT * FROM rumor_claims WHERE status = 'parked' ORDER BY created_at DESC").fetchall()
+            rows = con.execute(
+                f"SELECT * FROM rumor_claims WHERE {_status_condition(BUNDLE_ELIGIBLE_STATUSES)} ORDER BY created_at DESC"
+            ).fetchall()
             scored: list[tuple[float, dict[str, Any]]] = []
             for row in rows:
                 claim = _row_to_claim(row)
@@ -491,6 +514,15 @@ def _rumor_citation(claim: dict[str, Any]) -> dict[str, Any]:
 
 def _rumor_exclusion(claim: dict[str, Any], reason: str) -> dict[str, Any]:
     return {"source": SOURCE, "rumor_claim_id": claim["rumor_claim_id"], "reason": reason}
+
+
+def _status_in_clause(statuses: set[str]) -> str:
+    return f" AND {_status_condition(statuses)}"
+
+
+def _status_condition(statuses: set[str]) -> str:
+    quoted = ", ".join(f"'{status}'" for status in sorted(statuses))
+    return f"status IN ({quoted})"
 
 
 def _row_to_claim(row: sqlite3.Row | None) -> dict[str, Any]:

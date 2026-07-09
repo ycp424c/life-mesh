@@ -463,14 +463,14 @@ window.LIFEMESH_PROJECT_STATE = {
   ],
   rumorReview: {
     status: "prototype",
-    ruleVersion: "rumor-claim-v1",
+    ruleVersion: "rumor-claim-v1.1",
     summary:
       "结构化 CLI MVP 已落地：RumorClaim 默认不进普通 Bundle，显式包含时只作为未验证 lead；静态看板不直接读取本机 ~/.lifemesh/lifemesh.db，实时数量必须由后续只读同步脚本填充。",
     queues: [
       {
         name: "general_review",
         count: "Needs live query",
-        detail: "普通 parked claims；仅在 --source rumor 或 --include-unverified 时以 lead 展示。"
+        detail: "普通 parked claims；reviewed_parked 已人工检视并跳过默认复审；二者仅在 --source rumor 或 --include-unverified 时以 lead 展示。"
       },
       {
         name: "conflict_review",
@@ -490,9 +490,9 @@ window.LIFEMESH_PROJECT_STATE = {
         detail: "静态数据不得伪造 claim 内容或数量。"
       },
       {
-        label: "过期 / 丢弃",
+        label: "已检视 / 过期 / 丢弃",
         value: "Needs live query",
-        detail: "expired / dismissed 只读统计待同步脚本填充。"
+        detail: "reviewed_parked / expired / dismissed 只读统计待同步脚本填充。"
       },
       {
         label: "Promotion handoff",
@@ -503,7 +503,7 @@ window.LIFEMESH_PROJECT_STATE = {
     highImpact: [
       {
         title: "实时队列取数",
-        detail: "下一步需要只读同步命令从 lifemesh rumor list 聚合 queue count、高影响 claim 摘要、expired/dismissed 统计和规则版本。"
+        detail: "下一步需要只读同步命令从 lifemesh rumor list 聚合 queue count、高影响 claim 摘要、reviewed_parked/expired/dismissed 统计和规则版本。"
       }
     ]
   },
@@ -534,6 +534,11 @@ window.LIFEMESH_PROJECT_STATE = {
     }
   ],
   recentChanges: [
+    {
+      date: "2026-07-09",
+      title: "新增 RumorClaim 已检视保留状态",
+      detail: "新增 reviewed_parked 和 rumor keep：人工检视后仍保留为未验证 lead，但默认复审列表跳过；显式请求 rumor lead 时仍可进入 Bundle。"
+    },
     {
       date: "2026-07-03",
       title: "收紧 RumorClaim 准入、过期和看板边界",

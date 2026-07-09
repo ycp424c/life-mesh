@@ -243,6 +243,84 @@ class RumorClaimCliTest(unittest.TestCase):
             self.assertEqual(claim["candidate_links"][0]["target_type"], "candidate")
             self.assertEqual(claim["candidate_links"][0]["target_payload"]["statement"], "Supplier risk marker should be reviewed")
 
+    def test_keep_marks_claim_reviewed_without_requeueing(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            home = Path(tmp) / "home"
+            rumor_claim_id = self.add_claim(home)["rumor_claim_id"]
+
+            kept = self.run_json(["rumor", "keep", rumor_claim_id, "--reason", "human reviewed"], home)
+            default_list = self.run_json(["rumor", "list"], home)
+            reviewed_list = self.run_json(["rumor", "list", "--status", "reviewed_parked"], home)
+            bundle = self.run_json(["bundle", "supplier risk marker", "--source", "rumor"], home)
+
+            self.assertEqual(kept["status"], "reviewed_parked")
+            self.assertEqual(kept["audit_events"][-1]["action"], "keep")
+            self.assertEqual(kept["audit_events"][-1]["payload"]["reason"], "human reviewed")
+            self.assertEqual(default_list, [])
+            self.assertEqual(reviewed_list[0]["rumor_claim_id"], rumor_claim_id)
+            self.assertEqual(bundle["slices"][0]["provenance"]["rumor_claim_id"], rumor_claim_id)
+            self.assertEqual(bundle["slices"][0]["provenance"]["status"], "reviewed_parked")
+            self.assertEqual(bundle["slices"][0]["evidence_role"], "lead")
+
+    def test_keep_rejects_terminal_claims(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            home = Path(tmp) / "home"
+            dismissed_id = self.add_claim(home)["rumor_claim_id"]
+            expired_id = self.add_claim(home)["rumor_claim_id"]
+            candidate_id = self.add_claim(home)["rumor_claim_id"]
+
+            self.run_json(["rumor", "dismiss", dismissed_id], home)
+            self.run_json(["rumor", "expire", expired_id], home)
+            self.run_json(
+                [
+                    "rumor",
+                    "promote",
+                    candidate_id,
+                    "--to",
+                    "candidate",
+                    "--statement",
+                    "Supplier risk marker should be reviewed",
+                    "--type",
+                    "fact",
+                ],
+                home,
+            )
+
+            dismissed_result = self.run_cli(["rumor", "keep", dismissed_id], home)
+            expired_result = self.run_cli(["rumor", "keep", expired_id], home)
+            candidate_result = self.run_cli(["rumor", "keep", candidate_id], home)
+
+            self.assertEqual(dismissed_result.returncode, 2)
+            self.assertIn("Cannot keep dismissed", dismissed_result.stderr)
+            self.assertEqual(expired_result.returncode, 2)
+            self.assertIn("Cannot keep expired", expired_result.stderr)
+            self.assertEqual(candidate_result.returncode, 2)
+            self.assertIn("Cannot keep candidate_created", candidate_result.stderr)
+
+    def test_reviewed_parked_claim_can_still_be_promoted(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            home = Path(tmp) / "home"
+            rumor_claim_id = self.add_claim(home)["rumor_claim_id"]
+
+            self.run_json(["rumor", "keep", rumor_claim_id], home)
+            promoted = self.run_json(
+                [
+                    "rumor",
+                    "promote",
+                    rumor_claim_id,
+                    "--to",
+                    "candidate",
+                    "--statement",
+                    "Supplier risk marker should be reviewed",
+                    "--type",
+                    "fact",
+                ],
+                home,
+            )
+
+            self.assertEqual(promoted["rumor_claim"]["status"], "candidate_created")
+            self.assertEqual(promoted["rumor_claim"]["candidate_links"][0]["target_type"], "candidate")
+
     def test_bundle_all_requires_explicit_include_unverified(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             home = Path(tmp) / "home"

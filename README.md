@@ -35,7 +35,7 @@ LifeMesh 是一个面向个人的 Personal Data OS：把分散在生活、工作
 
 ## 当前状态
 
-文档基线和静态项目看板已建立。第 1 阶段已收敛为 Personal Context Layer，CLI 原型已提供 `lifemesh bundle`、Obsidian Source Adapter、source-neutral BundleAssembler、JSON Context Bundle、stale/missing 链路、agent skill，以及 Manual Input Inbox 的本地记录、语义检索、截图 VLM extraction、`--source manual-input/all` Bundle、update/revoke/delete 和 promote 到 inbox-derived 最小 task/event/memory/fact/candidate。Bundle slice 已包含 `citation` 展示字段；Manual Input 检索已区分 `strong` 证据命中和 `weak` 语义近邻，弱近邻只能作为 `lead`。RumorClaim 当前支持 `lifemesh rumor add/list/show/dismiss/expire/promote` 和 `bundle --source rumor` / `--include-unverified` 的 lead-only 准入；自动 source adapter、截图/图片自动抽取、外部事实核查和 review UI 尚未实现。
+文档基线和静态项目看板已建立。第 1 阶段已收敛为 Personal Context Layer，CLI 原型已提供 `lifemesh bundle`、Obsidian Source Adapter、source-neutral BundleAssembler、JSON Context Bundle、stale/missing 链路、agent skill，以及 Manual Input Inbox 的本地记录、语义检索、截图 VLM extraction、`--source manual-input/all` Bundle、update/revoke/delete 和 promote 到 inbox-derived 最小 task/event/memory/fact/candidate。Bundle slice 已包含 `citation` 展示字段；Manual Input 检索已区分 `strong` 证据命中和 `weak` 语义近邻，弱近邻只能作为 `lead`。RumorClaim 当前支持 `lifemesh rumor add/list/show/keep/dismiss/expire/promote` 和 `bundle --source rumor` / `--include-unverified` 的 lead-only 准入；自动 source adapter、截图/图片自动抽取、外部事实核查和 review UI 尚未实现。
 
 ## 本地 CLI 原型
 
@@ -72,6 +72,7 @@ RumorClaim 本地 MVP：
 ```bash
 bin/lifemesh rumor add --claim-text "未验证线索" --claim-type factual_claim --user-relevance medium --impact medium
 bin/lifemesh rumor list
+bin/lifemesh rumor keep <rumor-claim-id> --reason "人工检视后继续保留"
 bin/lifemesh bundle "需要未验证线索的任务" --source all --include-unverified --vault tests/fixtures/obsidian-vault
 ```
 

@@ -83,7 +83,7 @@ Phase 1 后续 RumorClaim milestone 通过条件：
 
 - RumorClaim 不作为 Manual Input kind，也不作为独立架构层。
 - RumorClaim 默认不保存完整原始物料；只保存通过初筛的 claim、entity mentions、relation mentions 和最小 source envelope。
-- `rumor add/list/show/dismiss/expire/promote`、持久化门槛、review queue、过期策略、Bundle lead 准入和 candidate promote 路径都有测试或人工验收。
+- `rumor add/list/show/keep/dismiss/expire/promote`、持久化门槛、review queue、过期策略、Bundle lead 准入和 candidate promote 路径都有测试或人工验收。
 - 每个自动 source adapter 在产出 RumorClaim 前声明 `rumor_policy`；自动 adapter 不属于当前结构化 CLI MVP。
 - 第一版不做去重/合并，不因重复出现提升可信度。
 - 与 Canonical Fact 冲突的 RumorClaim 只生成 conflict lead，不自动打开正式 Fact Review。

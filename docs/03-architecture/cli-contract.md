@@ -20,7 +20,7 @@
 - `lifemesh bundle --source all` 通过 source-neutral `BundleAssembler` 统一组装 Obsidian 与 Manual Input candidates，不拼接两个已完成 Bundle。
 - JSON Bundle 包含 `assembly_report` 诊断字段，用于解释候选、准入和选择策略。
 - Bundle slice 包含 `citation` 展示字段；Manual Input 检索结果包含 `match_status`、`match_reason`、`evidence_eligible` 和 `score_breakdown`。
-- RumorClaim / UnverifiedClaim 本地结构化 CLI MVP：`rumor add/list/show/dismiss/expire/promote`、持久化门槛、review queue、最小 source envelope、`bundle --source rumor` 和 `bundle --source all --include-unverified`。
+- RumorClaim / UnverifiedClaim 本地结构化 CLI MVP：`rumor add/list/show/keep/dismiss/expire/promote`、持久化门槛、review queue、最小 source envelope、`bundle --source rumor` 和 `bundle --source all --include-unverified`。
 
 当前未实现但已进入后续契约：
 
@@ -238,11 +238,13 @@ lifemesh rumor add \
 
 lifemesh rumor list \
   [--queue general_review|conflict_review|sensitive_review] \
-  [--status parked|candidate_created|dismissed|expired] \
+  [--status parked|reviewed_parked|candidate_created|dismissed|expired] \
   [--sensitivity-cap Private] \
   [--limit 20]
 
 lifemesh rumor show <rumor-claim-id>
+
+lifemesh rumor keep <rumor-claim-id> [--reason "..."]
 
 lifemesh rumor dismiss <rumor-claim-id> [--reason "..."]
 
@@ -261,6 +263,7 @@ lifemesh rumor expire <rumor-claim-id>
 - `user_relevance` 和 `impact` 是必填初筛字段；只有通过最低初筛的 claim 才持久化：`user_relevance >= medium OR impact >= high`。
 - `assessment` 由规则派生为主；第一版不自动联网核查。
 - 未显式提供可信度字段时，`evidence_state=unknown`，`assessment=unverified`。
+- `keep` 把人工已检视并决定继续保留的 claim 标记为 `reviewed_parked`；它不进入默认复审列表，但显式请求 RumorClaim lead 时仍可被 Bundle 检索。
 - `promote` 只允许到 Knowledge Candidate，不允许直接到 Canonical Fact、Memory、Task、Event 或外部动作。
 - 与 Canonical Fact 冲突时，只生成 conflict lead，不自动触发正式 Fact Review。
 - Dashboard 只能只读展示 RumorClaim 队列摘要和统计。

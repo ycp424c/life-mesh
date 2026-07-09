@@ -53,7 +53,7 @@
 - KnowledgeCandidate 应带有 CandidateLifecycle，用于区分本次任务临时使用、候选收件箱、持久化前确认和丢弃。
 - ManualInputRecord 是 source-neutral 的手动入口，不等同于 CanonicalFact。截图、心情和活动记录默认先作为 raw/lead/context material；只有用户明确 promote 或确认候选后，派生内容才进入目标层。
 - ManualInputRecord 第一版状态为 `active`、`auto_captured`、`promoted`、`revoked`。`auto_captured` 最多作为 lead 使用，不能当作已核实事实。
-- RumorClaim 是未验证 claim，不是 ManualInputRecord 的 kind，也不是 KnowledgeCandidate；只有通过相关性、影响和可信度初筛后，才可保留为 `parked` 线索。
+- RumorClaim 是未验证 claim，不是 ManualInputRecord 的 kind，也不是 KnowledgeCandidate；只有通过相关性、影响和可信度初筛后，才可保留为 `parked` 或人工已检视的 `reviewed_parked` 线索。
 - RumorClaim 只保存 claim、entity mentions、relation mentions 和最小 SourceEnvelope；原始文本、截图或图片默认只作为 temporary parsing sandbox 输入。
 - RumorClaim 的正式升级目标只能是 KnowledgeCandidate；不得直接创建 CanonicalFact、Memory、Task、Event 或外部动作。
 - RumorClaim 与 CanonicalFact 冲突时只生成 conflict lead，不自动修改 CanonicalFact 的 validity。
