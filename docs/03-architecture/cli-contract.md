@@ -1,7 +1,7 @@
 # CLI Contract
 
 状态：draft
-最后更新：2026-07-03
+最后更新：2026-07-09
 职责边界：定义第 1 阶段 LifeMesh CLI 的命令、JSON Bundle schema 和配套 skill 契约。实现状态以本文件的“当前实现”段落、README 和测试为准。
 
 ## 定位
@@ -20,10 +20,12 @@
 - `lifemesh bundle --source all` 通过 source-neutral `BundleAssembler` 统一组装 Obsidian 与 Manual Input candidates，不拼接两个已完成 Bundle。
 - JSON Bundle 包含 `assembly_report` 诊断字段，用于解释候选、准入和选择策略。
 - Bundle slice 包含 `citation` 展示字段；Manual Input 检索结果包含 `match_status`、`match_reason`、`evidence_eligible` 和 `score_breakdown`。
+- Knowledge Candidate inbox 最小 CLI：`candidate add/list/show/discard`，写入本地 `lifemesh.db`，用于 `confirm_required` 候选的异步复核。
 - RumorClaim / UnverifiedClaim 本地结构化 CLI MVP：`rumor add/list/show/keep/dismiss/expire/promote`、持久化门槛、review queue、最小 source envelope、`bundle --source rumor` 和 `bundle --source all --include-unverified`。
 
 当前未实现但已进入后续契约：
 
+- `candidate confirm/edit/merge/defer` 和 confirm 后升级到 Canonical Fact / Memory / Task。
 - 自动 source adapter 产出 RumorClaim 前的 `rumor_policy`、截图/图片自动抽取、来源融合、自动事实核查、review UI。
 
 兼容性说明：`lifemesh bundle` 默认仍为 `--source obsidian`，避免旧的只读原型被 Manual Input 本地依赖状态影响；跨源合并必须显式使用 `--source all`。
@@ -205,8 +207,26 @@ lifemesh remember "<info>" [--scope <range>] [--expires <date>]
 #   → 显式 Memory
 
 lifemesh candidate add "<statement>" --type fact|preference|relationship|task|decision [--source-ref ...]
-#   → Knowledge Candidate 进 inbox，lifecycle=confirm_required
+#   → Knowledge Candidate 进 inbox，lifecycle=confirm_required；当前已实现
 ```
+
+当前已实现的 Candidate inbox 命令：
+
+```bash
+lifemesh candidate add "<summary>" \
+  --type fact|preference|relationship|task|decision \
+  [--source-ref <ref>...] \
+  [--confidence 0.5] \
+  [--risk low|medium|high] \
+  [--why-suggested "..."] \
+  [--expires-at <datetime>]
+
+lifemesh candidate list [--type fact|preference|relationship|task|decision] [--lifecycle confirm_required|inbox|discard] [--limit 20]
+lifemesh candidate show <candidate-id>
+lifemesh candidate discard <candidate-id> [--reason "..."]
+```
+
+Candidate add 默认 `lifecycle=confirm_required`、`confidence=0.5`、`risk=medium`。默认 `list` 隐藏 `discard`；显式传 `--lifecycle discard` 才列出已丢弃候选。`discard` 只写 tombstone，不删除历史记录。
 
 ## RumorClaim 命令
 
@@ -275,7 +295,7 @@ lifemesh rumor expire <rumor-claim-id>
 - Agent 自动捕获后必须在回复中说明：input id、kind、摘要、sensitivity、Bundle 可用性。
 - Agent 自动捕获只进入 Manual Input Inbox，状态为 `auto_captured`。
 - Agent 不得自动 promote。
-- Agent 推断出的事实、待办、记忆和决策不得直接写入目标层，必须走 `input promote --to candidate` 或用户明确确认后的 promote。
+- Agent 推断出的事实、待办、记忆和决策不得直接写入目标层；可用 `candidate add` 创建 `confirm_required` 候选。只有用户明确确认并提供目标字段时，才可走 `input promote --to candidate` 或后续 confirm / promote 路径。
 - 用户明确提交的高敏信息可写入 Inbox，但必须标记 `Sensitive`；Agent 不得自动捕获明显高敏信息。`Sensitive` 默认不进入 Bundle、长期记忆、事实层或模型上下文。
 - 后续自动 source adapter 如需产出 RumorClaim，必须声明 `rumor_policy`；Agent 不得绕过 pipeline 直接把未验证材料写成 Candidate 或 Fact。
 

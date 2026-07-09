@@ -7,6 +7,16 @@ from pathlib import Path
 from typing import Any
 
 from .assembler import BundleAssembler
+from .candidates import (
+    CANDIDATE_RISKS as KNOWLEDGE_CANDIDATE_RISKS,
+    CANDIDATE_TYPES as KNOWLEDGE_CANDIDATE_TYPES,
+    DEFAULT_CONFIDENCE as DEFAULT_CANDIDATE_CONFIDENCE,
+    DEFAULT_RISK as DEFAULT_CANDIDATE_RISK,
+    DEFAULT_WHY_SUGGESTED as DEFAULT_CANDIDATE_WHY_SUGGESTED,
+    LISTABLE_CANDIDATE_LIFECYCLES,
+    CandidateError,
+    CandidateStore,
+)
 from .config import load_config
 from .manual_input import (
     MANUAL_KINDS,
@@ -69,6 +79,11 @@ def main(argv: list[str] | None = None) -> int:
     rumor_subparsers = rumor_parser.add_subparsers(dest="rumor_command", required=True)
     _add_rumor_parsers(rumor_subparsers)
 
+    candidate_parser = subparsers.add_parser("candidate", help="Manage Knowledge Candidate inbox records")
+    _add_config_arguments(candidate_parser)
+    candidate_subparsers = candidate_parser.add_subparsers(dest="candidate_command", required=True)
+    _add_candidate_parsers(candidate_subparsers)
+
     args = parser.parse_args(argv)
 
     try:
@@ -78,7 +93,9 @@ def main(argv: list[str] | None = None) -> int:
             return _handle_input(args)
         if args.command == "rumor":
             return _handle_rumor(args)
-    except (ManualInputError, RumorClaimError, ValueError, FileNotFoundError, NotADirectoryError) as exc:
+        if args.command == "candidate":
+            return _handle_candidate(args)
+    except (CandidateError, ManualInputError, RumorClaimError, ValueError, FileNotFoundError, NotADirectoryError) as exc:
         sys.stderr.write(f"lifemesh: error: {exc}\n")
         return 2
 
@@ -219,6 +236,29 @@ def _add_rumor_parsers(rumor_subparsers: argparse._SubParsersAction[argparse.Arg
     promote_parser.add_argument("--confidence")
     promote_parser.add_argument("--risk")
     promote_parser.add_argument("--source-ref", action="append", default=[])
+
+
+def _add_candidate_parsers(candidate_subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
+    add_parser = candidate_subparsers.add_parser("add", help="Add a Knowledge Candidate to the inbox")
+    add_parser.add_argument("summary")
+    add_parser.add_argument("--type", required=True, choices=sorted(KNOWLEDGE_CANDIDATE_TYPES))
+    add_parser.add_argument("--source-ref", action="append", default=[])
+    add_parser.add_argument("--confidence", type=float, default=DEFAULT_CANDIDATE_CONFIDENCE)
+    add_parser.add_argument("--risk", default=DEFAULT_CANDIDATE_RISK, choices=sorted(KNOWLEDGE_CANDIDATE_RISKS))
+    add_parser.add_argument("--why-suggested", default=DEFAULT_CANDIDATE_WHY_SUGGESTED)
+    add_parser.add_argument("--expires-at")
+
+    list_parser = candidate_subparsers.add_parser("list", help="List Knowledge Candidates")
+    list_parser.add_argument("--lifecycle", choices=sorted(LISTABLE_CANDIDATE_LIFECYCLES))
+    list_parser.add_argument("--type", choices=sorted(KNOWLEDGE_CANDIDATE_TYPES))
+    list_parser.add_argument("--limit", type=int, default=20)
+
+    show_parser = candidate_subparsers.add_parser("show", help="Show one Knowledge Candidate")
+    show_parser.add_argument("candidate_id")
+
+    discard_parser = candidate_subparsers.add_parser("discard", help="Discard one Knowledge Candidate")
+    discard_parser.add_argument("candidate_id")
+    discard_parser.add_argument("--reason")
 
 
 def _handle_bundle(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int:
@@ -445,6 +485,35 @@ def _handle_rumor(args: argparse.Namespace) -> int:
         result = store.promote(args.rumor_claim_id, _rumor_promote_payload(args))
     else:
         raise RumorClaimError(f"Unsupported rumor command: {command}")
+    _emit_json(result)
+    return 0
+
+
+def _handle_candidate(args: argparse.Namespace) -> int:
+    store = CandidateStore(_load_config_from_args(args))
+    command = args.candidate_command
+    if command == "add":
+        result = store.add(
+            summary=args.summary,
+            candidate_type=args.type,
+            source_refs=args.source_ref,
+            confidence=args.confidence,
+            risk=args.risk,
+            why_suggested=args.why_suggested,
+            expires_at=args.expires_at,
+        )
+    elif command == "list":
+        result = store.list_candidates(
+            lifecycle=args.lifecycle,
+            candidate_type=args.type,
+            limit=args.limit,
+        )
+    elif command == "show":
+        result = store.show(args.candidate_id)
+    elif command == "discard":
+        result = store.discard(args.candidate_id, reason=args.reason)
+    else:
+        raise CandidateError(f"Unsupported candidate command: {command}")
     _emit_json(result)
     return 0
 

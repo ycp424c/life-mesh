@@ -40,11 +40,12 @@ Manual Input 之后的 Phase 1 follow-on milestone 是 RumorClaim / UnverifiedCl
 - 2026-06-30 已定义并实现第一版 Source-Backed Answer 引用字段和 Manual Input 检索命中策略：Bundle slice 带 `citation`；Obsidian 使用 `obsidian-note-line-range-v1`，Manual Input 使用 `manual-input-v1`；Manual Input `strong` 命中可作为 `raw`，`weak` 向量近邻只作为 `lead`。
 - 2026-07-03 已实现 RumorClaim 本地结构化 CLI MVP：`rumor add/list/show/keep/dismiss/expire/promote`、持久化门槛、review queue、最小 source envelope、审计事件、`bundle --source rumor` 和 `bundle --source all --include-unverified` 的 lead-only 准入。
 - 2026-07-09 已完成 Q20 真实 vault 手工验收记录：`bundle --source obsidian` 返回 20 个 `raw/current` slices，命中专题归档页和 `hot.md`，保留 `excluded_sources` / `freshness_report` 字段；基于真实 `hot.md` 临时副本验证 stale 和 missing 均只进入 `freshness_report`，新 Bundle slice 使用 current revision。`--source all` 对 Q20 未选入 Manual Input，因此这次只验证不会误用 weak lead；独立 Manual Input weak lead 真实任务样例仍可后续补充。
+- 2026-07-09 已实现 Candidate inbox 最小 CLI：`candidate add/list/show/discard` 写入本地 `lifemesh.db`，按 risk / confidence 排序待确认队列；`discard` 只写 tombstone，不删除历史。
 
 仍未完成：
 
 - frontmatter 结构化事实边界。
-- Candidate inbox 与写侧命令。
+- Candidate confirm / merge / edit，以及确认后升级到 Canonical Fact / Memory / Task。
 - Canonical Fact 持久化与复核命令实现。
 - 自动 RumorClaim source adapter、截图/图片自动抽取、review UI、来源融合和自动 fact-check。
 
@@ -178,7 +179,8 @@ ADR-0009 对应第 1 阶段后续 milestone，不覆盖只读原型或 Manual In
    - 2026-07-09 已用 Q20 真实 vault 样例验证 Obsidian `citation.label`、stale 和 missing 状态报告；后续如需 UI 级体验，仍需在回答渲染层补“基于当前来源重新生成”的交互。
 
 2. **Candidate inbox 最小实现**
-   - 先支持 `candidate add/list/show/discard`，再支持 confirm / merge / edit。
+   - 首版已完成：`candidate add/list/show/discard`。
+   - 后续支持 confirm / merge / edit，以及按 type 升级到 Canonical Fact / Memory / Task。
    - dashboard 继续只读展示，不做写回。
 
 3. **RumorClaim 自动来源评估**

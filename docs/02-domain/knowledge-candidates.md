@@ -1,7 +1,7 @@
 # Knowledge Candidates
 
 状态：draft
-最后更新：2026-07-03
+最后更新：2026-07-09
 职责边界：定义第一版 Knowledge Candidate 的类型、共同字段和持久化边界。
 
 ## 定位
@@ -39,7 +39,7 @@ RumorClaim / UnverifiedClaim 是 Knowledge Candidate 的前置线索形态，不
 - `transient`：仅用于当前任务，不进入候选收件箱。
 - `inbox`：进入候选知识收件箱，等待用户批量整理。
 - `confirm_required`：写入 Canonical Store、Memory、任务、自动化规则或外部动作前必须确认。
-- `discard`：不保留。
+- `discard`：不进入待确认或可用候选队列；保留 tombstone、原因和审计历史。
 
 ## 持久化边界
 
@@ -53,19 +53,28 @@ RumorClaim / UnverifiedClaim 是 Knowledge Candidate 的前置线索形态，不
 
 ## 确认流程
 
-candidate 存在本地 inbox（第 1 阶段为 `.lifemesh/candidates.json`），用户用 CLI 异步批量确认，dashboard 只读展示、不写回：
+candidate 存在本地 inbox（第 1 阶段为 `~/.lifemesh/lifemesh.db` 的 `knowledge_candidates` 表），用户用 CLI 异步批量确认，dashboard 只读展示、不写回。
+
+当前已实现最小 CLI：
 
 ```bash
 lifemesh candidate list                      # 看待确认 inbox，按 risk/confidence 排序
 lifemesh candidate show <id>                 # 看详情：来源、why_suggested、置信度
+lifemesh candidate discard <id>             # 丢弃，写 tombstone，不删除历史
+```
+
+后续仍未实现：
+
+```bash
 lifemesh candidate confirm <id>             # 接受
 lifemesh candidate edit <id> "<text>"        # 先改再接受
 lifemesh candidate merge <id1> <id2>         # 合并重复
-lifemesh candidate discard <id>             # 丢弃
 lifemesh candidate defer <id>               # 留在 inbox，下次再看
 lifemesh candidate confirm --ids i1,i2,i3   # 批量
 lifemesh candidate discard --type preference --older-than 30d
 ```
+
+`candidate add` 已实现，默认写入 `lifecycle=confirm_required`，支持 `type`、`source_refs[]`、`confidence`、`risk`、`why_suggested` 和可选 `expires_at`。当前 `discard` 只改变 lifecycle，不执行 confirm 后的对象升级。
 
 确认特性：
 

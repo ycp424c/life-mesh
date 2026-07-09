@@ -2,7 +2,7 @@
 
 LifeMesh 是一个面向个人的 Personal Data OS：把分散在生活、工作、关系、文件、日程和决策中的个人数据，逐步整理成可检索、可理解、可授权、可审计，并能被 AI Agent 安全使用的上下文基础设施。
 
-当前阶段已从文档结构和静态 Web 项目看板，进入第 1 阶段本地 CLI 原型。已实现 Obsidian 只读 Context Bundle、source-neutral BundleAssembler，以及 ADR-0008 的 Manual Input Inbox：本地 SQLite、FTS、sqlite-vec、LM Studio embedding/VLM、update/revoke/delete 和 inbox-derived promote 闭环。ADR-0009 的 RumorClaim / UnverifiedClaim 已有本地结构化 CLI MVP：保存通过初筛的 claim、entity/relation mentions 和最小 source envelope，默认不进入普通 Bundle，显式包含时只能作为未验证 lead，并且只能 promote 到 Knowledge Candidate。2026-07-09 已完成 Q20 真实 vault 手工验收记录，验证 Obsidian `citation.label`、stale 和 missing 状态链路。
+当前阶段已从文档结构和静态 Web 项目看板，进入第 1 阶段本地 CLI 原型。已实现 Obsidian 只读 Context Bundle、source-neutral BundleAssembler，以及 ADR-0008 的 Manual Input Inbox：本地 SQLite、FTS、sqlite-vec、LM Studio embedding/VLM、update/revoke/delete 和 inbox-derived promote 闭环。ADR-0009 的 RumorClaim / UnverifiedClaim 已有本地结构化 CLI MVP：保存通过初筛的 claim、entity/relation mentions 和最小 source envelope，默认不进入普通 Bundle，显式包含时只能作为未验证 lead，并且只能 promote 到 Knowledge Candidate。2026-07-09 已完成 Q20 真实 vault 手工验收记录，验证 Obsidian `citation.label`、stale 和 missing 状态链路；同日落地 Candidate inbox 最小 CLI：`candidate add/list/show/discard`。
 
 ## 项目原则
 
@@ -35,7 +35,7 @@ LifeMesh 是一个面向个人的 Personal Data OS：把分散在生活、工作
 
 ## 当前状态
 
-文档基线和静态项目看板已建立。第 1 阶段已收敛为 Personal Context Layer，CLI 原型已提供 `lifemesh bundle`、Obsidian Source Adapter、source-neutral BundleAssembler、JSON Context Bundle、stale/missing 链路、agent skill，以及 Manual Input Inbox 的本地记录、语义检索、截图 VLM extraction、`--source manual-input/all` Bundle、update/revoke/delete 和 promote 到 inbox-derived 最小 task/event/memory/fact/candidate。Bundle slice 已包含 `citation` 展示字段；2026-07-09 已用真实 vault Q20 样例确认 Obsidian `citation.label` 与 stale/missing 状态报告可用。Manual Input 检索已区分 `strong` 证据命中和 `weak` 语义近邻，弱近邻只能作为 `lead`。RumorClaim 当前支持 `lifemesh rumor add/list/show/keep/dismiss/expire/promote` 和 `bundle --source rumor` / `--include-unverified` 的 lead-only 准入；自动 source adapter、截图/图片自动抽取、外部事实核查和 review UI 尚未实现。
+文档基线和静态项目看板已建立。第 1 阶段已收敛为 Personal Context Layer，CLI 原型已提供 `lifemesh bundle`、Obsidian Source Adapter、source-neutral BundleAssembler、JSON Context Bundle、stale/missing 链路、agent skill，以及 Manual Input Inbox 的本地记录、语义检索、截图 VLM extraction、`--source manual-input/all` Bundle、update/revoke/delete 和 promote 到 inbox-derived 最小 task/event/memory/fact/candidate。Bundle slice 已包含 `citation` 展示字段；2026-07-09 已用真实 vault Q20 样例确认 Obsidian `citation.label` 与 stale/missing 状态报告可用。Candidate inbox 当前支持 `candidate add/list/show/discard`，用于把 agent 推断或用户断言先放入本地待确认队列；confirm / merge / edit 和升级到 Canonical Fact / Memory / Task 仍是后续。Manual Input 检索已区分 `strong` 证据命中和 `weak` 语义近邻，弱近邻只能作为 `lead`。RumorClaim 当前支持 `lifemesh rumor add/list/show/keep/dismiss/expire/promote` 和 `bundle --source rumor` / `--include-unverified` 的 lead-only 准入；自动 source adapter、截图/图片自动抽取、外部事实核查和 review UI 尚未实现。
 
 ## 本地 CLI 原型
 
@@ -66,6 +66,15 @@ bin/lifemesh bundle "需要什么上下文" --source all --vault tests/fixtures/
 ```
 
 `--source all` 会让 Obsidian 和 Manual Input 各自返回 candidates，再由 BundleAssembler 统一执行准入、来源层级、去重、多样性选择和 `assembly_report` 诊断。
+
+Candidate inbox 本地 MVP：
+
+```bash
+bin/lifemesh candidate add "候选知识" --type fact --source-ref "obsidian:hot.md#L16-L22"
+bin/lifemesh candidate list
+bin/lifemesh candidate show <candidate-id>
+bin/lifemesh candidate discard <candidate-id> --reason "不再需要"
+```
 
 RumorClaim 本地 MVP：
 

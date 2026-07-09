@@ -2,22 +2,23 @@ window.LIFEMESH_PROJECT_STATE = {
   lastUpdated: "2026-07-09",
   state: "Personal Context Layer",
   currentPhase: "第 1 阶段：Personal Context Layer",
-  overallProgress: 42,
+  overallProgress: 44,
   summary:
-    "LifeMesh 第 1 阶段已进入本地 CLI 原型：只读 Obsidian bundle、Manual Input Inbox、source-neutral BundleAssembler 和 RumorClaim 本地结构化 CLI MVP 已落地；Manual Input 已通过首次真实本机验收，并已加入 citation 字段与强/弱检索命中策略。2026-07-09 已完成 Q20 真实 vault 手工验收，确认 Obsidian citation label、stale 和 missing 状态链路可用。RumorClaim 当前只保存结构化 claim、mentions 和最小 source envelope，自动 source adapter 与 review UI 尚未实现。",
+    "LifeMesh 第 1 阶段已进入本地 CLI 原型：只读 Obsidian bundle、Manual Input Inbox、Candidate inbox、source-neutral BundleAssembler 和 RumorClaim 本地结构化 CLI MVP 已落地；Manual Input 已通过首次真实本机验收，并已加入 citation 字段与强/弱检索命中策略。2026-07-09 已完成 Q20 真实 vault 手工验收，确认 Obsidian citation label、stale 和 missing 状态链路可用。RumorClaim 当前只保存结构化 claim、mentions 和最小 source envelope，自动 source adapter 与 review UI 尚未实现。",
   metrics: [
     { label: "文档基线", value: "active", detail: "Manual Input 实现已同步", tone: "green" },
     { label: "Web 看板", value: "active", detail: "静态页面，无构建链", tone: "blue" },
-    { label: "Context Layer", value: "phase 1", detail: "Q20 真实验收已记录", tone: "blue" },
+    { label: "Context Layer", value: "phase 1", detail: "Candidate inbox MVP 已落地", tone: "blue" },
     { label: "关键风险", value: "13", detail: "含自动捕获、本地模型和流言污染风险", tone: "red" }
   ],
   work: [
     {
       lane: "Now",
       items: [
-        "实现 Candidate inbox 最小 add/list/show/discard",
+        "设计 candidate confirm / merge / edit 的升级边界",
+        "补 Candidate inbox 与 Manual Input/RumorClaim promote 的 handoff 规则",
         "补 Manual Input weak lead 的独立真实任务样例",
-        "定义 candidate confirm / merge / edit 的后续边界"
+        "定义 dashboard 只读 Candidate inbox 摘要"
       ]
     },
     {
@@ -59,8 +60,8 @@ window.LIFEMESH_PROJECT_STATE = {
       id: "1",
       title: "Personal Context Layer",
       status: "active",
-      progress: 84,
-      focus: "只读 bundle 原型、Q20 真实验收、Manual Input 本地写入检索、source-neutral BundleAssembler、RumorClaim 结构化 CLI MVP",
+      progress: 86,
+      focus: "只读 bundle 原型、Q20 真实验收、Manual Input 本地写入检索、Candidate inbox MVP、source-neutral BundleAssembler、RumorClaim 结构化 CLI MVP",
       docs: ["phase-1-delivery-plan.md", "cli-contract.md", "ADR-0005", "ADR-0006", "ADR-0008", "ADR-0009"]
     },
     {
@@ -221,9 +222,9 @@ window.LIFEMESH_PROJECT_STATE = {
   docs: [
     { name: "Vision", path: "docs/00-vision/", status: "draft", signal: "方向已建立" },
     { name: "Governance", path: "docs/01-governance/", status: "draft", signal: "需细化删除和授权" },
-    { name: "Domain", path: "docs/02-domain/", status: "draft", signal: "Q20 真实验收记录已补充" },
+    { name: "Domain", path: "docs/02-domain/", status: "draft", signal: "Candidate inbox MVP 已同步" },
     { name: "Architecture", path: "docs/03-architecture/", status: "draft", signal: "BundleAssembler 与 Rumor lead 准入已同步" },
-    { name: "Roadmap", path: "docs/04-roadmap/", status: "active", signal: "下一步转向 Candidate inbox" },
+    { name: "Roadmap", path: "docs/04-roadmap/", status: "active", signal: "Candidate confirm 边界待设计" },
     { name: "ADR", path: "docs/05-decisions/", status: "active", signal: "9 条 accepted" },
     { name: "Security", path: "docs/07-security/", status: "draft", signal: "补充自动捕获、本地模型和流言污染风险" },
     { name: "Dashboard", path: "docs/08-dashboard/", status: "active", signal: "同步规则已落地" }
@@ -357,7 +358,7 @@ window.LIFEMESH_PROJECT_STATE = {
       phase: "第 1 阶段",
       sensitivity: "Private",
       status: "prototype",
-      next: "保持 Q20 验收样例作为回归；下一步转向 Candidate inbox"
+      next: "保持 Q20 验收样例作为回归"
     },
     {
       name: "Vault Note",
@@ -496,7 +497,7 @@ window.LIFEMESH_PROJECT_STATE = {
       {
         label: "Promotion handoff",
         value: "local link",
-        detail: "当前仅写 rumor_candidate_links，完整 Candidate inbox 仍未完成。"
+        detail: "当前 rumor promote 仍只写 rumor_candidate_links；与 Candidate inbox 的正式 handoff 和 confirm lifecycle 待补。"
       }
     ],
     highImpact: [
@@ -514,6 +515,10 @@ window.LIFEMESH_PROJECT_STATE = {
     {
       title: "Manual Input weak lead 真实样例",
       detail: "Q20 的 --source all 未选入 Manual Input candidates；weak lead 不作为事实的规则已有本机验收，仍可补一个独立真实任务样例。"
+    },
+    {
+      title: "Candidate confirm 升级边界",
+      detail: "candidate add/list/show/discard 已落地；confirm / merge / edit 和升级到 Canonical Fact、Memory、Task 仍需设计和实现。"
     },
     {
       title: "Obsidian 白名单目录",
@@ -537,6 +542,11 @@ window.LIFEMESH_PROJECT_STATE = {
     }
   ],
   recentChanges: [
+    {
+      date: "2026-07-09",
+      title: "落地 Candidate inbox 最小 CLI",
+      detail: "新增 lifemesh candidate add/list/show/discard，本地写入 lifemesh.db 的 knowledge_candidates 表；默认 lifecycle=confirm_required，list 按 risk/confidence 排序，discard 写 tombstone 不删除历史；confirm/merge/edit 仍是后续能力。"
+    },
     {
       date: "2026-07-09",
       title: "完成 Q20 真实 vault 手工验收记录",

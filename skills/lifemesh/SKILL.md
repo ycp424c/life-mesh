@@ -67,6 +67,17 @@ RumorClaim / UnverifiedClaim has a structured local CLI MVP:
 
 This CLI stores only structured claim fields, mentions, minimal source envelope, status, and audit events. It does not ingest raw rumor material or run automatic source adapters yet.
 
+Knowledge Candidate inbox has a minimal local CLI MVP:
+
+```bash
+/Users/justynchen/Documents/code/life-mesh/bin/lifemesh candidate add "..." --type fact|preference|relationship|task|decision
+/Users/justynchen/Documents/code/life-mesh/bin/lifemesh candidate list
+/Users/justynchen/Documents/code/life-mesh/bin/lifemesh candidate show <candidate-id>
+/Users/justynchen/Documents/code/life-mesh/bin/lifemesh candidate discard <candidate-id>
+```
+
+Candidates are stored in `~/.lifemesh/lifemesh.db` with `lifecycle=confirm_required` by default. `candidate confirm`, `candidate edit`, `candidate merge`, and upgrade into Canonical Fact / Memory / Task are not implemented yet.
+
 ## Quick Checks
 
 Use these before relying on LifeMesh in a task:
@@ -110,6 +121,13 @@ If LM Studio is stopped, start it:
 - `evidence_state=contradicted` must use `assessment=contradicted`; contradicted claims are excluded from usable Bundle slices.
 - Expired, dismissed, Sensitive-over-cap, stale, missing, revoked, or deleted material must not be used as evidence.
 - `rumor promote --to candidate` currently creates a local `rumor_candidate_links` handoff and marks the claim `candidate_created`; it is not a complete Candidate inbox lifecycle.
+
+## Candidate Rules
+
+- Agent may use `candidate add` for inferred reusable knowledge that needs user review.
+- `candidate add` is not confirmation. It creates a `confirm_required` inbox record only.
+- Agent must not confirm, edit, merge, or upgrade a candidate unless the user explicitly asks and the current CLI supports that command.
+- `candidate discard` is a tombstone operation; it should only be used when the user explicitly rejects a candidate or asks to clean it up.
 
 ## How To Consume The Bundle
 
