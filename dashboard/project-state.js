@@ -1,10 +1,10 @@
 window.LIFEMESH_PROJECT_STATE = {
-  lastUpdated: "2026-07-09",
+  lastUpdated: "2026-07-10",
   state: "Personal Context Layer",
   currentPhase: "第 1 阶段：Personal Context Layer",
   overallProgress: 44,
   summary:
-    "LifeMesh 第 1 阶段已进入本地 CLI 原型：只读 Obsidian bundle、Manual Input Inbox、Candidate inbox、source-neutral BundleAssembler 和 RumorClaim 本地结构化 CLI MVP 已落地；Manual Input 已通过首次真实本机验收，并已加入 citation 字段与强/弱检索命中策略。2026-07-09 已完成 Q20 真实 vault 手工验收，确认 Obsidian citation label、stale 和 missing 状态链路可用。RumorClaim 当前只保存结构化 claim、mentions 和最小 source envelope，自动 source adapter 与 review UI 尚未实现。",
+    "LifeMesh 第 1 阶段已进入本地 CLI 原型：只读 Obsidian bundle、Manual Input Inbox、Candidate inbox、source-neutral BundleAssembler 和 RumorClaim 本地结构化 CLI MVP 已落地；Manual Input 已通过首次真实本机验收，并已加入 citation 字段与强/弱检索命中策略。2026-07-10 已确认 Unified Write Model 完整设计，下一步一次性交付统一 Candidate handoff、Acceptance、正式对象、Fact Review 和真实数据库备份迁移；这些能力当前尚未实现。",
   metrics: [
     { label: "文档基线", value: "active", detail: "Manual Input 实现已同步", tone: "green" },
     { label: "Web 看板", value: "active", detail: "静态页面，无构建链", tone: "blue" },
@@ -15,10 +15,10 @@ window.LIFEMESH_PROJECT_STATE = {
     {
       lane: "Now",
       items: [
-        "设计 candidate confirm / merge / edit 的升级边界",
-        "补 Candidate inbox 与 Manual Input/RumorClaim promote 的 handoff 规则",
-        "补 Manual Input weak lead 的独立真实任务样例",
-        "定义 dashboard 只读 Candidate inbox 摘要"
+        "实施 Unified Write Model、集中 schema migration 和事务边界",
+        "统一 CLI、Manual Input、RumorClaim 的 Candidate handoff",
+        "落地 Candidate confirm 与 Canonical Fact/Memory/Task/Event",
+        "完成真实数据库备份、迁移、回滚和计数验收"
       ]
     },
     {
@@ -61,7 +61,7 @@ window.LIFEMESH_PROJECT_STATE = {
       title: "Personal Context Layer",
       status: "active",
       progress: 86,
-      focus: "只读 bundle 原型、Q20 真实验收、Manual Input 本地写入检索、Candidate inbox MVP、source-neutral BundleAssembler、RumorClaim 结构化 CLI MVP",
+      focus: "既有读链路与受限采集已验收；Unified Write Model 完整设计已确认，等待实现和真实库迁移",
       docs: ["phase-1-delivery-plan.md", "cli-contract.md", "ADR-0005", "ADR-0006", "ADR-0008", "ADR-0009"]
     },
     {
@@ -224,7 +224,7 @@ window.LIFEMESH_PROJECT_STATE = {
     { name: "Governance", path: "docs/01-governance/", status: "draft", signal: "需细化删除和授权" },
     { name: "Domain", path: "docs/02-domain/", status: "draft", signal: "Candidate inbox MVP 已同步" },
     { name: "Architecture", path: "docs/03-architecture/", status: "draft", signal: "BundleAssembler 与 Rumor lead 准入已同步" },
-    { name: "Roadmap", path: "docs/04-roadmap/", status: "active", signal: "Candidate confirm 边界待设计" },
+    { name: "Roadmap", path: "docs/04-roadmap/", status: "active", signal: "Unified Write Model 设计已确认，待实现" },
     { name: "ADR", path: "docs/05-decisions/", status: "active", signal: "9 条 accepted" },
     { name: "Security", path: "docs/07-security/", status: "draft", signal: "补充自动捕获、本地模型和流言污染风险" },
     { name: "Dashboard", path: "docs/08-dashboard/", status: "active", signal: "同步规则已落地" }
@@ -518,7 +518,7 @@ window.LIFEMESH_PROJECT_STATE = {
     },
     {
       title: "Candidate confirm 升级边界",
-      detail: "candidate add/list/show/discard 已落地；confirm / merge / edit 和升级到 Canonical Fact、Memory、Task 仍需设计和实现。"
+      detail: "2026-07-10 已确认 Unified Write Model 完整设计：统一 handoff、Acceptance、正式对象、Fact Review 和迁移一次性交付；当前等待实现和真实库切换。"
     },
     {
       title: "Obsidian 白名单目录",
@@ -542,6 +542,11 @@ window.LIFEMESH_PROJECT_STATE = {
     }
   ],
   recentChanges: [
+    {
+      date: "2026-07-10",
+      title: "确认 Unified Write Model 完整设计",
+      detail: "确定一次性交付集中 SQLite migration、统一 Candidate handoff、Acceptance、Canonical Fact/Memory/Task/Event、Fact Review、normalized provenance 和真实数据库 online backup/migration；当前仅设计已确认，尚未宣称实现完成。"
+    },
     {
       date: "2026-07-09",
       title: "落地 Candidate inbox 最小 CLI",

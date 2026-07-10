@@ -1,7 +1,7 @@
 # LifeMesh 文档地图
 
 状态：active
-最后更新：2026-07-03
+最后更新：2026-07-10
 职责边界：说明文档体系如何组织、维护和演进。
 
 ## 目录结构
@@ -17,6 +17,7 @@ docs/
   06-research/      共享对话、外部材料、调研摘要
   07-security/      威胁模型、访问控制、工具安全、备份恢复
   08-dashboard/     Web 项目看板维护规则
+  superpowers/      已确认的设计规格与实施计划
   templates/        RFC、ADR、数据源接入等模板
 ```
 
@@ -43,6 +44,7 @@ docs/
 - [System Map](03-architecture/system-map.md)
 - [渐进式路线图](04-roadmap/phases.md)
 - [Phase 1 Delivery Plan](04-roadmap/phase-1-delivery-plan.md)
+- [Unified Write Model Design](superpowers/specs/2026-07-10-unified-write-model-design.md)
 - [项目看板维护规则](08-dashboard/project-board.md)
 
 ## 演进规则
