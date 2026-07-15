@@ -1,7 +1,7 @@
 # Architecture Overview
 
 状态：draft
-最后更新：2026-07-03
+最后更新：2026-07-15
 职责边界：描述 LifeMesh 的高层架构，不绑定具体技术栈。
 
 ## 一句话架构
@@ -65,6 +65,12 @@
 - Agent 可以自动捕获非高敏个人相关信息进入 Inbox，但必须透明说明，且不能自动 promote 到长期层或正式对象；明显高敏信息必须由用户明确提交。
 - RumorClaim 是处理可信度未知材料的 Phase 1 follow-on 契约：它不是独立架构层，也不是 Manual Input kind；主资产是抽取出的 claim、entity mention 和 relation mention，原始物料默认只进 temporary parsing sandbox。
 - RumorClaim 默认不进入普通 Context Bundle，明确请求未验证线索时只能作为 `lead`，且只能 promote 到 Knowledge Candidate。
+
+## Unified Write Model 目标架构
+
+ADR-0010 已确认 Unified Write Model 目标架构，但实现尚未开始。目标状态由统一 database layer 和 `KnowledgeWorkflow` 收敛 CLI、Manual Input、RumorClaim 的 Candidate handoff、Acceptance、Canonical Object、provenance、review、tombstone 与 audit；当前三个 legacy 写路径在迁移完成前仍是运行时真相。
+
+迁移与恢复必须共享 exclusive lock，使用 SQLite online backup，并以迁移当时动态生成的 identity/count manifest 做守恒验收。详细边界见 [Unified Write Model And Migrations](write-model-and-migrations.md) 和 [ADR-0010](../05-decisions/ADR-0010-unified-write-model-transactional-acceptance-and-database-migration.md)。
 
 ## 可视化边界
 

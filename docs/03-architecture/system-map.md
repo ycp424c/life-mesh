@@ -1,7 +1,7 @@
 # System Map
 
 状态：draft
-最后更新：2026-07-03
+最后更新：2026-07-15
 职责边界：说明 Web 看板中的 LifeMesh 系统架构图及其层级含义。
 
 ## 定位
@@ -39,6 +39,20 @@ Source Adapters
 - Knowledge Candidate 在确认或策略接受前不能成为 Canonical Fact 或 Memory。
 - Canonical Fact 可以作为 Context Bundle 来源，但必须可追溯、可复核、可撤销。
 - Agent Access 在第 1 阶段通过 CLI + skill 获取授权后的 JSON Context Bundle；只读原型验收后，ADR-0008 定义 Manual Input Inbox 作为 Phase 1 后续 milestone。
+
+## Unified Write Model 目标路径
+
+ADR-0010 已接受但尚未实现的写路径为：
+
+```text
+CLI / Manual Input / RumorClaim
+  -> KnowledgeWorkflow
+  -> LifeMeshDatabase transaction
+  -> Candidate / Acceptance / Canonical Object / Review / Audit
+  -> Bundle retriever
+```
+
+当前 `candidate add`、`input promote`、`rumor promote` 仍分别写入 legacy 表。只有实现、备份、动态 preflight migration 和 postflight 验收完成后，看板才能把 Unified Write Model 标记为运行时已落地。详细边界见 [Unified Write Model And Migrations](write-model-and-migrations.md)。
 
 ## Context Bundle 来源优先级
 

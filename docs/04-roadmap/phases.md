@@ -1,7 +1,7 @@
 # Roadmap Phases
 
 状态：draft
-最后更新：2026-07-03
+最后更新：2026-07-15
 职责边界：定义 LifeMesh 从文档基线到可行动 Agent 的渐进路线。
 
 ## 第 0 阶段：个人数据宪法
@@ -41,6 +41,7 @@
 - 未验证流言：ADR-0009 将文本片段、截图和图片中的可信度未知材料建模为 RumorClaim；当前已有结构化 CLI MVP。它不是 Manual Input kind，默认不进普通 Bundle，只能作为 `lead`，且只能 promote 到 Knowledge Candidate；自动 source adapter 和截图/图片自动抽取仍是后续能力。
 - agent 推断禁止直接 `fact add`，只能走 candidate → 用户 CLI 确认 → 按 type 升级（fact→Canonical Fact、task→Task、preference/relationship/decision→Memory）。
 - fact 复核与撤销：`fact review` / `fact revoke` 处理 `needs_review`、superseded、invalid、revoked 和 tombstone。
+- Unified Write Model：ADR-0010 已确认统一 database layer、Candidate handoff、Acceptance、typed Canonical Object、normalized provenance、review/tombstone 和动态数据库迁移/恢复合同；当前是已接受目标架构，尚未实现。
 - Skill 指导 agent 调用与 `evidence_role` 消费，使用范围是用户的所有信息。
 - 不引入运行时 server，不绑定 MCP；`automation` 仍 deferred 在阶段 6。
 

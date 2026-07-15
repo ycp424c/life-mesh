@@ -1,15 +1,15 @@
 window.LIFEMESH_PROJECT_STATE = {
-  lastUpdated: "2026-07-10",
+  lastUpdated: "2026-07-15",
   state: "Personal Context Layer",
   currentPhase: "第 1 阶段：Personal Context Layer",
   overallProgress: 44,
   summary:
-    "LifeMesh 第 1 阶段已进入本地 CLI 原型：只读 Obsidian bundle、Manual Input Inbox、Candidate inbox、source-neutral BundleAssembler 和 RumorClaim 本地结构化 CLI MVP 已落地；Manual Input 已通过首次真实本机验收，并已加入 citation 字段与强/弱检索命中策略。2026-07-10 已确认 Unified Write Model 完整设计，下一步一次性交付统一 Candidate handoff、Acceptance、正式对象、Fact Review 和真实数据库备份迁移；这些能力当前尚未实现。",
+    "LifeMesh 第 1 阶段已进入本地 CLI 原型：只读 Obsidian bundle、Manual Input Inbox、Candidate inbox、source-neutral BundleAssembler 和 RumorClaim 本地结构化 CLI MVP 已落地。2026-07-15 已接受 ADR-0010 与 Unified Write Model implementation spec，下一步一次性交付统一 Candidate handoff、Acceptance、正式对象、Fact Review 和动态数据库备份迁移；这些能力当前尚未实现。",
   metrics: [
     { label: "文档基线", value: "active", detail: "Manual Input 实现已同步", tone: "green" },
     { label: "Web 看板", value: "active", detail: "静态页面，无构建链", tone: "blue" },
     { label: "Context Layer", value: "phase 1", detail: "Candidate inbox MVP 已落地", tone: "blue" },
-    { label: "关键风险", value: "13", detail: "含自动捕获、本地模型和流言污染风险", tone: "red" }
+    { label: "关键风险", value: "14", detail: "含自动捕获、本地模型、流言污染和数据库迁移风险", tone: "red" }
   ],
   work: [
     {
@@ -61,8 +61,8 @@ window.LIFEMESH_PROJECT_STATE = {
       title: "Personal Context Layer",
       status: "active",
       progress: 86,
-      focus: "既有读链路与受限采集已验收；Unified Write Model 完整设计已确认，等待实现和真实库迁移",
-      docs: ["phase-1-delivery-plan.md", "cli-contract.md", "ADR-0005", "ADR-0006", "ADR-0008", "ADR-0009"]
+      focus: "既有读链路与受限采集已验收；ADR-0010 与 Unified Write Model 实施规格已接受，等待实现和真实库迁移",
+      docs: ["phase-1-delivery-plan.md", "write-model-and-migrations.md", "ADR-0005", "ADR-0006", "ADR-0008", "ADR-0009", "ADR-0010"]
     },
     {
       id: "2",
@@ -223,11 +223,12 @@ window.LIFEMESH_PROJECT_STATE = {
     { name: "Vision", path: "docs/00-vision/", status: "draft", signal: "方向已建立" },
     { name: "Governance", path: "docs/01-governance/", status: "draft", signal: "需细化删除和授权" },
     { name: "Domain", path: "docs/02-domain/", status: "draft", signal: "Candidate inbox MVP 已同步" },
-    { name: "Architecture", path: "docs/03-architecture/", status: "draft", signal: "BundleAssembler 与 Rumor lead 准入已同步" },
-    { name: "Roadmap", path: "docs/04-roadmap/", status: "active", signal: "Unified Write Model 设计已确认，待实现" },
-    { name: "ADR", path: "docs/05-decisions/", status: "active", signal: "9 条 accepted" },
-    { name: "Security", path: "docs/07-security/", status: "draft", signal: "补充自动捕获、本地模型和流言污染风险" },
-    { name: "Dashboard", path: "docs/08-dashboard/", status: "active", signal: "同步规则已落地" }
+    { name: "Architecture", path: "docs/03-architecture/", status: "draft", signal: "Unified Write Model 目标架构已同步，待实现" },
+    { name: "Roadmap", path: "docs/04-roadmap/", status: "active", signal: "ADR-0010 一次性交付边界已同步" },
+    { name: "ADR", path: "docs/05-decisions/", status: "active", signal: "10 条 accepted" },
+    { name: "Security", path: "docs/07-security/", status: "draft", signal: "迁移 backup/restore 与动态验收已同步" },
+    { name: "Dashboard", path: "docs/08-dashboard/", status: "active", signal: "同步规则已落地" },
+    { name: "Implementation Specs", path: "docs/superpowers/specs/", status: "active", signal: "Unified Write Model spec 已通过 written review" }
   ],
   risks: [
     {
@@ -294,6 +295,11 @@ window.LIFEMESH_PROJECT_STATE = {
       title: "流言原始物料污染本地仓库",
       severity: "medium",
       control: "原始物料默认只进 temporary parsing sandbox，长期保留最小 source envelope"
+    },
+    {
+      title: "真实数据库迁移或恢复损坏",
+      severity: "high",
+      control: "exclusive lock + online backup + 动态 preflight/postflight 守恒 + forensic restore"
     }
   ],
   decisions: [
@@ -350,6 +356,12 @@ window.LIFEMESH_PROJECT_STATE = {
       title: "Unverified Rumor Claims",
       status: "accepted",
       path: "../docs/05-decisions/ADR-0009-unverified-rumor-claims.md"
+    },
+    {
+      id: "ADR-0010",
+      title: "Unified Write Model, Transactional Acceptance And Database Migration",
+      status: "accepted",
+      path: "../docs/05-decisions/ADR-0010-unified-write-model-transactional-acceptance-and-database-migration.md"
     }
   ],
   dataSources: [
@@ -517,10 +529,6 @@ window.LIFEMESH_PROJECT_STATE = {
       detail: "Q20 的 --source all 未选入 Manual Input candidates；weak lead 不作为事实的规则已有本机验收，仍可补一个独立真实任务样例。"
     },
     {
-      title: "Candidate confirm 升级边界",
-      detail: "2026-07-10 已确认 Unified Write Model 完整设计：统一 handoff、Acceptance、正式对象、Fact Review 和迁移一次性交付；当前等待实现和真实库切换。"
-    },
-    {
       title: "Obsidian 白名单目录",
       detail: "首批数据源已确认为 Obsidian Vault；仍需决定是否允许用户为归档或专题目录建立显式白名单。"
     },
@@ -542,6 +550,11 @@ window.LIFEMESH_PROJECT_STATE = {
     }
   ],
   recentChanges: [
+    {
+      date: "2026-07-15",
+      title: "完成 Unified Write Model written-spec review",
+      detail: "新增 ADR-0010 和正式目标架构文档；把迁移验收改为动态 preflight/postflight 守恒，修正 Source Reference 外键回填顺序、legacy why_suggested/handoff_key 映射和 restore exclusive lock，并同步 README、roadmap、security 与文档健康区。当前仍只确认设计，未宣称实现或迁移完成。"
+    },
     {
       date: "2026-07-10",
       title: "确认 Unified Write Model 完整设计",

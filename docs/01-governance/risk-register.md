@@ -1,7 +1,7 @@
 # Risk Register
 
 状态：draft
-最后更新：2026-07-03
+最后更新：2026-07-15
 职责边界：记录 LifeMesh 的主要风险、影响、缓解策略和待决问题。
 
 | 风险 | 影响 | 初始缓解策略 | 状态 |
@@ -18,4 +18,5 @@
 | 流言污染事实层 | 自动来源把未验证材料写成事实、记忆或任务 | RumorClaim 只能作为未验证 lead；只可 promote 到 Knowledge Candidate | open |
 | 流言原始物料污染本地仓库 | 广告、截图噪声或第三方隐私被长期保存 | 原始物料默认只进 temporary parsing sandbox；长期保留最小 source envelope | open |
 | 本地个人数据库泄露 | `~/.lifemesh` 被其他进程或备份读取 | 目录 0700、数据库和 raw asset 0600；后续评估加密 | open |
+| 真实数据库迁移或恢复损坏 | 固定计数漏迁、外键失败、并发连接覆盖或错误 restore 导致个人数据丢失 | exclusive lock、SQLite online backup、动态 preflight/postflight 守恒、forensic 副本和锁内恢复验收 | open |
 | 看板与文档状态漂移 | 误导规划、架构或治理判断 | AGENTS.md 强制同步，看板以 docs 和 ADR 为事实源 | open |

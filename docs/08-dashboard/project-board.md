@@ -1,7 +1,7 @@
 # Project Board
 
 状态：active
-最后更新：2026-07-03
+最后更新：2026-07-15
 职责边界：定义 LifeMesh Web 项目看板的用途、数据来源和同步维护规则。
 
 ## 入口
@@ -42,6 +42,7 @@
 - 路线图：`docs/04-roadmap/`
 - 决策：`docs/05-decisions/`
 - 安全：`docs/07-security/`
+- 已接受实施规格：`docs/superpowers/specs/`
 - 架构图说明：`docs/03-architecture/system-map.md`
 - RumorClaim review：`docs/02-domain/rumor-claims.md` 和 `docs/05-decisions/ADR-0009-unverified-rumor-claims.md`
 

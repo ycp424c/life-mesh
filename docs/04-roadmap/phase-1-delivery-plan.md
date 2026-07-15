@@ -1,7 +1,7 @@
 # Phase 1 Delivery Plan
 
 状态：active
-最后更新：2026-07-09
+最后更新：2026-07-15
 职责边界：定义第 1 阶段 Personal Context Layer 的落地范围、验收方式，以及验收通过后的下一步。不替代 `phases.md`、`evaluation-criteria.md` 或 ADR。
 
 ## 定位
@@ -25,9 +25,11 @@ Obsidian Vault
 
 Manual Input 之后的 Phase 1 follow-on milestone 是 RumorClaim / UnverifiedClaim（ADR-0009）：为后续自动信息源提供可信度未知材料的处理契约。它只保存通过初筛的 claim、entity mention、relation mention 和最小 source envelope；原始物料默认不长期保存。当前已落地本地结构化 CLI MVP；自动 source adapter、截图/图片自动抽取、review UI 和自动 fact-check 仍不在本轮。
 
+ADR-0010 已确认 Phase 1 写侧的下一交付是 Unified Write Model：统一 Candidate handoff、Acceptance、Canonical Fact/Memory/Task/Event、provenance、Fact Review、数据库 backup/migration/restore，并在一次实现交付中切换。该目标架构和实施规格已通过设计评审，但代码与真实数据库迁移尚未开始。
+
 ## 当前实现状态
 
-截至 2026-07-09，第 1 阶段本地 CLI 原型已开始落地：
+截至 2026-07-15，第 1 阶段本地 CLI 原型已开始落地：
 
 - `bin/lifemesh bundle` 可生成 JSON Context Bundle。
 - `lifemesh/` 包含 Obsidian 只读扫描、Source Revision、section 提取、简单检索排序、sensitivity cap 过滤、stale / missing state 检测。
@@ -41,6 +43,7 @@ Manual Input 之后的 Phase 1 follow-on milestone 是 RumorClaim / UnverifiedCl
 - 2026-07-03 已实现 RumorClaim 本地结构化 CLI MVP：`rumor add/list/show/keep/dismiss/expire/promote`、持久化门槛、review queue、最小 source envelope、审计事件、`bundle --source rumor` 和 `bundle --source all --include-unverified` 的 lead-only 准入。
 - 2026-07-09 已完成 Q20 真实 vault 手工验收记录：`bundle --source obsidian` 返回 20 个 `raw/current` slices，命中专题归档页和 `hot.md`，保留 `excluded_sources` / `freshness_report` 字段；基于真实 `hot.md` 临时副本验证 stale 和 missing 均只进入 `freshness_report`，新 Bundle slice 使用 current revision。`--source all` 对 Q20 未选入 Manual Input，因此这次只验证不会误用 weak lead；独立 Manual Input weak lead 真实任务样例仍可后续补充。
 - 2026-07-09 已实现 Candidate inbox 最小 CLI：`candidate add/list/show/discard` 写入本地 `lifemesh.db`，按 risk / confidence 排序待确认队列；`discard` 只写 tombstone，不删除历史。
+- 2026-07-15 已接受 ADR-0010 与 Unified Write Model implementation spec；当前仍是 target architecture，不宣称统一 schema、Acceptance、Canonical Object、Fact Review 或真实库迁移已实现。
 
 仍未完成：
 
@@ -178,9 +181,11 @@ ADR-0009 对应第 1 阶段后续 milestone，不覆盖只读原型或 Manual In
    - 首版已完成：Bundle slice 输出 `citation`，覆盖 Obsidian `note_path`、heading、line range、citation_status，以及 Manual Input `input_id`、kind、status、content_hash 摘要、citation_status。
    - 2026-07-09 已用 Q20 真实 vault 样例验证 Obsidian `citation.label`、stale 和 missing 状态报告；后续如需 UI 级体验，仍需在回答渲染层补“基于当前来源重新生成”的交互。
 
-2. **Candidate inbox 最小实现**
-   - 首版已完成：`candidate add/list/show/discard`。
-   - 后续支持 confirm / merge / edit，以及按 type 升级到 Canonical Fact / Memory / Task。
+2. **Unified Write Model 一次性交付**
+   - 保留已完成的 `candidate add/list/show/discard`，并补齐 edit / merge / defer / resume / confirm。
+   - 统一 CLI、Manual Input、RumorClaim 的 Candidate handoff，停止 legacy 分裂写入。
+   - 落地 Acceptance、Canonical Fact/Memory/Task/Event、normalized provenance、Fact Review、tombstone 和 Bundle 准入。
+   - 使用动态 preflight manifest 完成真实数据库 online backup、migration、postflight、幂等和 restore 验收。
    - dashboard 继续只读展示，不做写回。
 
 3. **RumorClaim 自动来源评估**
@@ -196,15 +201,7 @@ ADR-0009 对应第 1 阶段后续 milestone，不覆盖只读原型或 Manual In
    - 首版检索阈值已落地：`vector_evidence=0.75`、`vector_lead=0.45`；`strong` 可作为 `raw`，`weak` 只能作为 `lead`。
    - 后续仍需补充长期性能边界和更完整的真实任务场景验收。
 
-5. **用户断言与候选确认**
-   - 将 `fact add`、`task add`、`remember` 与 Manual Input promote 共用目标对象表。
-   - agent 推断仍只能 `candidate add` 或 `input promote --to candidate`。
-
-6. **Canonical Fact 持久化与复核**
-   - 实现 `fact review list/show/revalidate/revise/invalidate` 和 `fact revoke`。
-   - 支持 Source Tombstone / Fact Tombstone 的影响范围展示。
-
-7. **进入第 2 阶段准备**
+5. **进入第 2 阶段准备**
    - 当读链路、候选确认、Manual Input 和事实复核稳定后，再进入系统日历/任务同步与高级调度。
    - 第 2 阶段前必须复盘第 1 阶段的来源、权限、审计和撤销模型是否足够 source-neutral。
 
@@ -215,6 +212,6 @@ ADR-0009 对应第 1 阶段后续 milestone，不覆盖只读原型或 Manual In
 - 不做自动化外发或不可逆动作。
 - 不正式接入金融、健康、位置等高敏数据源；用户明确提交的 `Sensitive` Manual Input 仅作为本地隔离 Inbox 记录处理，默认不进入 Bundle。
 - 不把 Obsidian 变成产品中心。
-- 不要求一次性实现所有写侧命令。
+- 不要求一次性实现 ADR-0010 范围外的所有未来写侧命令；但 ADR-0010 明确列出的 Unified Write Model、迁移和恢复合同必须作为一次完整切换交付，不能留下长期双写中间态。
 - 不做后台截屏、系统日历同步或活动自动追踪；这些需要独立 Source Adapter 评估。
 - 不默认使用远程 embedding、远程 OCR 或远程视觉模型。
