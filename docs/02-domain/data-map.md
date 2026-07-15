@@ -1,7 +1,7 @@
 # Personal Data Map
 
 状态：draft
-最后更新：2026-07-03
+最后更新：2026-07-15
 职责边界：定义 LifeMesh 管理的个人数据类型、优先级和接入顺序。
 
 ## 数据类型
@@ -90,6 +90,8 @@ RumorClaim 是 Phase 1 follow-on milestone。当前已实现本地结构化 CLI 
 - [Rumor Claims](rumor-claims.md)
 
 ## 当前领域模型入口
+
+2026-07-15 已完成统一 Candidate/Acceptance/Canonical Object persistence 和真实本地数据库迁移；Manual Input 与 RumorClaim handoff 现共享统一 Candidate inbox。
 
 - [Context Bundle](context-bundle.md)
 - [Rumor Claims](rumor-claims.md)

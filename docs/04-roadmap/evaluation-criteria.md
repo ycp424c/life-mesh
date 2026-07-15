@@ -1,6 +1,6 @@
 # Evaluation Criteria
 
-状态：draft
+状态：active
 最后更新：2026-07-15
 职责边界：定义 LifeMesh 每个阶段如何判断“做得对”，避免只按功能数量推进。
 
@@ -49,16 +49,16 @@
 - Console 直接展示带敏感度标签的 Sensitive 正文，但 Bundle Explorer 默认排除 Sensitive；只有本次组装显式选择后才可加入，且不持久化该选择。
 - 2026-07-15 的首版实现已通过 Python HTTP/服务单测，以及桌面与窄屏真实浏览器验收；该记录不替代后续真实个人数据规模下的长期性能验证。
 - 配套 skill 存在，能指导 agent 调用 CLI 并按 `evidence_role` 消费 Bundle。
-- CLI 契约存在（`cli-contract.md`）：`bundle` 读 + Phase 1 后续 Manual Input `input add/search/list/show/update/revoke/delete/promote` + 传统 `fact add`/`task add`/`remember`/`candidate add` 写。
+- CLI 契约存在（`cli-contract.md`）：`bundle` 读、Manual Input、Unified Candidate/Acceptance/Canonical Object、review 和数据库维护命令与运行时一致。
 - agent 自动捕获只能用于非高敏信息并进入 `auto_captured` Manual Input，必须透明说明；agent 推断不得直接 `fact add` 或自动 promote，只能走 candidate / auto_captured → 用户确认。
 - RumorClaim 本地 CLI MVP 存在时，必须明确它只保存结构化 claim/mentions/source envelope；未验证线索默认不进入普通 Bundle，显式包含时只能作为 `lead`。
 - candidate 确认按 type 升级：`fact`→Canonical Fact、`task`→Task、`preference`/`relationship`/`decision`→Memory。
 - 低风险事实可策略自动接受；普通回答不被候选确认阻塞。
 - 能产出 Knowledge Candidate，但不会在未确认前写入 Canonical Store 或 Memory。
 - Knowledge Candidate 第一版至少支持 fact、preference、relationship、task、decision 五类。
-- 每个 Knowledge Candidate 都包含 confidence、risk、lifecycle、source_refs 和 why_suggested。
+- 每个 Knowledge Candidate 都包含 confidence、risk、status、normalized source links 和 why_suggested；兼容 lifecycle 只用于旧输出语义。
 - 普通回答不被 User Confirmation 阻塞。
-- Knowledge Candidate 具备生命周期：transient、inbox、confirm_required、discard。
+- 持久化 Knowledge Candidate 具备 pending、deferred、confirmed、merged、discarded 生命周期；transient lead 不写入 inbox。
 - User Confirmation 只在持久化到 Canonical Store、Memory、自动化规则或高风险写入前触发。
 - Canonical Fact 第一版只允许通过用户确认、用户手动创建、低风险策略接受三条路径生成。
 - Canonical Fact 必须包含 statement、source_refs、accepted_by、accepted_at、acceptance_path、confidence、risk、validity、revocation_status。
@@ -91,6 +91,14 @@ Phase 1 后续 RumorClaim milestone 通过条件：
 - 每个自动 source adapter 在产出 RumorClaim 前声明 `rumor_policy`；自动 adapter 不属于当前结构化 CLI MVP。
 - 第一版不做去重/合并，不因重复出现提升可信度。
 - 与 Canonical Fact 冲突的 RumorClaim 只生成 conflict lead，不自动打开正式 Fact Review。
+
+Phase 1 Unified Write Model milestone 已通过：
+
+- CLI、Manual Input、RumorClaim 的 Candidate handoff 进入同一 `knowledge_candidates` 真相源。
+- Candidate confirm 和 direct promote 共用 Acceptance、typed Fact/Memory/Task/Event persistence 和 normalized provenance。
+- source stale/revoked/deleted 能打开 Candidate/Object review；Fact/Memory 失效后不进入 Bundle。
+- migration 默认 dry-run，apply 前 online backup；restore 需要显式 apply，并与普通连接共享 `.database.lock` 并发合同。
+- 真实库 preflight/postflight 数量守恒，integrity/foreign-key 检查通过，migration 重跑 no-op，备份 SHA-256 与 manifest 一致。
 
 第 4 阶段通过条件：
 

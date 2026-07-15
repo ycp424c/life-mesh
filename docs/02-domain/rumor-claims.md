@@ -136,7 +136,7 @@ user_relevance >= medium OR impact >= high
 |---|---|
 | `parked` | 通过最低初筛，保留为未验证线索 |
 | `reviewed_parked` | 已人工检视并决定继续保留为未验证线索；默认复审列表跳过，但显式请求 rumor lead 时仍可进入 Bundle |
-| `candidate_created` | 已生成 Knowledge Candidate |
+| `candidate_created` | 已在统一 inbox 生成 Knowledge Candidate |
 | `dismissed` | 用户或规则判定无价值 |
 | `expired` | 到期未复核，默认不再检索或进入 Bundle |
 
@@ -144,7 +144,7 @@ user_relevance >= medium OR impact >= high
 
 - 普通 `parked` / `reviewed_parked`：60 天
 - 高影响或用户订阅主题：180 天
-- `candidate_created`：当前 MVP 仅保留本地 candidate link；完整 Candidate inbox 落地后跟随 Knowledge Candidate 生命周期
+- `candidate_created`：已生成统一 pending Candidate，后续跟随 Knowledge Candidate 生命周期
 - 用户显式 pin/save：不自动过期，但仍是未验证线索
 
 Review queue：
@@ -168,7 +168,7 @@ RumorClaim 默认不进入普通 Context Bundle。只有任务明确请求未验
 
 ## Promotion
 
-RumorClaim 只能 promote 到 Knowledge Candidate。当前本地 CLI MVP 会创建 `rumor_candidate_links` 并把 RumorClaim 标记为 `candidate_created`；这只是 Candidate handoff 的本地 link，不等同于完整 Candidate inbox 生命周期已实现。
+RumorClaim 只能 promote 到 Knowledge Candidate。当前 CLI 通过 `KnowledgeWorkflow` 创建统一 pending Candidate、normalized source link 和 audit，并把 RumorClaim 标记为 `candidate_created`；不再新增 legacy `rumor_candidate_links`。
 
 ```text
 RumorClaim -> Knowledge Candidate -> User Confirmation / policy -> Canonical Fact / Memory / Task

@@ -1,7 +1,7 @@
 # Knowledge Candidates
 
-状态：draft
-最后更新：2026-07-09
+状态：active
+最后更新：2026-07-15
 职责边界：定义第一版 Knowledge Candidate 的类型、共同字段和持久化边界。
 
 ## 定位
@@ -12,13 +12,13 @@ RumorClaim / UnverifiedClaim 是 Knowledge Candidate 的前置线索形态，不
 
 ## 第一版类型
 
-| 类型 | 说明 | 示例 | 默认生命周期 |
+| 类型 | 说明 | 示例 | 默认持久化状态 |
 |---|---|---|---|
-| fact | 带来源的客观陈述 | 某篇笔记提到“本地优先架构” | transient 或 inbox |
-| preference | 用户偏好或长期倾向 | 用户倾向本地优先、可审计、低耦合 | inbox 或 confirm_required |
-| relationship | 人、项目、主题、组织之间的关系 | 某人参与某项目，某主题关联某文档集 | inbox |
-| task | 可能需要行动的事项 | 某笔记里出现“下周补设计文档” | inbox 或 confirm_required |
-| decision | 用户做过的选择及其理由 | 选择静态看板而不是前端框架 | inbox 或 confirm_required |
+| fact | 带来源的客观陈述 | 某篇笔记提到“本地优先架构” | pending |
+| preference | 用户偏好或长期倾向 | 用户倾向本地优先、可审计、低耦合 | pending |
+| relationship | 人、项目、主题、组织之间的关系 | 某人参与某项目，某主题关联某文档集 | pending |
+| task | 可能需要行动的事项 | 某笔记里出现“下周补设计文档” | pending |
+| decision | 用户做过的选择及其理由 | 选择静态看板而不是前端框架 | pending |
 
 ## 共同字段
 
@@ -28,7 +28,7 @@ RumorClaim / UnverifiedClaim 是 Knowledge Candidate 的前置线索形态，不
 - `summary`
 - `confidence`
 - `risk`
-- `lifecycle`
+- `status`（`pending` / `deferred` / `confirmed` / `merged` / `discarded`）
 - `source_refs[]`
 - `why_suggested`
 - `created_at`
@@ -36,10 +36,13 @@ RumorClaim / UnverifiedClaim 是 Knowledge Candidate 的前置线索形态，不
 
 ## 生命周期
 
-- `transient`：仅用于当前任务，不进入候选收件箱。
-- `inbox`：进入候选知识收件箱，等待用户批量整理。
-- `confirm_required`：写入 Canonical Store、Memory、任务、自动化规则或外部动作前必须确认。
-- `discard`：不进入待确认或可用候选队列；保留 tombstone、原因和审计历史。
+- `pending`：进入候选知识收件箱，等待用户处理；兼容输出映射为 `confirm_required`。
+- `deferred`：暂缓处理，可带 `deferred_until`，之后 resume 回 pending。
+- `confirmed`：已经通过 Acceptance 生成正式对象。
+- `merged`：重复候选已合并到另一个 Candidate，保留 `merged_into_candidate_id` 和 decision。
+- `discarded`：不进入待确认或可用候选队列；保留 decision、原因和审计历史。
+
+仅用于当前 Bundle 的 transient lead 不写入 `knowledge_candidates`。
 
 ## 持久化边界
 
@@ -53,35 +56,29 @@ RumorClaim / UnverifiedClaim 是 Knowledge Candidate 的前置线索形态，不
 
 ## 确认流程
 
-candidate 存在本地 inbox（第 1 阶段为 `~/.lifemesh/lifemesh.db` 的 `knowledge_candidates` 表），用户用 CLI 异步批量确认，dashboard 只读展示、不写回。
+candidate 存在本地 inbox（第 1 阶段为 `~/.lifemesh/lifemesh.db` 的 `knowledge_candidates` 表），用户用 CLI 异步逐条处理，dashboard 只读展示、不写回。批量确认仍是体验优化项。
 
-当前已实现最小 CLI：
+当前 CLI：
 
 ```bash
 lifemesh candidate list                      # 看待确认 inbox，按 risk/confidence 排序
 lifemesh candidate show <id>                 # 看详情：来源、why_suggested、置信度
-lifemesh candidate discard <id>             # 丢弃，写 tombstone，不删除历史
-```
-
-后续仍未实现：
-
-```bash
 lifemesh candidate confirm <id>             # 接受
-lifemesh candidate edit <id> "<text>"        # 先改再接受
-lifemesh candidate merge <id1> <id2>         # 合并重复
+lifemesh candidate edit <id> --summary "..." # 先改再接受
+lifemesh candidate merge <winner> <loser>    # 合并重复
 lifemesh candidate defer <id>               # 留在 inbox，下次再看
-lifemesh candidate confirm --ids i1,i2,i3   # 批量
-lifemesh candidate discard --type preference --older-than 30d
+lifemesh candidate resume <id>              # 恢复待处理
+lifemesh candidate discard <id>             # 丢弃，保留 decision 和审计
 ```
 
-`candidate add` 已实现，默认写入 `lifecycle=confirm_required`，支持 `type`、`source_refs[]`、`confidence`、`risk`、`why_suggested` 和可选 `expires_at`。当前 `discard` 只改变 lifecycle，不执行 confirm 后的对象升级。
+`candidate add` 默认写入 `status=pending`，支持 `type`、normalized source links、`confidence`、`risk`、`why_suggested`、`sensitivity` 和可选 `expires_at`。Manual Input 与 RumorClaim promote 复用同一 handoff；`confirm` 在一个事务内写 Acceptance、正式对象、source links、decision 和 audit。
 
 确认特性：
 
 - **异步、不阻塞**：candidate 进 inbox 后，普通回答照常返回，不逼用户当场逐条确认。`bundle` 产出候选时只提示"本次产生 N 条候选，可 `candidate list` 复核"。
 - **低风险自动接受**（Q12 路径 3）：非常明确、非画像的事实（"某笔记标题是 X""某文件在路径 Y""某 revision hash 是 Z"）不走人工确认，策略直接接受。
-- **批量 + defer**：支持批量 confirm/discard，拿不准的留 inbox。
-- **agent 不能 confirm**：agent 只能 `candidate add`，确认只能由用户发起。
+- **defer**：拿不准的留 inbox，之后显式 resume。
+- **agent 不能 confirm**：agent 可以 `candidate add`，`candidate confirm` 由用户直接操作 CLI。
 
 ## 确认后升级映射
 

@@ -12,6 +12,7 @@ from typing import Any
 from .assembler import BundleAssembler
 from .config import LifemeshConfig
 from .context_types import ContextCandidate, RetrievalResult
+from .database import LifeMeshDatabase
 
 SENSITIVITY_LEVELS = ["Public", "Internal", "Private", "Sensitive", "Restricted"]
 SENSITIVITY_RANK = {name.lower(): index for index, name in enumerate(SENSITIVITY_LEVELS)}
@@ -197,13 +198,41 @@ class RumorClaimStore:
             claim = _row_to_claim(row)
             claim["entity_mentions"] = self._mentions(con, rumor_claim_id, "entity")
             claim["relation_mentions"] = self._mentions(con, rumor_claim_id, "relation")
-            claim["candidate_links"] = [
-                _decode_candidate_link(dict(item))
-                for item in con.execute(
-                    "SELECT * FROM rumor_candidate_links WHERE rumor_claim_id = ? ORDER BY created_at",
-                    (rumor_claim_id,),
-                ).fetchall()
-            ]
+            claim["candidate_links"] = []
+            if _table_exists(con, "rumor_candidate_links"):
+                claim["candidate_links"] = [
+                    _decode_candidate_link(dict(item))
+                    for item in con.execute(
+                        "SELECT * FROM rumor_candidate_links WHERE rumor_claim_id = ? ORDER BY created_at",
+                        (rumor_claim_id,),
+                    ).fetchall()
+                ]
+            if _has_unified_schema(con):
+                claim["candidate_links"].extend(
+                    {
+                        "object_id": item["candidate_id"],
+                        "target_type": "candidate",
+                        "target_payload": {
+                            "statement": item["summary"],
+                            "type": item["type"],
+                            "confidence": item["confidence"],
+                            "risk": item["risk"],
+                        },
+                        "rumor_claim_id": rumor_claim_id,
+                        "created_at": item["created_at"],
+                    }
+                    for item in con.execute(
+                        """
+                        SELECT DISTINCT c.*
+                        FROM knowledge_candidates c
+                        JOIN candidate_source_links l ON l.candidate_id = c.candidate_id
+                        JOIN source_references s ON s.source_ref_id = l.source_ref_id
+                        WHERE s.source_kind = 'rumor_claim' AND s.source_item_id = ?
+                          AND l.relationship = 'derived_from'
+                        """,
+                        (rumor_claim_id,),
+                    ).fetchall()
+                )
             claim["audit_events"] = [
                 _decode_audit(dict(item))
                 for item in con.execute(
@@ -240,6 +269,17 @@ class RumorClaimStore:
 
     def promote(self, rumor_claim_id: str, payload: dict[str, Any]) -> dict[str, Any]:
         _validate_candidate_payload(payload)
+        if LifeMeshDatabase(self.config).status()["schema_status"] == "current":
+            from .knowledge_workflow import KnowledgeWorkflow
+
+            candidate = KnowledgeWorkflow(self.config).handoff_rumor_claim(rumor_claim_id, payload)
+            return {
+                "object_id": candidate["candidate_id"],
+                "target_type": "candidate",
+                "derived_from_rumor_claim_id": rumor_claim_id,
+                "candidate": candidate,
+                "rumor_claim": self.show(rumor_claim_id),
+            }
         object_id = _new_id("candidate")
         now = _utc_now()
         with self._connect() as con:
@@ -341,9 +381,10 @@ class RumorClaimStore:
         )
 
     def _connect(self) -> sqlite3.Connection:
+        database = LifeMeshDatabase(self.config)
+        database.ensure_current_for_write()
         _ensure_private_dir(self.config.home)
-        con = sqlite3.connect(self.config.db_path)
-        con.row_factory = sqlite3.Row
+        con = database.connect()
         _create_schema(con)
         _chmod_file(self.config.db_path, 0o600)
         return con
@@ -439,12 +480,6 @@ def _create_schema(con: sqlite3.Connection) -> None:
             value TEXT NOT NULL,
             position INTEGER NOT NULL
         );
-        CREATE TABLE IF NOT EXISTS rumor_candidate_links (
-            object_id TEXT PRIMARY KEY,
-            target_payload_json TEXT NOT NULL,
-            rumor_claim_id TEXT NOT NULL,
-            created_at TEXT NOT NULL
-        );
         CREATE TABLE IF NOT EXISTS rumor_audit_events (
             event_id INTEGER PRIMARY KEY AUTOINCREMENT,
             rumor_claim_id TEXT NOT NULL,
@@ -454,6 +489,30 @@ def _create_schema(con: sqlite3.Connection) -> None:
         );
         """
     )
+    if not _has_unified_schema(con):
+        con.execute(
+            """
+            CREATE TABLE IF NOT EXISTS rumor_candidate_links (
+                object_id TEXT PRIMARY KEY,
+                target_payload_json TEXT NOT NULL,
+                rumor_claim_id TEXT NOT NULL,
+                created_at TEXT NOT NULL
+            )
+            """
+        )
+
+
+def _has_unified_schema(con: sqlite3.Connection) -> bool:
+    return con.execute(
+        "SELECT 1 FROM sqlite_master WHERE type='table' AND name='schema_migrations'"
+    ).fetchone() is not None
+
+
+def _table_exists(con: sqlite3.Connection, table: str) -> bool:
+    return con.execute(
+        "SELECT 1 FROM sqlite_master WHERE type='table' AND name = ?",
+        (table,),
+    ).fetchone() is not None
 
 
 def _claim_to_slice(claim: dict[str, Any], index: int, score: float) -> dict[str, Any]:

@@ -2,7 +2,7 @@
 
 LifeMesh 是一个面向个人的 Personal Data OS：把分散在生活、工作、关系、文件、日程和决策中的个人数据，逐步整理成可检索、可理解、可授权、可审计，并能被 AI Agent 安全使用的上下文基础设施。
 
-当前阶段已从文档结构和静态 Web 项目看板，进入第 1 阶段本地原型。已实现 Obsidian 只读 Context Bundle、source-neutral BundleAssembler，以及 ADR-0008 的 Manual Input Inbox：本地 SQLite、FTS、sqlite-vec、LM Studio embedding/VLM、update/revoke/delete 和 inbox-derived promote 闭环。ADR-0009 的 RumorClaim / UnverifiedClaim 已有本地结构化 CLI MVP：保存通过初筛的 claim、entity/relation mentions 和最小 source envelope，默认不进入普通 Bundle，显式包含时只能作为未验证 lead，并且只能 promote 到 Knowledge Candidate。2026-07-09 已完成 Q20 真实 vault 手工验收记录并落地 Candidate inbox 最小 CLI。2026-07-15 已实现 React + shadcn/ui 的本机只读 LifeMesh Console；ADR-0010 的 Unified Write Model 仍是已接受但尚未实现的目标架构。
+当前阶段已从文档结构和静态 Web 项目看板，进入第 1 阶段本地原型。已实现 Obsidian 只读 Context Bundle、source-neutral BundleAssembler，以及 ADR-0008 的 Manual Input Inbox：本地 SQLite、FTS、sqlite-vec、LM Studio embedding/VLM、update/revoke/delete 和 inbox-derived promote 闭环。ADR-0009 的 RumorClaim / UnverifiedClaim 已有本地结构化 CLI MVP：保存通过初筛的 claim、entity/relation mentions 和最小 source envelope，默认不进入普通 Bundle，显式包含时只能作为未验证 lead，并且只能 promote 到 Knowledge Candidate。2026-07-15 已实现 React + shadcn/ui 的本机只读 LifeMesh Console，并完成 ADR-0010 Unified Write Model：统一 Candidate handoff、Acceptance、typed Canonical Fact/Memory/Task/Event、provenance/review/tombstone、Bundle 准入和受控数据库迁移/恢复。真实 `~/.lifemesh/lifemesh.db` 已完成 online backup、守恒迁移和幂等复核。
 
 ## 项目原则
 
@@ -40,7 +40,7 @@ LifeMesh 是一个面向个人的 Personal Data OS：把分散在生活、工作
 
 ## 当前状态
 
-文档基线和静态 Project Board 已建立。第 1 阶段已收敛为 Personal Context Layer，CLI 原型已提供 `lifemesh bundle`、Obsidian Source Adapter、source-neutral BundleAssembler、JSON Context Bundle、stale/missing 链路、agent skill，以及 Manual Input Inbox 的本地记录、语义检索、截图 VLM extraction、`--source manual-input/all` Bundle、update/revoke/delete 和 promote 到 inbox-derived 最小 task/event/memory/fact/candidate。Candidate inbox 当前支持 `candidate add/list/show/discard`；ADR-0010 已确定 confirm / merge / edit、统一 Candidate handoff、Acceptance、Canonical Fact / Memory / Task / Event、Fact Review 与数据库迁移必须一次性交付，但这些能力当前仍未实现。ADR-0011 的只读 LifeMesh Console 已实现：按需启动、仅绑定 `127.0.0.1`，不替代 Project Board 或 Agent 的 CLI + Bundle。RumorClaim 当前仍是 lead-only，自动 source adapter、图片自动抽取、外部事实核查和写入式 review UI 尚未实现。
+文档基线和静态 Project Board 已建立。第 1 阶段已收敛为 Personal Context Layer，CLI 原型已提供 `lifemesh bundle`、Obsidian Source Adapter、source-neutral BundleAssembler、JSON Context Bundle、stale/missing 链路、agent skill，以及 Manual Input Inbox 的本地记录、语义检索、截图 VLM extraction、update/revoke/delete。Candidate inbox 已支持 add/list/show/edit/merge/defer/resume/confirm/discard；Manual Input 与 RumorClaim handoff 已统一进入该 inbox，confirm 或用户显式写入通过 Acceptance 生成 typed Canonical Fact/Memory/Task/Event。Fact Review、source cascade、tombstone、canonical Bundle retrieval 和数据库 backup/migrate/restore/reconcile 已实现。ADR-0011 的只读 LifeMesh Console 仍按需启动、仅绑定 `127.0.0.1`，不替代 Project Board 或 Agent 的 CLI + Bundle。RumorClaim 仍是 lead-only，自动 source adapter、图片自动抽取、外部事实核查和写入式 review UI 尚未实现。
 
 ## LifeMesh Console
 
@@ -97,13 +97,20 @@ bin/lifemesh bundle "需要什么上下文" --source all --vault tests/fixtures/
 
 `--source all` 会让 Obsidian 和 Manual Input 各自返回 candidates，再由 BundleAssembler 统一执行准入、来源层级、去重、多样性选择和 `assembly_report` 诊断。
 
-Candidate inbox 本地 MVP：
+Unified Write Model 常用命令：
 
 ```bash
 bin/lifemesh candidate add "候选知识" --type fact --source-ref "obsidian:hot.md#L16-L22"
 bin/lifemesh candidate list
 bin/lifemesh candidate show <candidate-id>
+bin/lifemesh candidate confirm <candidate-id>
 bin/lifemesh candidate discard <candidate-id> --reason "不再需要"
+bin/lifemesh fact add "用户明确确认的事实" --user-asserted
+bin/lifemesh remember "需要长期保留的显式记忆"
+bin/lifemesh review list
+bin/lifemesh db status
+bin/lifemesh db migrate              # dry-run
+bin/lifemesh db migrate --apply      # online backup + migration
 ```
 
 RumorClaim 本地 MVP：

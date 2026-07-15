@@ -10,6 +10,7 @@ from .assembler import BundleAssembler
 from .candidates import CandidateError, CandidateStore
 from .config import LifemeshConfig
 from .context_types import ContextCandidate
+from .database import LifeMeshDatabase
 from .manual_input import ManualInputError, ManualInputStore
 from .obsidian import retrieve_candidates as retrieve_obsidian_candidates
 from .rumor_claims import RumorClaimError, RumorClaimStore
@@ -329,7 +330,7 @@ class ConsoleService:
         vector_status = "not configured"
         if database_exists:
             try:
-                with sqlite3.connect(f"file:{self.config.db_path}?mode=ro", uri=True) as con:
+                with LifeMeshDatabase(self.config).connect() as con:
                     row = con.execute(
                         "SELECT value FROM lifemesh_meta WHERE key = 'vector_status'"
                     ).fetchone()

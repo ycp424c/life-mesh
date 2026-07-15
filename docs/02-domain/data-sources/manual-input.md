@@ -1,7 +1,7 @@
 # Manual Input
 
-状态：draft
-最后更新：2026-07-03
+状态：active
+最后更新：2026-07-15
 职责边界：定义 Phase 1 后续 milestone 中，用户和 Agent 主动提交的截图、日程、心情、活动、待办和备注如何进入 LifeMesh Inbox、索引、Bundle 和 promote 流程。不定义后台截屏、系统日历同步、活动追踪器接入或远程 embedding 默认策略。
 
 ## Source
@@ -150,9 +150,9 @@ Manual Input 可以 promote 到：
 
 Promote 必须带目标对象的明确字段。缺关键字段时，只能转 candidate 或停留在 Inbox。Promote 后：
 
-- 创建 inbox-derived 最小目标对象表记录。
-- 写入 `derived_from_input_id`。
-- 记录 audit event。
+- Candidate 目标走统一 handoff；Fact/Memory/Task/Event 目标走 Acceptance 和 typed persistence。
+- 写入 normalized Manual Input Source Reference 及 `derived_from` / `supports` links。
+- 在同一数据库事务记录 source、acceptance、object 和 audit；legacy `promoted_objects` 不再接受新写入。
 - 原 input 状态改为 `promoted`，但仍作为 provenance 保留。
 
 Phase 1 的 Task / Event promote 只验证本地 Inbox 到最小目标对象的闭环，不接入系统日历、提醒事项或外部任务应用同步。
@@ -203,7 +203,7 @@ Manual Input 准入规则：
 
 - `revoke`：停止检索和 Bundle 准入，保留 tombstone、审计和派生关系。
 - `delete`：移除 managed raw asset、embedding、extraction 和主记录内容，只保留最小 deletion tombstone。
-- 依赖该 input 的 Candidate 标记 discarded 或 needs_review。
+- 依赖该 input 的 Candidate 打开 source-triggered review，并在解决前禁止 confirm。
 - 依赖该 input 的 Canonical Fact 进入 `validity=needs_review`。
 - 依赖该 input 的 Memory 需要展示来源撤销，并允许删除或修订。
 

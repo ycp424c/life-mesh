@@ -22,7 +22,7 @@ LifeMesh Phase 1 已有三个可运行但彼此分裂的写入口：`candidate a
 - 真实库迁移前必须获取 exclusive lock，使用 SQLite online backup API 生成备份与 manifest，并以迁移前动态 identity/count snapshot 驱动 postflight 守恒校验；设计时固定计数不能作为实施常量。
 - restore 必须复用 migration 的 exclusive lock 和旧进程 preflight，在没有目标数据库 connection 存活时原子替换，并在锁内完成 integrity 与 smoke test。
 
-完整字段、状态机、CLI、migration mapping 和验收规则见 [Unified Write Model Implementation Spec](../superpowers/specs/2026-07-10-unified-write-model-design.md)；目标架构边界见 [Unified Write Model And Migrations](../03-architecture/write-model-and-migrations.md)。
+完整字段、状态机、CLI、migration mapping 和验收规则见 [Unified Write Model Implementation Spec](../superpowers/specs/2026-07-10-unified-write-model-design.md)；运行时架构边界见 [Unified Write Model And Migrations](../03-architecture/write-model-and-migrations.md)。
 
 ## Consequences
 
@@ -53,9 +53,10 @@ LifeMesh Phase 1 已有三个可运行但彼此分裂的写入口：`candidate a
 4. **仅靠操作提示停止连接，不实现 restore lock**
    - 未选择。旧进程或 companion file 仍可能在 `os.replace` 期间写入，无法保证恢复安全。
 
-## Follow-ups
+## Implementation Record
 
-- 按 implementation spec 使用 TDD 实现统一 database layer、workflow、typed stores、review 和 Bundle integration。
-- 在隔离 HOME 完成 legacy fixture migration、幂等、backup/restore 和 failure rollback 测试。
-- 自动化验证全部通过后，备份并迁移真实数据库，交付 manifest、hash、postflight report 和恢复命令。
-- 实现完成后更新领域、CLI、Agent skill、架构、路线图和 dashboard，使其从 target architecture 切换为 runtime truth。
+- 2026-07-15：按 implementation spec 使用 TDD 完成统一 database layer、workflow、typed stores、review 和 Bundle integration。
+- 隔离 HOME 的 legacy fixture 与真实数据库形状演练均通过 migration、幂等、backup/restore 和守恒测试。
+- 真实数据库已先生成受管 online backup，再迁移为 `0001_unified_write_model`；postflight integrity、foreign key 和动态集合守恒通过，备份 SHA-256 与 manifest 一致。
+- 2026-07-15 独立 Standards/Spec review 后补强 source update 原子性、多来源 required/optional 判定、Candidate review 闭环、staged-file outbox、identity/link/audit/FTS/vector 守恒和 forensic restore。真实库另做受管 online backup，并将 1 条 deleted-input promote 的统一审计副本净化为仅含 object/type/payload hash 的 `legacy_target_missing`；integrity check 通过。
+- 领域、CLI、Agent skill、架构、路线图和 dashboard 已同步为 runtime truth。

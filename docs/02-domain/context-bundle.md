@@ -1,12 +1,14 @@
 # Context Bundle
 
-状态：draft
-最后更新：2026-07-03
+状态：active
+最后更新：2026-07-15
 职责边界：定义 Context Bundle 的组装方式、来源优先级和失效来源处理，不定义具体序列化格式。
 
 ## 定位
 
 Context Bundle 是 Personal Context Layer 为某个 Agent 任务、在某个权限边界内临时组装的上下文包。它由若干 Context Slice 组成，每个 Slice 都带来源、权限、新鲜度和 Citation Status。
+
+当前 `bundle --source all` 已将准入通过的 typed Canonical Fact 和 Memory 与 Obsidian、Manual Input、可选 RumorClaim candidates 一起交给 BundleAssembler；`needs_review`、invalid、superseded、revoked 或失去 current support 的对象不会进入可用 slices。
 
 它不是：
 

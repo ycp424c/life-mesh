@@ -70,11 +70,11 @@
 
 LifeMesh Console 是独立于静态 Project Board 的用户产品界面。第一版读取真实本地数据但不修改数据，通过按需启动、仅绑定 `127.0.0.1` 的 Console Server 复用 read-side application logic；Agent 接口仍是 CLI + JSON Bundle + skill。详细边界见 [LifeMesh Console](lifemesh-console.md) 和 [ADR-0011](../05-decisions/ADR-0011-local-loopback-console-server.md)。
 
-## Unified Write Model 目标架构
+## Unified Write Model
 
-ADR-0010 已确认 Unified Write Model 目标架构，但实现尚未开始。目标状态由统一 database layer 和 `KnowledgeWorkflow` 收敛 CLI、Manual Input、RumorClaim 的 Candidate handoff、Acceptance、Canonical Object、provenance、review、tombstone 与 audit；当前三个 legacy 写路径在迁移完成前仍是运行时真相。
+ADR-0010 已实现。统一 database layer 和 `KnowledgeWorkflow` 已收敛 CLI、Manual Input、RumorClaim 的 Candidate handoff、Acceptance、typed Canonical Object、provenance、review、tombstone 与 audit；legacy `promoted_objects`、`rumor_candidate_links` 和旧 audit 表仅保留只读兼容数据。
 
-迁移与恢复必须共享 exclusive lock，使用 SQLite online backup，并以迁移当时动态生成的 identity/count manifest 做守恒验收。详细边界见 [Unified Write Model And Migrations](write-model-and-migrations.md) 和 [ADR-0010](../05-decisions/ADR-0010-unified-write-model-transactional-acceptance-and-database-migration.md)。
+普通连接持有 shared database lock；迁移与恢复共享 exclusive lock，使用 SQLite online backup，并以迁移当时动态生成的 identity/count manifest 做守恒验收。2026-07-15 真实本地库已完成迁移与幂等复核。详细边界见 [Unified Write Model And Migrations](write-model-and-migrations.md) 和 [ADR-0010](../05-decisions/ADR-0010-unified-write-model-transactional-acceptance-and-database-migration.md)。
 
 ## 可视化边界
 

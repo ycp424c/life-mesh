@@ -105,11 +105,11 @@ The user action required before a Knowledge Candidate or high-risk action is per
 _Avoid_: approval, feedback
 
 **Candidate Lifecycle**:
-The lifecycle state of a Knowledge Candidate before it becomes durable knowledge. Initial states are transient, inbox, confirm_required, and discard.
+The persisted lifecycle of a Knowledge Candidate before and after acceptance. Stored states are pending, deferred, confirmed, merged, and discarded; expired is a time-derived effective state, while transient leads are not persisted. Compatibility output may still expose confirm_required for pending records.
 _Avoid_: confirmation status, review queue
 
 **Candidate Inbox**:
-A local store (phase 1: a JSON file) where Knowledge Candidates wait for user confirmation. Users confirm, edit, merge, defer, or discard candidates via CLI, asynchronously and in batches; the dashboard shows the inbox read-only and does not write back.
+A local SQLite store where Knowledge Candidates wait for user confirmation. Users confirm, edit, merge, defer, resume, or discard candidates via CLI asynchronously; batch confirmation remains a future experience improvement, and the dashboard stays read-only.
 _Avoid_: approval queue, task list, notification center
 
 **Source-Backed Answer**:

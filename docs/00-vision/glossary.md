@@ -1,7 +1,7 @@
 # Glossary
 
 状态：draft
-最后更新：2026-07-03
+最后更新：2026-07-15
 职责边界：统一 LifeMesh 的核心术语，避免后续文档语义漂移。
 
 | 术语 | 含义 |
@@ -34,7 +34,7 @@
 | Manual Input Tombstone | Manual Input 被 revoke 或 delete 后的不可用标记，用于阻止旧 input、extraction 和 embedding 继续命中新任务。 |
 | Fact Tombstone | Canonical Fact 被撤销、失效或替代后的不可用标记，用于阻止旧 fact 继续进入新 Context Bundle。 |
 | User Confirmation | 候选知识进入 canonical facts、长期记忆或高风险外部动作前的用户确认；普通回答不应被确认流程阻塞。 |
-| Candidate Lifecycle | Knowledge Candidate 持久化前的生命周期状态，初始包括 transient、inbox、confirm_required、discard。 |
+| Candidate Lifecycle | Knowledge Candidate 的持久化状态为 pending、deferred、confirmed、merged、discarded；expired 是时间投影，transient lead 不持久化。 |
 | Obsidian Vault | LifeMesh 第一个验证适配器：本地 Obsidian 知识库，用于验证可编辑知识源，不是产品中心。 |
 | Vault Note | Obsidian Vault 内的 Markdown 笔记，可能包含 frontmatter、标题、wikilink、任务和附件链接。 |
 | Vault Note Revision | 某篇 Vault Note 被索引时的具体版本，由路径、修改元数据、内容哈希和索引时间识别。 |

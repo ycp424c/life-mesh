@@ -1,8 +1,8 @@
 # Unified Write Model Implementation Spec
 
-状态：active
+状态：implemented
 最后更新：2026-07-15
-职责边界：把 ADR-0010 和正式架构文档约束展开为 LifeMesh Phase 1 Unified Write Model 的实施、迁移与验收规格。架构决策以 ADR-0010 为准，目标架构以 `docs/03-architecture/write-model-and-migrations.md` 为准；本文不定义外部日历/任务同步、自动 Rumor source adapter、远程服务或 dashboard 写回。
+职责边界：记录 ADR-0010 Phase 1 Unified Write Model 已完成实现、迁移与验收所遵循的规格。架构决策以 ADR-0010 为准，运行时架构以 `docs/03-architecture/write-model-and-migrations.md` 为准；本文不定义外部日历/任务同步、自动 Rumor source adapter、远程服务或 dashboard 写回。
 
 正式决策与架构来源：
 
@@ -11,7 +11,7 @@
 
 ## 1. 背景
 
-LifeMesh 已有三个可运行的本地写侧原型，但它们没有形成统一闭环：
+实施前，LifeMesh 已有三个可运行的本地写侧原型，但它们没有形成统一闭环：
 
 - `candidate add` 写入 `knowledge_candidates`。
 - `input promote` 写入通用 JSON 表 `promoted_objects`。
@@ -504,7 +504,7 @@ Candidate 参数固定为：
 - `defer <id> [--until ...] [--reason ...]` 与 `resume <id>`。
 - `confirm <id> [--user-asserted] [--accepted-by local-user]`。没有 current supports 的 Fact Candidate 必须显式 `--user-asserted`，不能把 derived Rumor link 自动升级为 supports。
 
-本地 CLI 没有身份认证，无法从技术上判断调用者是否为 Agent。“Agent 不能 confirm”是 capability/governance 约束：skill 和 Agent runtime 在没有用户当前明确指令时不得调用 confirm/review/revoke；CLI 审计 actor 固定记录实际传入的本地 actor，不宣称它是鉴权 token。
+本地 CLI 没有身份认证，无法从技术上判断调用者是否为 Agent。“Agent 不能 confirm”是 capability/governance 约束：skill 和 Agent runtime 不调用 `candidate confirm`，确认由用户直接操作 CLI；review/revoke 也不得由 Agent 自主执行。CLI 审计 actor 固定记录实际传入的本地 actor，不宣称它是鉴权 token。
 
 file outbox 在原命令返回前立即尝试一次；失败时领域记录已不可检索，但响应必须返回 `file_cleanup_pending=true` 和非零状态。managed 文件仍留在私有目录，后续用 `db reconcile-files --apply` 幂等重试。
 
@@ -742,3 +742,7 @@ node --check dashboard/app.js
 8. 候选确认、正式对象、Fact Review 和 Bundle 准入在隔离 HOME 完成端到端验收。
 9. 备份路径、hash、迁移报告和恢复命令已交付给用户。
 10. 明确说明 dashboard 已同步；若展示结构未改，说明现有结构足以承载新状态。
+
+## 16. Implementation Record
+
+2026-07-15 已按本规格完成实现和真实本地数据库切换。隔离 HOME 自动化与真实数据库形状演练覆盖 migration、幂等、backup/restore、Candidate/Acceptance/Review/Bundle；正式库 postflight 为 7 Candidates、134 Source References、38 Source Tombstones、0 Canonical Objects，集合守恒且 integrity/foreign-key 检查通过。旧业务表保留只读，所有新 handoff 和正式对象写入统一 workflow。

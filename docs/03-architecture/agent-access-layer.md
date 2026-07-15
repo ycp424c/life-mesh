@@ -1,6 +1,6 @@
 # Agent Access Layer
 
-状态：draft
+状态：active
 最后更新：2026-07-15
 职责边界：定义 AI Agent 如何通过受控接口访问 LifeMesh，而不是直接访问底层数据。
 
@@ -40,8 +40,8 @@
 第 1 阶段 Agent 接口 = 薄 CLI + skill，不引入运行时 server。CLI 契约见 `cli-contract.md`：
 
 - 读：`lifemesh bundle "<task>"` 产出 JSON Context Bundle。
-- Phase 1 后续写入：`input add/search/list/show/update/revoke/delete/promote`（Manual Input Inbox，ADR-0008）。
-- 用户断言写：`fact add` / `task add` / `remember` 后续与 Manual Input promote 共用底层目标对象。
+- Manual Input 写入：`input add/search/list/show/update/revoke/delete/promote`（ADR-0008）。
+- Unified Write Model：`candidate` 完整生命周期、`fact` / `memory` / `task` / `event`、`review` 和 `db` 命令已实现；用户断言、Candidate confirm 与 Manual Input promote 共用 Acceptance/typed persistence。
 - agent 自动捕获：只能对非高敏信息调用 `input add --auto-captured`，写入后必须透明说明 id、kind、摘要、sensitivity 和 Bundle 可用性。
 - agent 推断写：`candidate add` 或 `input promote --to candidate`（进 inbox，需用户确认）。
 - RumorClaim 本地结构化 CLI MVP：`rumor` 命令只能保存已抽取的未验证 claim，并作为 review lead 处理；Agent 不得把 RumorClaim 当作事实、任务、记忆或外部动作。

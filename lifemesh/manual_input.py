@@ -10,6 +10,7 @@ import shutil
 import sqlite3
 import struct
 import uuid
+from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -19,6 +20,7 @@ from urllib import error, request
 from .assembler import BundleAssembler
 from .config import LifemeshConfig
 from .context_types import ContextCandidate, RetrievalResult
+from .database import LifeMeshDatabase
 
 SENSITIVITY_LEVELS = ["Public", "Internal", "Private", "Sensitive", "Restricted"]
 SENSITIVITY_RANK = {name.lower(): index for index, name in enumerate(SENSITIVITY_LEVELS)}
@@ -253,11 +255,16 @@ class ManualInputStore:
         extraction_error = None
         extraction_status = "skipped"
         embedding_error = None
+        staged_path: Path | None = None
 
         if kind == "screenshot":
             if file_path is None:
                 raise ManualInputError("--file is required for kind=screenshot")
-            stored_path, asset_sha256, media_type = self._copy_asset(file_path, input_id, created_at)
+            staged_path, stored_path, asset_sha256, media_type = self._stage_asset(
+                file_path,
+                input_id,
+                created_at,
+            )
             if not no_extract:
                 try:
                     extraction_text, _confidence = self.client.extract_image(file_path, text)
@@ -283,7 +290,7 @@ class ManualInputStore:
         else:
             embedding_error = "Manual Input has no searchable text"
 
-        with self._connect() as con:
+        with _staged_asset_guard(staged_path), self._connect() as con:
             con.execute(
                 """
                 INSERT INTO manual_inputs (
@@ -351,6 +358,23 @@ class ManualInputStore:
             if embedding_subject and vector is not None:
                 self._insert_embedding(con, input_id, "input_text", input_id, embedding_subject, vector, created_at)
             self._replace_fts(con, input_id)
+            if staged_path is not None and stored_path is not None:
+                operation_key = f"promote-staged-asset:{input_id}:{asset_sha256}"
+                con.execute(
+                    """
+                    INSERT INTO file_operations(
+                        operation_id, operation_type, idempotency_key,
+                        source_path, target_path, status, attempts, created_at
+                    ) VALUES (?, 'promote_staged_asset', ?, ?, ?, 'pending', 0, ?)
+                    """,
+                    (
+                        _new_id("fileop"),
+                        operation_key,
+                        str(staged_path),
+                        str(stored_path),
+                        created_at,
+                    ),
+                )
             audit_payload: dict[str, Any] = {"kind": kind, "status": status}
             if extraction_error:
                 audit_payload["extraction_error"] = extraction_error
@@ -360,9 +384,15 @@ class ManualInputStore:
                 audit_payload["vector_error"] = self._vector_setup_error
             self._audit(con, input_id, "add", audit_payload)
 
+        file_cleanup_pending = False
+        if staged_path is not None:
+            report = LifeMeshDatabase(self.config).reconcile_files(apply=True)
+            file_cleanup_pending = bool(report["pending_count"])
+
         return self.show(input_id) | {
             "bundle_eligible": bool(embedding_subject) and status == "active" and normalized_sensitivity != "Sensitive",
             "extraction_id": extraction_id,
+            "file_cleanup_pending": file_cleanup_pending,
         }
 
     def search(
@@ -496,13 +526,61 @@ class ManualInputStore:
                     (input_id,),
                 ).fetchall()
             ]
-            derived = [
-                _decode_promoted(dict(item))
-                for item in con.execute(
-                    "SELECT * FROM promoted_objects WHERE derived_from_input_id = ? ORDER BY created_at",
-                    (input_id,),
-                ).fetchall()
-            ]
+            derived = []
+            if _table_exists(con, "promoted_objects"):
+                derived = [
+                    _decode_promoted(dict(item))
+                    for item in con.execute(
+                        "SELECT * FROM promoted_objects WHERE derived_from_input_id = ? ORDER BY created_at",
+                        (input_id,),
+                    ).fetchall()
+                ]
+            if _has_unified_schema(con):
+                derived.extend(
+                    {
+                        "object_id": item["candidate_id"],
+                        "target_type": "candidate",
+                        "target_payload": {
+                            "statement": item["summary"],
+                            "type": item["type"],
+                            "confidence": item["confidence"],
+                            "risk": item["risk"],
+                        },
+                        "derived_from_input_id": input_id,
+                        "created_at": item["created_at"],
+                    }
+                    for item in con.execute(
+                        """
+                        SELECT DISTINCT c.*
+                        FROM knowledge_candidates c
+                        JOIN candidate_source_links l ON l.candidate_id = c.candidate_id
+                        JOIN source_references s ON s.source_ref_id = l.source_ref_id
+                        WHERE s.source_kind = 'manual_input' AND s.source_item_id = ?
+                          AND l.relationship = 'derived_from'
+                        """,
+                        (input_id,),
+                    ).fetchall()
+                )
+                derived.extend(
+                    {
+                        "object_id": item["object_id"],
+                        "target_type": item["object_type"],
+                        "target_payload": {},
+                        "derived_from_input_id": input_id,
+                        "created_at": item["created_at"],
+                    }
+                    for item in con.execute(
+                        """
+                        SELECT DISTINCT o.*
+                        FROM canonical_objects o
+                        JOIN object_source_links l ON l.object_id = o.object_id
+                        JOIN source_references s ON s.source_ref_id = l.source_ref_id
+                        WHERE s.source_kind = 'manual_input' AND s.source_item_id = ?
+                          AND l.relationship = 'derived_from'
+                        """,
+                        (input_id,),
+                    ).fetchall()
+                )
             audit = [
                 _decode_audit(dict(item))
                 for item in con.execute(
@@ -537,6 +615,37 @@ class ManualInputStore:
             updates["title"] = _title_from_text(str(updates["text"]))
         if "tags" in updates and isinstance(updates["tags"], list):
             updates["tags_json"] = json.dumps(updates.pop("tags"), ensure_ascii=False)
+        with self._connect() as con:
+            row = con.execute("SELECT * FROM manual_inputs WHERE input_id = ?", (input_id,)).fetchone()
+            if row is None:
+                raise ManualInputError(f"Manual Input not found: {input_id}")
+            record = _row_to_record(row)
+            if record["status"] in {"revoked", "deleted"}:
+                raise ManualInputError(f"Cannot update {record['status']} input: {input_id}")
+            previous_content_hash = record.get("content_hash")
+            previous_updated_at = str(record["updated_at"])
+            prospective = dict(row)
+            prospective.update(updates)
+            text = _optional_searchable_text(
+                str(prospective.get("text") or ""),
+                _extraction_text(con, input_id) or None,
+            )
+
+        # LM Studio is deliberately called before the write transaction. The
+        # second read below is an optimistic guard against concurrent updates.
+        vector = None
+        embedding_status = "failed"
+        content_hash = _content_hash(text) if text else None
+        embedding_error = None
+        if text:
+            try:
+                vector = self.client.embed(text)
+                embedding_status = "ready"
+            except ManualInputError as exc:
+                embedding_error = str(exc)
+        else:
+            embedding_error = "Manual Input has no searchable text"
+
         updated_at = _utc_now()
         with self._connect() as con:
             row = con.execute("SELECT * FROM manual_inputs WHERE input_id = ?", (input_id,)).fetchone()
@@ -545,13 +654,19 @@ class ManualInputStore:
             record = _row_to_record(row)
             if record["status"] in {"revoked", "deleted"}:
                 raise ManualInputError(f"Cannot update {record['status']} input: {input_id}")
+            if (
+                str(record["updated_at"]) != previous_updated_at
+                or record.get("content_hash") != previous_content_hash
+            ):
+                raise ManualInputError(
+                    f"Manual Input changed while update processing was in progress: {input_id}"
+                )
             assignments = [f"{key} = ?" for key in updates]
             values = list(updates.values())
             assignments.append("updated_at = ?")
             values.append(updated_at)
             values.append(input_id)
             con.execute(f"UPDATE manual_inputs SET {', '.join(assignments)} WHERE input_id = ?", values)
-            refreshed = _row_to_record(con.execute("SELECT * FROM manual_inputs WHERE input_id = ?", (input_id,)).fetchone())
             previous_embedding_ids = [
                 int(item["embedding_id"])
                 for item in con.execute(
@@ -565,19 +680,6 @@ class ManualInputStore:
                 except (ManualInputError, sqlite3.Error):
                     pass
             con.execute("UPDATE embedding_records SET status = 'stale' WHERE input_id = ? AND status = 'ready'", (input_id,))
-            text = _optional_record_search_text(con, refreshed)
-            vector = None
-            embedding_status = "failed"
-            content_hash = _content_hash(text) if text else None
-            embedding_error = None
-            if text:
-                try:
-                    vector = self.client.embed(text)
-                    embedding_status = "ready"
-                except ManualInputError as exc:
-                    embedding_error = str(exc)
-            else:
-                embedding_error = "Manual Input has no searchable text"
             con.execute(
                 "UPDATE manual_inputs SET content_hash = ?, embedding_status = ? WHERE input_id = ?",
                 (content_hash, embedding_status, input_id),
@@ -591,9 +693,22 @@ class ManualInputStore:
             if self._vector_setup_error:
                 audit_payload["vector_error"] = self._vector_setup_error
             self._audit(con, input_id, "update", audit_payload)
+            if previous_content_hash and previous_content_hash != content_hash:
+                from .knowledge_workflow import KnowledgeWorkflow
+
+                KnowledgeWorkflow(self.config).cascade_manual_input_update_in_transaction(
+                    con,
+                    input_id,
+                    previous_content_hash,
+                )
         return self.show(input_id)
 
     def revoke(self, input_id: str) -> dict[str, Any]:
+        if LifeMeshDatabase(self.config).status()["schema_status"] == "current":
+            from .knowledge_workflow import KnowledgeWorkflow
+
+            KnowledgeWorkflow(self.config).cascade_manual_input(input_id, "revoked")
+            return self.show(input_id)
         with self._connect() as con:
             row = self._require_existing(con, input_id)
             record = _row_to_record(row)
@@ -608,6 +723,11 @@ class ManualInputStore:
         return self.show(input_id)
 
     def delete(self, input_id: str) -> dict[str, Any]:
+        if LifeMeshDatabase(self.config).status()["schema_status"] == "current":
+            from .knowledge_workflow import KnowledgeWorkflow
+
+            pending = KnowledgeWorkflow(self.config).delete_manual_input(input_id)
+            return self.show(input_id) | {"file_cleanup_pending": pending}
         with self._connect() as con:
             row = self._require_existing(con, input_id)
             record = _row_to_record(row)
@@ -650,6 +770,27 @@ class ManualInputStore:
         if target_type not in PROMOTE_TARGETS:
             raise ManualInputError(f"Unknown promote target: {target_type}")
         _validate_promote_payload(target_type, payload)
+        if LifeMeshDatabase(self.config).status()["schema_status"] == "current":
+            from .knowledge_workflow import KnowledgeWorkflow
+
+            workflow = KnowledgeWorkflow(self.config)
+            if target_type == "candidate":
+                candidate = workflow.handoff_manual_input(input_id, payload)
+                return {
+                    "object_id": candidate["candidate_id"],
+                    "target_type": "candidate",
+                    "derived_from_input_id": input_id,
+                    "candidate": candidate,
+                    "input": self.show(input_id),
+                }
+            canonical_object = workflow.promote_manual_input(input_id, target_type, payload)
+            return {
+                "object_id": canonical_object["object_id"],
+                "target_type": target_type,
+                "derived_from_input_id": input_id,
+                "object": canonical_object,
+                "input": self.show(input_id),
+            }
         object_id = _new_id(target_type)
         now = _utc_now()
         with self._connect() as con:
@@ -758,9 +899,10 @@ class ManualInputStore:
         }
 
     def _connect(self) -> sqlite3.Connection:
+        database = LifeMeshDatabase(self.config)
+        database.ensure_current_for_write()
         _ensure_private_dir(self.config.home)
-        con = sqlite3.connect(self.config.db_path)
-        con.row_factory = sqlite3.Row
+        con = database.connect()
         _create_schema(con)
         self._vector_available = False
         self._vector_setup_error = None
@@ -781,19 +923,26 @@ class ManualInputStore:
         _chmod_file(self.config.db_path, 0o600)
         return con
 
-    def _copy_asset(self, file_path: Path, input_id: str, created_at: str) -> tuple[Path, str, str]:
+    def _stage_asset(
+        self,
+        file_path: Path,
+        input_id: str,
+        created_at: str,
+    ) -> tuple[Path, Path, str, str]:
         if not file_path.exists() or not file_path.is_file():
             raise ManualInputError(f"Screenshot file not found: {file_path}")
         dt = datetime.fromisoformat(created_at.replace("Z", "+00:00"))
         ext = file_path.suffix or ".bin"
         target_dir = self.config.raw_asset_dir / f"{dt.year:04d}" / f"{dt.month:02d}"
-        _ensure_private_dir(target_dir)
         target = target_dir / f"{input_id}{ext}"
-        shutil.copy2(file_path, target)
-        _chmod_file(target, 0o600)
-        digest = _file_hash(target)
+        staging_dir = self.config.home / "staging"
+        _ensure_private_dir(staging_dir)
+        staged = staging_dir / f"{input_id}-{uuid.uuid4().hex}{ext}"
+        shutil.copy2(file_path, staged)
+        _chmod_file(staged, 0o600)
+        digest = _file_hash(staged)
         media_type = mimetypes.guess_type(target.name)[0] or "application/octet-stream"
-        return target, digest, media_type
+        return staged, target, digest, media_type
 
     def _insert_embedding(
         self,
@@ -958,17 +1107,35 @@ def _create_schema(con: sqlite3.Connection) -> None:
             status TEXT NOT NULL,
             embedded_at TEXT NOT NULL
         );
-        CREATE TABLE IF NOT EXISTS promoted_objects (
-            object_id TEXT PRIMARY KEY,
-            target_type TEXT NOT NULL,
-            target_payload_json TEXT NOT NULL,
-            derived_from_input_id TEXT NOT NULL,
-            created_at TEXT NOT NULL
-        );
         CREATE VIRTUAL TABLE IF NOT EXISTS manual_inputs_fts
         USING fts5(input_id UNINDEXED, text, title, tags, extraction);
         """
     )
+    if not _has_unified_schema(con):
+        con.execute(
+            """
+            CREATE TABLE IF NOT EXISTS promoted_objects (
+                object_id TEXT PRIMARY KEY,
+                target_type TEXT NOT NULL,
+                target_payload_json TEXT NOT NULL,
+                derived_from_input_id TEXT NOT NULL,
+                created_at TEXT NOT NULL
+            )
+            """
+        )
+
+
+def _has_unified_schema(con: sqlite3.Connection) -> bool:
+    return con.execute(
+        "SELECT 1 FROM sqlite_master WHERE type='table' AND name='schema_migrations'"
+    ).fetchone() is not None
+
+
+def _table_exists(con: sqlite3.Connection, table: str) -> bool:
+    return con.execute(
+        "SELECT 1 FROM sqlite_master WHERE type='table' AND name = ?",
+        (table,),
+    ).fetchone() is not None
 
 
 def _get_meta(con: sqlite3.Connection, key: str) -> str | None:
@@ -1241,6 +1408,16 @@ def _parse_datetime(value: Any) -> datetime | None:
     if dt.tzinfo is None:
         return dt.replace(tzinfo=timezone.utc)
     return dt
+
+
+@contextmanager
+def _staged_asset_guard(path: Path | None) -> Any:
+    try:
+        yield
+    except Exception:
+        if path is not None:
+            path.unlink(missing_ok=True)
+        raise
 
 
 def _content_hash(text: str) -> str:

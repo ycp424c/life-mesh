@@ -20,14 +20,14 @@
 - `lifemesh bundle --source all` 通过 source-neutral `BundleAssembler` 统一组装 Obsidian 与 Manual Input candidates，不拼接两个已完成 Bundle。
 - JSON Bundle 包含 `assembly_report` 诊断字段，用于解释候选、准入和选择策略。
 - Bundle slice 包含 `citation` 展示字段；Manual Input 检索结果包含 `match_status`、`match_reason`、`evidence_eligible` 和 `score_breakdown`。
-- Knowledge Candidate inbox 最小 CLI：`candidate add/list/show/discard`，写入本地 `lifemesh.db`，用于 `confirm_required` 候选的异步复核。
+- Unified Candidate inbox：`candidate add/list/show/edit/merge/defer/resume/confirm/discard`；Manual Input 与 RumorClaim promote 复用同一 handoff。
+- Acceptance 与 typed Canonical Object：`fact add/show/review/revoke`、`remember`、`memory list/show/revoke`、`task add/list/show/close/revoke`、`event list/show/cancel/revoke`。
+- Source-triggered review：`review list/show/resolve`；Bundle `--source all` 会纳入准入通过的 Canonical Fact 和 Memory。
+- 数据库维护：`db status/migrate/restore/reconcile-files`，包含 shared/exclusive lock、online backup、动态守恒与幂等 migration。
 - RumorClaim / UnverifiedClaim 本地结构化 CLI MVP：`rumor add/list/show/keep/dismiss/expire/promote`、持久化门槛、review queue、最小 source envelope、`bundle --source rumor` 和 `bundle --source all --include-unverified`。
 - LifeMesh Console 只读入口：`lifemesh console` 按需启动仅监听 `127.0.0.1` 的用户界面；它不是 Agent API，也不提供持久化写接口。
 
-当前未实现但已进入后续契约：
-
-- `candidate confirm/edit/merge/defer` 和 confirm 后升级到 Canonical Fact / Memory / Task。
-- 自动 source adapter 产出 RumorClaim 前的 `rumor_policy`、截图/图片自动抽取、来源融合、自动事实核查、review UI。
+当前仍未实现：自动 source adapter 产出 RumorClaim 前的 `rumor_policy`、截图/图片自动抽取、来源融合、自动事实核查和写入式 review UI。
 
 兼容性说明：`lifemesh bundle` 默认仍为 `--source obsidian`，避免旧的只读原型被 Manual Input 本地依赖状态影响；跨源合并必须显式使用 `--source all`。
 
@@ -208,25 +208,25 @@ lifemesh input promote <input-id> --to candidate \
 - Manual Input 不创建 SourceRevision；promote 后的目标对象通过 `derived_from_input_id`、input content_hash 和 audit event 保留来源。
 - Phase 1 的 `task` / `event` promote 不接入系统日历、提醒事项或外部任务应用，只验证本地最小对象闭环。
 
-## 传统写命令
+## Unified Write Model 命令
 
-这些命令仍是契约，后续会与 Manual Input promote 共享底层对象表。
+这些命令已与 Manual Input direct promote、Candidate confirmation 共用 Acceptance 和 typed object persistence。
 
 ```bash
 lifemesh fact add "<statement>" [--source-ref <ref>...] [--user-asserted]
 #   → Canonical Fact, acceptance_path=manual；无来源时标记 user_asserted
 
-lifemesh task add "<todo>" [--due <date>]
+lifemesh task add "<todo>" [--description "..."] [--due-at <datetime>]
 #   → Task
 
-lifemesh remember "<info>" [--scope <range>] [--expires <date>]
+lifemesh remember "<info>" [--scope <range>] [--expires-at <datetime>]
 #   → 显式 Memory
 
 lifemesh candidate add "<statement>" --type fact|preference|relationship|task|decision [--source-ref ...]
-#   → Knowledge Candidate 进 inbox，lifecycle=confirm_required；当前已实现
+#   → Knowledge Candidate 进统一 inbox，status=pending
 ```
 
-当前已实现的 Candidate inbox 命令：
+Candidate inbox 命令：
 
 ```bash
 lifemesh candidate add "<summary>" \
@@ -237,12 +237,29 @@ lifemesh candidate add "<summary>" \
   [--why-suggested "..."] \
   [--expires-at <datetime>]
 
-lifemesh candidate list [--type fact|preference|relationship|task|decision] [--lifecycle confirm_required|inbox|discard] [--limit 20]
+lifemesh candidate list [--status pending|deferred|confirmed|merged|discarded|expired] [--type fact|preference|relationship|task|decision] [--sensitivity-cap Private] [--limit 20]
+# 兼容参数：[--lifecycle confirm_required|inbox|discard]
 lifemesh candidate show <candidate-id>
+lifemesh candidate edit <candidate-id> [--summary "..."] [--add-source-ref <ref>...]
+lifemesh candidate defer <candidate-id> [--until <datetime>] [--reason "..."]
+lifemesh candidate resume <candidate-id>
+lifemesh candidate merge <winner-id> <loser-id> [--reason "..."]
+lifemesh candidate confirm <candidate-id> [--user-asserted]
 lifemesh candidate discard <candidate-id> [--reason "..."]
 ```
 
-Candidate add 默认 `lifecycle=confirm_required`、`confidence=0.5`、`risk=medium`。默认 `list` 隐藏 `discard`；显式传 `--lifecycle discard` 才列出已丢弃候选。`discard` 只写 tombstone，不删除历史记录。
+Candidate add 默认 `status=pending`（兼容输出 `lifecycle=confirm_required`）、`confidence=0.5`、`risk=medium`。默认 `list` 返回待处理候选；`confirm` 按 type 映射为 Fact、Task 或 Memory，并在同一事务写 Acceptance、source links、decision 和 audit。`discard`、`merge` 保留历史和决策链，不物理删除 Candidate。
+
+数据库维护命令：
+
+```bash
+lifemesh db status
+lifemesh db migrate [--dry-run|--apply]
+lifemesh db restore <backup-manifest> --apply
+lifemesh db reconcile-files [--dry-run|--apply]
+```
+
+`migrate` 默认 dry-run；`restore` 必须显式 `--apply`。数据库连接持有 shared lock，migration/restore 持有同一 `.database.lock` 的 exclusive lock。
 
 ## RumorClaim 命令
 
@@ -311,7 +328,7 @@ lifemesh rumor expire <rumor-claim-id>
 - Agent 自动捕获后必须在回复中说明：input id、kind、摘要、sensitivity、Bundle 可用性。
 - Agent 自动捕获只进入 Manual Input Inbox，状态为 `auto_captured`。
 - Agent 不得自动 promote。
-- Agent 推断出的事实、待办、记忆和决策不得直接写入目标层；可用 `candidate add` 创建 `confirm_required` 候选。只有用户明确确认并提供目标字段时，才可走 `input promote --to candidate` 或后续 confirm / promote 路径。
+- Agent 推断出的事实、待办、记忆和决策不得直接写入目标层；可用 `candidate add` 创建 pending 候选。`candidate confirm` 由用户直接操作 CLI；Agent 不得通过 direct promote、`fact add`、`remember` 或 `task add` 绕过确认边界。
 - 用户明确提交的高敏信息可写入 Inbox，但必须标记 `Sensitive`；Agent 不得自动捕获明显高敏信息。`Sensitive` 默认不进入 Bundle、长期记忆、事实层或模型上下文。
 - 后续自动 source adapter 如需产出 RumorClaim，必须声明 `rumor_policy`；Agent 不得绕过 pipeline 直接把未验证材料写成 Candidate 或 Fact。
 
@@ -372,11 +389,14 @@ LIFEMESH_OBSIDIAN_VAULT=/path/to/vault
 
 ```bash
 lifemesh fact review list
-lifemesh fact review show <fact-id>
-lifemesh fact review revalidate <fact-id> --source-ref <ref>
-lifemesh fact review revise <fact-id> "<statement>" [--source-ref <ref>...]
-lifemesh fact review invalidate <fact-id>
-lifemesh fact revoke <fact-id>
+lifemesh fact review show <review-id>
+lifemesh fact review revalidate <fact-id> [--source-ref <ref>] [--user-asserted]
+lifemesh fact review revise <fact-id> --statement "<statement>" [--source-ref <ref>...] [--user-asserted]
+lifemesh fact review invalidate <fact-id> [--reason "..."]
+lifemesh fact revoke <fact-id> [--reason "..."]
+lifemesh review list
+lifemesh review show <review-id>
+lifemesh review resolve <review-id> --action keep|revoke
 ```
 
 硬规则：

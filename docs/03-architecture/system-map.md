@@ -45,9 +45,9 @@ Source Adapters
 - LifeMesh Console 是按需启动的用户界面适配器，首版只能读取、搜索、筛选和临时组装 Bundle；浏览器不能直接打开 SQLite，也不能借由 Console 修改个人数据。
 - Project Board 是文档派生的项目治理界面，不展示真实个人数据，也不承担 LifeMesh Console 的产品职责。
 
-## Unified Write Model 目标路径
+## Unified Write Model 运行时路径
 
-ADR-0010 已接受但尚未实现的写路径为：
+ADR-0010 已实现的写路径为：
 
 ```text
 CLI / Manual Input / RumorClaim
@@ -57,7 +57,7 @@ CLI / Manual Input / RumorClaim
   -> Bundle retriever
 ```
 
-当前 `candidate add`、`input promote`、`rumor promote` 仍分别写入 legacy 表。只有实现、备份、动态 preflight migration 和 postflight 验收完成后，看板才能把 Unified Write Model 标记为运行时已落地。详细边界见 [Unified Write Model And Migrations](write-model-and-migrations.md)。
+`candidate add`、`input promote`、`rumor promote` 已通过统一 workflow 写 Candidate/Acceptance/typed objects；legacy 表只读保留。真实数据库已完成 online backup、动态 preflight migration、postflight 守恒和幂等验收。详细边界见 [Unified Write Model And Migrations](write-model-and-migrations.md)。
 
 ## Context Bundle 来源优先级
 

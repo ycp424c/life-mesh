@@ -1,7 +1,7 @@
 # Data Layers
 
-状态：draft
-最后更新：2026-07-03
+状态：active
+最后更新：2026-07-15
 职责边界：定义 LifeMesh 数据层分层和各层职责。
 
 ## 分层
@@ -17,6 +17,8 @@
 | Policy Layer | 数据分类、授权、审计、撤销 | 存储业务事实 |
 
 ## 设计注意事项
+
+Phase 1 运行时已使用统一 SQLite database layer 保存 Candidate、Acceptance、typed Canonical Object、normalized provenance、review、tombstone 和 audit；Raw Vault managed asset 通过 file-operation outbox 与数据库状态协调。
 
 - 向量索引是检索工具，不是事实库。
 - 图谱关系需要来源和置信度。

@@ -2,13 +2,13 @@ window.LIFEMESH_PROJECT_STATE = {
   lastUpdated: "2026-07-15",
   state: "Personal Context Layer",
   currentPhase: "第 1 阶段：Personal Context Layer",
-  overallProgress: 48,
+  overallProgress: 54,
   summary:
-    "LifeMesh 第 1 阶段已进入本地原型。2026-07-15 已实现 ADR-0011 的只读 LifeMesh Console：React + shadcn/ui 界面与本 Project Board 分离，通过按需 127.0.0.1 服务读取真实本地数据；ADR-0010 的 Unified Write Model 仍是已接受但尚未实现的目标架构。",
+    "LifeMesh 第 1 阶段已进入本地原型。2026-07-15 已实现 ADR-0011 只读 LifeMesh Console，并完成 ADR-0010 Unified Write Model：统一 Candidate handoff、Acceptance、typed Canonical Object、Fact Review、provenance/tombstone、Bundle 准入及真实本地数据库守恒迁移。",
   metrics: [
-    { label: "文档基线", value: "active", detail: "Manual Input 实现已同步", tone: "green" },
+    { label: "文档基线", value: "active", detail: "Unified Write Model 已同步", tone: "green" },
     { label: "Web 看板", value: "active", detail: "静态页面，无构建链", tone: "blue" },
-    { label: "Context Layer", value: "phase 1", detail: "只读 Console V1 已落地", tone: "blue" },
+    { label: "Context Layer", value: "phase 1", detail: "统一读写闭环已落地", tone: "blue" },
     { label: "关键风险", value: "16", detail: "含本地模型、流言、数据库迁移和 Console 暴露风险", tone: "red" }
   ],
   work: [
@@ -16,17 +16,16 @@ window.LIFEMESH_PROJECT_STATE = {
       lane: "Now",
       items: [
         "用真实个人数据规模持续验证只读 LifeMesh Console 的可用性与性能",
-        "实施 Unified Write Model、集中 schema migration 和事务边界",
-        "统一 CLI、Manual Input、RumorClaim 的 Candidate handoff",
-        "落地 Candidate confirm 与 Canonical Fact/Memory/Task/Event",
-        "完成真实数据库备份、迁移、回滚和计数验收"
+        "观察 Unified Write Model 在真实增量写入中的稳定性与 review 队列",
+        "保留并定期验证迁移前受管备份和 restore 路径"
       ]
     },
     {
       lane: "Next",
       items: [
         "评估第一个自动 RumorClaim source adapter 和 rumor_policy",
-        "补 Fact Review 对 Manual Input tombstone 的级联验收",
+        "评估 Console 增加 Canonical Object / Review 只读视图",
+        "补 frontmatter 结构化事实边界",
         "补 Manual Input 长期性能边界和真实任务场景验收"
       ]
     },
@@ -61,8 +60,8 @@ window.LIFEMESH_PROJECT_STATE = {
       id: "1",
       title: "Personal Context Layer",
       status: "active",
-      progress: 90,
-      focus: "既有读链路、受限采集和只读 LifeMesh Console 已落地；下一核心交付是 Unified Write Model",
+      progress: 96,
+      focus: "读链路、受限采集、统一写模型、真实库迁移和只读 Console 已落地；转入真实使用稳定性验证",
       docs: ["phase-1-delivery-plan.md", "lifemesh-console.md", "write-model-and-migrations.md", "ADR-0006", "ADR-0010", "ADR-0011"]
     },
     {
@@ -119,7 +118,7 @@ window.LIFEMESH_PROJECT_STATE = {
     },
     {
       title: "Canonical Store",
-      detail: "规范化对象、事实、事件、承诺、记忆",
+      detail: "已实现 Acceptance、Fact、Memory、Task、Event、Review 与 Tombstone typed persistence",
       tone: "store"
     },
     {
@@ -188,7 +187,8 @@ window.LIFEMESH_PROJECT_STATE = {
           { title: "Context Slice", detail: "带 evidence_role：fact / raw / context / lead" },
           { title: "Context Bundle", detail: "由 assembler 统一组装 candidates" },
           { title: "RumorClaim", detail: "未验证 claim，只能作为 lead 或 promote 到 Knowledge Candidate" },
-          { title: "Knowledge Candidate", detail: "fact / preference / relationship / task / decision" }
+          { title: "Knowledge Candidate", detail: "统一 pending/deferred/confirmed/merged/discarded 生命周期" },
+          { title: "KnowledgeWorkflow", detail: "统一 handoff、Acceptance、source cascade 与 review 事务" }
         ]
       },
       {
@@ -196,9 +196,11 @@ window.LIFEMESH_PROJECT_STATE = {
         subtitle: "确认后可复用",
         tone: "store",
         nodes: [
-          { title: "Canonical Fact", detail: "已核实、可追溯、可复核、可撤销事实" },
+          { title: "Acceptance", detail: "用户确认与 direct promote 共用正式对象写入路径" },
+          { title: "Canonical Fact", detail: "已实现：可追溯、可复核、可撤销并受 Bundle 准入约束" },
           { title: "Memory", detail: "偏好/语境，只影响排序语气，不作事实证据" },
-          { title: "Promoted Object", detail: "由 input promote 创建 inbox-derived 最小对象" },
+          { title: "Task / Event", detail: "Phase 1 本地 typed object，不等同于外部系统同步" },
+          { title: "Review / Tombstone", detail: "来源失效后阻止旧对象继续进入 Bundle" },
           { title: "Decision Record", detail: "选择、理由、来源和时间" }
         ]
       },
@@ -238,13 +240,13 @@ window.LIFEMESH_PROJECT_STATE = {
   docs: [
     { name: "Vision", path: "docs/00-vision/", status: "draft", signal: "方向已建立" },
     { name: "Governance", path: "docs/01-governance/", status: "draft", signal: "需细化删除和授权" },
-    { name: "Domain", path: "docs/02-domain/", status: "draft", signal: "Candidate inbox MVP 已同步" },
-    { name: "Architecture", path: "docs/03-architecture/", status: "draft", signal: "Console 实现与 Unified Write Model 边界已同步" },
-    { name: "Roadmap", path: "docs/04-roadmap/", status: "active", signal: "只读 Console V1 已完成，统一写模型待实施" },
+    { name: "Domain", path: "docs/02-domain/", status: "active", signal: "Candidate / Canonical / provenance 运行时已同步" },
+    { name: "Architecture", path: "docs/03-architecture/", status: "active", signal: "Console 与 Unified Write Model 运行时已同步" },
+    { name: "Roadmap", path: "docs/04-roadmap/", status: "active", signal: "统一写模型与真实库迁移已完成" },
     { name: "ADR", path: "docs/05-decisions/", status: "active", signal: "11 条 accepted" },
     { name: "Security", path: "docs/07-security/", status: "draft", signal: "迁移恢复与 loopback Console 控制已同步" },
     { name: "Dashboard", path: "docs/08-dashboard/", status: "active", signal: "同步规则已落地" },
-    { name: "Implementation Specs", path: "docs/superpowers/specs/", status: "active", signal: "Unified Write Model spec 已通过 written review" }
+    { name: "Implementation Specs", path: "docs/superpowers/specs/", status: "implemented", signal: "Unified Write Model spec 已实现并验收" }
   ],
   risks: [
     {
@@ -315,7 +317,7 @@ window.LIFEMESH_PROJECT_STATE = {
     {
       title: "真实数据库迁移或恢复损坏",
       severity: "high",
-      control: "exclusive lock + online backup + 动态 preflight/postflight 守恒 + forensic restore"
+      control: "shared/exclusive .database.lock + online backup + 动态守恒 + forensic restore；真实迁移已验收"
     },
     {
       title: "本地 Console Server 暴露个人数据",
@@ -547,8 +549,8 @@ window.LIFEMESH_PROJECT_STATE = {
       },
       {
         label: "Promotion handoff",
-        value: "local link",
-        detail: "当前 rumor promote 仍只写 rumor_candidate_links；与 Candidate inbox 的正式 handoff 和 confirm lifecycle 待补。"
+        value: "unified inbox",
+        detail: "rumor promote 已写统一 pending Candidate、normalized source link 和 audit；legacy link 只读保留。"
       }
     ],
     highImpact: [
@@ -595,6 +597,21 @@ window.LIFEMESH_PROJECT_STATE = {
   recentChanges: [
     {
       date: "2026-07-15",
+      title: "完成 Unified Write Model 独立复审与安全加固",
+      detail: "按 Standards/Spec 双轴复审修复 source update 原子性、多来源判定、Candidate review 闭环、staged-file outbox、identity/link/audit/FTS/vector 守恒和 forensic restore；真实库经受管 online backup 后净化 1 条 deleted-input promote 的统一审计副本，integrity check 通过。"
+    },
+    {
+      date: "2026-07-15",
+      title: "实现并迁移 Unified Write Model",
+      detail: "完成统一 LifeMeshDatabase/KnowledgeWorkflow、Candidate 完整生命周期、Acceptance、typed Fact/Memory/Task/Event、Fact Review、source cascade、tombstone、canonical Bundle retrieval 和数据库维护 CLI；真实库 7 Candidates、134 Source References、38 Source Tombstones 守恒，integrity/foreign-key/幂等复核通过，迁移前备份 hash 与 manifest 一致。"
+    },
+    {
+      date: "2026-07-15",
+      title: "完成真实数据库形状迁移与恢复演练",
+      detail: "使用真实库 online snapshot 在隔离 HOME 演练 migration、二次 no-op、Candidate 读取和 manifest restore，恢复后可回到 legacy schema；正式切换后所有普通连接改持 shared .database.lock。"
+    },
+    {
+      date: "2026-07-15",
       title: "实现 React + shadcn/ui LifeMesh Console V1",
       detail: "新增按需 127.0.0.1 Python Console Server、真实本地 read-side API、总览/搜索/分域浏览/详情/图谱/时间线/非持久化 Bundle Explorer，以及暖琥珀、萌芽绿、未知紫和理性灰蓝的响应式产品界面；完成 HTTP 安全测试和桌面/窄屏真实浏览器验收。"
     },
@@ -611,17 +628,17 @@ window.LIFEMESH_PROJECT_STATE = {
     {
       date: "2026-07-15",
       title: "完成 Unified Write Model written-spec review",
-      detail: "新增 ADR-0010 和正式目标架构文档；把迁移验收改为动态 preflight/postflight 守恒，修正 Source Reference 外键回填顺序、legacy why_suggested/handoff_key 映射和 restore exclusive lock，并同步 README、roadmap、security 与文档健康区。当前仍只确认设计，未宣称实现或迁移完成。"
+      detail: "新增 ADR-0010 和正式目标架构文档；把迁移验收改为动态 preflight/postflight 守恒，修正 Source Reference 外键回填顺序、legacy why_suggested/handoff_key 映射和 restore exclusive lock。该规格随后已完成实现和真实迁移。"
     },
     {
       date: "2026-07-10",
       title: "确认 Unified Write Model 完整设计",
-      detail: "确定一次性交付集中 SQLite migration、统一 Candidate handoff、Acceptance、Canonical Fact/Memory/Task/Event、Fact Review、normalized provenance 和真实数据库 online backup/migration；当前仅设计已确认，尚未宣称实现完成。"
+      detail: "确定一次性交付集中 SQLite migration、统一 Candidate handoff、Acceptance、Canonical Fact/Memory/Task/Event、Fact Review、normalized provenance 和真实数据库 online backup/migration；已于 2026-07-15 完成。"
     },
     {
       date: "2026-07-09",
       title: "落地 Candidate inbox 最小 CLI",
-      detail: "新增 lifemesh candidate add/list/show/discard，本地写入 lifemesh.db 的 knowledge_candidates 表；默认 lifecycle=confirm_required，list 按 risk/confidence 排序，discard 写 tombstone 不删除历史；confirm/merge/edit 仍是后续能力。"
+      detail: "新增 lifemesh candidate add/list/show/discard，本地写入 lifemesh.db；后续 ADR-0010 已补齐 edit/merge/defer/resume/confirm 和正式对象升级。"
     },
     {
       date: "2026-07-09",

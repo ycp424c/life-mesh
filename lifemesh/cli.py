@@ -9,6 +9,7 @@ from typing import Any
 from .assembler import BundleAssembler
 from .candidates import (
     CANDIDATE_RISKS as KNOWLEDGE_CANDIDATE_RISKS,
+    CANDIDATE_STATUSES as KNOWLEDGE_CANDIDATE_STATUSES,
     CANDIDATE_TYPES as KNOWLEDGE_CANDIDATE_TYPES,
     DEFAULT_CONFIDENCE as DEFAULT_CANDIDATE_CONFIDENCE,
     DEFAULT_RISK as DEFAULT_CANDIDATE_RISK,
@@ -18,8 +19,11 @@ from .candidates import (
     CandidateStore,
 )
 from .config import load_config
+from .canonical_store import CanonicalStore, CanonicalStoreError
 from .console_service import ConsoleError
 from .console_server import run_console
+from .database import DatabaseError, LifeMeshDatabase
+from .knowledge_workflow import KnowledgeWorkflow, KnowledgeWorkflowError
 from .manual_input import (
     MANUAL_KINDS,
     PROMOTE_TARGETS,
@@ -86,6 +90,119 @@ def main(argv: list[str] | None = None) -> int:
     candidate_subparsers = candidate_parser.add_subparsers(dest="candidate_command", required=True)
     _add_candidate_parsers(candidate_subparsers)
 
+    db_parser = subparsers.add_parser("db", help="Inspect and maintain the local LifeMesh database")
+    _add_config_arguments(db_parser)
+    db_subparsers = db_parser.add_subparsers(dest="db_command", required=True)
+    db_subparsers.add_parser("status", help="Show database schema and migration status")
+    migrate_parser = db_subparsers.add_parser("migrate", help="Plan or apply the unified schema migration")
+    migrate_mode = migrate_parser.add_mutually_exclusive_group()
+    migrate_mode.add_argument("--dry-run", action="store_true", help="Inspect migration without changing data")
+    migrate_mode.add_argument("--apply", action="store_true", help="Back up and apply the migration")
+    restore_parser = db_subparsers.add_parser("restore", help="Restore a managed database backup")
+    restore_parser.add_argument("backup_manifest", type=Path)
+    restore_parser.add_argument("--apply", action="store_true", help="Apply the validated restore")
+    reconcile_parser = db_subparsers.add_parser("reconcile-files", help="Inspect or retry managed file operations")
+    reconcile_mode = reconcile_parser.add_mutually_exclusive_group()
+    reconcile_mode.add_argument("--dry-run", action="store_true")
+    reconcile_mode.add_argument("--apply", action="store_true")
+
+    fact_parser = subparsers.add_parser("fact", help="Manage Canonical Facts")
+    _add_config_arguments(fact_parser)
+    fact_subparsers = fact_parser.add_subparsers(dest="fact_command", required=True)
+    fact_add_parser = fact_subparsers.add_parser("add", help="Add a user-accepted Canonical Fact")
+    fact_add_parser.add_argument("statement")
+    fact_add_parser.add_argument("--source-ref", action="append", default=[])
+    fact_add_parser.add_argument("--user-asserted", action="store_true")
+    fact_add_parser.add_argument("--confidence", type=float, default=0.5)
+    fact_add_parser.add_argument("--risk", choices=sorted(KNOWLEDGE_CANDIDATE_RISKS), default="medium")
+    fact_add_parser.add_argument("--sensitivity", choices=["Public", "Internal", "Private", "Sensitive", "Restricted"], default="Private")
+    fact_show_parser = fact_subparsers.add_parser("show", help="Show one Canonical Fact")
+    fact_show_parser.add_argument("fact_id")
+    fact_review_parser = fact_subparsers.add_parser("review", help="Resolve Canonical Fact reviews")
+    fact_review_subparsers = fact_review_parser.add_subparsers(dest="fact_review_command", required=True)
+    fact_review_list_parser = fact_review_subparsers.add_parser("list", help="List Canonical Fact reviews")
+    fact_review_list_parser.add_argument("--status", choices=["open", "resolved", "dismissed"], default="open")
+    fact_review_list_parser.add_argument("--limit", type=int, default=20)
+    fact_review_show_parser = fact_review_subparsers.add_parser("show", help="Show one Canonical Fact review")
+    fact_review_show_parser.add_argument("review_id")
+    fact_revalidate_parser = fact_review_subparsers.add_parser("revalidate", help="Revalidate a Canonical Fact")
+    fact_revalidate_parser.add_argument("fact_id")
+    fact_revalidate_parser.add_argument("--source-ref", action="append", default=[])
+    fact_revalidate_parser.add_argument("--user-asserted", action="store_true")
+    fact_revise_parser = fact_review_subparsers.add_parser("revise", help="Revise a Canonical Fact")
+    fact_revise_parser.add_argument("fact_id")
+    fact_revise_parser.add_argument("--statement", required=True)
+    fact_revise_parser.add_argument("--source-ref", action="append", default=[])
+    fact_revise_parser.add_argument("--user-asserted", action="store_true")
+    fact_invalidate_parser = fact_review_subparsers.add_parser("invalidate", help="Invalidate a Canonical Fact")
+    fact_invalidate_parser.add_argument("fact_id")
+    fact_invalidate_parser.add_argument("--reason")
+    fact_revoke_parser = fact_subparsers.add_parser("revoke", help="Revoke a Canonical Fact")
+    fact_revoke_parser.add_argument("fact_id")
+    fact_revoke_parser.add_argument("--reason")
+
+    memory_parser = subparsers.add_parser("memory", help="Manage canonical Memories")
+    _add_config_arguments(memory_parser)
+    memory_subparsers = memory_parser.add_subparsers(dest="memory_command", required=True)
+    memory_list_parser = memory_subparsers.add_parser("list", help="List Memories")
+    memory_list_parser.add_argument("--limit", type=int, default=20)
+    memory_show_parser = memory_subparsers.add_parser("show", help="Show one Memory")
+    memory_show_parser.add_argument("memory_id")
+    memory_revoke_parser = memory_subparsers.add_parser("revoke", help="Revoke one Memory")
+    memory_revoke_parser.add_argument("memory_id")
+    memory_revoke_parser.add_argument("--reason")
+
+    task_parser = subparsers.add_parser("task", help="Manage canonical Tasks")
+    _add_config_arguments(task_parser)
+    task_subparsers = task_parser.add_subparsers(dest="task_command", required=True)
+    task_add_parser = task_subparsers.add_parser("add", help="Add a local Task")
+    task_add_parser.add_argument("title")
+    task_add_parser.add_argument("--description")
+    task_add_parser.add_argument("--due-at")
+    task_add_parser.add_argument("--sensitivity", choices=["Public", "Internal", "Private", "Sensitive", "Restricted"], default="Private")
+    task_list_parser = task_subparsers.add_parser("list", help="List Tasks")
+    task_list_parser.add_argument("--limit", type=int, default=20)
+    task_show_parser = task_subparsers.add_parser("show", help="Show one Task")
+    task_show_parser.add_argument("task_id")
+    task_close_parser = task_subparsers.add_parser("close", help="Complete one Task")
+    task_close_parser.add_argument("task_id")
+    task_revoke_parser = task_subparsers.add_parser("revoke", help="Revoke one Task")
+    task_revoke_parser.add_argument("task_id")
+    task_revoke_parser.add_argument("--reason")
+
+    event_parser = subparsers.add_parser("event", help="Manage canonical Events")
+    _add_config_arguments(event_parser)
+    event_subparsers = event_parser.add_subparsers(dest="event_command", required=True)
+    event_list_parser = event_subparsers.add_parser("list", help="List Events")
+    event_list_parser.add_argument("--limit", type=int, default=20)
+    event_show_parser = event_subparsers.add_parser("show", help="Show one Event")
+    event_show_parser.add_argument("event_id")
+    event_cancel_parser = event_subparsers.add_parser("cancel", help="Cancel one Event")
+    event_cancel_parser.add_argument("event_id")
+    event_revoke_parser = event_subparsers.add_parser("revoke", help="Revoke one Event")
+    event_revoke_parser.add_argument("event_id")
+    event_revoke_parser.add_argument("--reason")
+
+    remember_parser = subparsers.add_parser("remember", help="Store an explicit local Memory")
+    _add_config_arguments(remember_parser)
+    remember_parser.add_argument("text")
+    remember_parser.add_argument("--scope")
+    remember_parser.add_argument("--confidence", type=float, default=1.0)
+    remember_parser.add_argument("--expires-at")
+    remember_parser.add_argument("--sensitivity", choices=["Public", "Internal", "Private", "Sensitive", "Restricted"], default="Private")
+
+    review_parser = subparsers.add_parser("review", help="Inspect source-triggered review items")
+    _add_config_arguments(review_parser)
+    review_subparsers = review_parser.add_subparsers(dest="review_command", required=True)
+    review_list_parser = review_subparsers.add_parser("list", help="List review items")
+    review_list_parser.add_argument("--status", choices=["open", "resolved", "dismissed"], default="open")
+    review_list_parser.add_argument("--limit", type=int, default=20)
+    review_show_parser = review_subparsers.add_parser("show", help="Show one review item")
+    review_show_parser.add_argument("review_id")
+    review_resolve_parser = review_subparsers.add_parser("resolve", help="Resolve an object review")
+    review_resolve_parser.add_argument("review_id")
+    review_resolve_parser.add_argument("--action", required=True, choices=["keep", "revoke"])
+
     console_parser = subparsers.add_parser("console", help="Open the read-only local LifeMesh Console")
     _add_config_arguments(console_parser)
     console_parser.add_argument(
@@ -106,9 +223,23 @@ def main(argv: list[str] | None = None) -> int:
             return _handle_rumor(args)
         if args.command == "candidate":
             return _handle_candidate(args)
+        if args.command == "db":
+            return _handle_db(args)
+        if args.command == "fact":
+            return _handle_fact(args)
+        if args.command == "memory":
+            return _handle_memory(args)
+        if args.command == "task":
+            return _handle_task(args)
+        if args.command == "event":
+            return _handle_event(args)
+        if args.command == "remember":
+            return _handle_remember(args)
+        if args.command == "review":
+            return _handle_review(args)
         if args.command == "console":
             return _handle_console(args)
-    except (CandidateError, ConsoleError, ManualInputError, RumorClaimError, ValueError, FileNotFoundError, NotADirectoryError) as exc:
+    except (CandidateError, CanonicalStoreError, ConsoleError, DatabaseError, KnowledgeWorkflowError, ManualInputError, RumorClaimError, ValueError, FileNotFoundError, NotADirectoryError) as exc:
         sys.stderr.write(f"lifemesh: error: {exc}\n")
         return 2
 
@@ -260,14 +391,46 @@ def _add_candidate_parsers(candidate_subparsers: argparse._SubParsersAction[argp
     add_parser.add_argument("--risk", default=DEFAULT_CANDIDATE_RISK, choices=sorted(KNOWLEDGE_CANDIDATE_RISKS))
     add_parser.add_argument("--why-suggested", default=DEFAULT_CANDIDATE_WHY_SUGGESTED)
     add_parser.add_argument("--expires-at")
+    add_parser.add_argument("--sensitivity", default="Private", choices=["Public", "Internal", "Private", "Sensitive", "Restricted"])
 
     list_parser = candidate_subparsers.add_parser("list", help="List Knowledge Candidates")
     list_parser.add_argument("--lifecycle", choices=sorted(LISTABLE_CANDIDATE_LIFECYCLES))
+    list_parser.add_argument("--status", choices=sorted(KNOWLEDGE_CANDIDATE_STATUSES))
     list_parser.add_argument("--type", choices=sorted(KNOWLEDGE_CANDIDATE_TYPES))
+    list_parser.add_argument("--sensitivity-cap", default="Private", choices=["Public", "Internal", "Private", "Sensitive", "Restricted"])
     list_parser.add_argument("--limit", type=int, default=20)
 
     show_parser = candidate_subparsers.add_parser("show", help="Show one Knowledge Candidate")
     show_parser.add_argument("candidate_id")
+
+    defer_parser = candidate_subparsers.add_parser("defer", help="Defer one Knowledge Candidate")
+    defer_parser.add_argument("candidate_id")
+    defer_parser.add_argument("--until")
+    defer_parser.add_argument("--reason")
+
+    resume_parser = candidate_subparsers.add_parser("resume", help="Resume one deferred Knowledge Candidate")
+    resume_parser.add_argument("candidate_id")
+
+    merge_parser = candidate_subparsers.add_parser("merge", help="Merge a duplicate Knowledge Candidate")
+    merge_parser.add_argument("winner_id")
+    merge_parser.add_argument("loser_id")
+    merge_parser.add_argument("--reason")
+
+    edit_parser = candidate_subparsers.add_parser("edit", help="Edit a pending Knowledge Candidate")
+    edit_parser.add_argument("candidate_id")
+    edit_parser.add_argument("--summary")
+    edit_parser.add_argument("--type", choices=sorted(KNOWLEDGE_CANDIDATE_TYPES))
+    edit_parser.add_argument("--confidence", type=float)
+    edit_parser.add_argument("--risk", choices=sorted(KNOWLEDGE_CANDIDATE_RISKS))
+    edit_parser.add_argument("--sensitivity", choices=["Public", "Internal", "Private", "Sensitive", "Restricted"])
+    edit_parser.add_argument("--expires-at")
+    edit_parser.add_argument("--add-source-ref", action="append", default=[])
+    edit_parser.add_argument("--remove-source-ref", action="append", default=[])
+
+    confirm_parser = candidate_subparsers.add_parser("confirm", help="Confirm a Knowledge Candidate")
+    confirm_parser.add_argument("candidate_id")
+    confirm_parser.add_argument("--user-asserted", action="store_true")
+    confirm_parser.add_argument("--accepted-by", default="local-user")
 
     discard_parser = candidate_subparsers.add_parser("discard", help="Discard one Knowledge Candidate")
     discard_parser.add_argument("candidate_id")
@@ -296,6 +459,16 @@ def _handle_bundle(args: argparse.Namespace, parser: argparse.ArgumentParser) ->
         excluded_sources = [*obsidian_result.excluded_sources, *manual_result.excluded_sources]
         freshness_report = [*obsidian_result.freshness_report, *manual_result.freshness_report]
         allowed_sources = ["obsidian", "manual-input"]
+        if LifeMeshDatabase(config).status()["schema_status"] == "current":
+            canonical_result = CanonicalStore(config).retrieve_candidates(
+                task=args.task,
+                max_candidates=candidate_limit,
+                sensitivity_cap=args.sensitivity_cap,
+            )
+            candidates.extend(canonical_result.candidates)
+            excluded_sources.extend(canonical_result.excluded_sources)
+            freshness_report.extend(canonical_result.freshness_report)
+            allowed_sources.append("canonical")
         if args.include_unverified:
             rumor_result = RumorClaimStore(config).retrieve_candidates(
                 task=args.task,
@@ -447,6 +620,8 @@ def _handle_input(args: argparse.Namespace) -> int:
     else:
         raise ManualInputError(f"Unsupported input command: {command}")
     _emit_json(result)
+    if isinstance(result, dict) and result.get("file_cleanup_pending"):
+        return 1
     return 0
 
 
@@ -514,19 +689,202 @@ def _handle_candidate(args: argparse.Namespace) -> int:
             risk=args.risk,
             why_suggested=args.why_suggested,
             expires_at=args.expires_at,
+            sensitivity=args.sensitivity,
         )
     elif command == "list":
         result = store.list_candidates(
             lifecycle=args.lifecycle,
+            status=args.status,
             candidate_type=args.type,
+            sensitivity_cap=args.sensitivity_cap,
             limit=args.limit,
         )
     elif command == "show":
         result = store.show(args.candidate_id)
+    elif command == "defer":
+        result = store.defer(args.candidate_id, until=args.until, reason=args.reason)
+    elif command == "resume":
+        result = store.resume(args.candidate_id)
+    elif command == "merge":
+        result = store.merge(args.winner_id, args.loser_id, reason=args.reason)
+    elif command == "edit":
+        result = store.edit(
+            args.candidate_id,
+            summary=args.summary,
+            candidate_type=args.type,
+            confidence=args.confidence,
+            risk=args.risk,
+            sensitivity=args.sensitivity,
+            expires_at=args.expires_at,
+            add_source_refs=args.add_source_ref,
+            remove_source_refs=args.remove_source_ref,
+        )
+    elif command == "confirm":
+        result = KnowledgeWorkflow(_load_config_from_args(args)).confirm_candidate(
+            args.candidate_id,
+            user_asserted=args.user_asserted,
+            accepted_by=args.accepted_by,
+        )
     elif command == "discard":
         result = store.discard(args.candidate_id, reason=args.reason)
     else:
         raise CandidateError(f"Unsupported candidate command: {command}")
+    _emit_json(result)
+    return 0
+
+
+def _handle_db(args: argparse.Namespace) -> int:
+    database = LifeMeshDatabase(_load_config_from_args(args))
+    if args.db_command == "status":
+        result = database.status()
+    elif args.db_command == "migrate":
+        result = database.migrate(apply=args.apply)
+    elif args.db_command == "restore":
+        result = database.restore(args.backup_manifest, apply=args.apply)
+    elif args.db_command == "reconcile-files":
+        result = database.reconcile_files(apply=args.apply)
+    else:
+        raise DatabaseError(f"Unsupported database command: {args.db_command}")
+    _emit_json(result)
+    return 0
+
+
+def _handle_fact(args: argparse.Namespace) -> int:
+    config = _load_config_from_args(args)
+    store = CanonicalStore(config)
+    if args.fact_command == "add":
+        result = KnowledgeWorkflow(config).accept_direct(
+            "fact",
+            {"statement": args.statement, "confidence": args.confidence, "risk": args.risk},
+            sensitivity=args.sensitivity,
+            user_asserted=args.user_asserted,
+            source_refs=args.source_ref,
+        )
+    elif args.fact_command == "show":
+        result = store.show_fact(args.fact_id)
+    elif args.fact_command == "review" and args.fact_review_command == "list":
+        result = store.list_fact_reviews(status=args.status, limit=args.limit)
+    elif args.fact_command == "review" and args.fact_review_command == "show":
+        result = store.show_review(args.review_id)
+        if result["object_id"] is None:
+            raise CanonicalStoreError(f"Review is not a Canonical Fact review: {args.review_id}")
+        store.show_fact(result["object_id"])
+    elif args.fact_command == "review" and args.fact_review_command == "revalidate":
+        result = KnowledgeWorkflow(config).revalidate_fact(
+            args.fact_id,
+            user_asserted=args.user_asserted,
+            source_refs=args.source_ref,
+        )
+    elif args.fact_command == "review" and args.fact_review_command == "revise":
+        result = KnowledgeWorkflow(config).revise_fact(
+            args.fact_id,
+            statement=args.statement,
+            user_asserted=args.user_asserted,
+            source_refs=args.source_ref,
+        )
+    elif args.fact_command == "review" and args.fact_review_command == "invalidate":
+        result = KnowledgeWorkflow(config).invalidate_fact(args.fact_id, reason=args.reason)
+    elif args.fact_command == "revoke":
+        result = KnowledgeWorkflow(config).revoke_object(args.fact_id, reason=args.reason)
+    else:
+        raise CanonicalStoreError(f"Unsupported fact command: {args.fact_command}")
+    _emit_json(result)
+    return 0
+
+
+def _handle_task(args: argparse.Namespace) -> int:
+    config = _load_config_from_args(args)
+    if args.task_command == "add":
+        result = KnowledgeWorkflow(config).accept_direct(
+            "task",
+            {"title": args.title, "description": args.description, "due_at": args.due_at},
+            sensitivity=args.sensitivity,
+        )
+    elif args.task_command == "list":
+        result = CanonicalStore(config).list_objects("task", limit=args.limit)
+    elif args.task_command == "show":
+        result = CanonicalStore(config).show_typed(args.task_id, "task")
+    elif args.task_command == "close":
+        result = KnowledgeWorkflow(config).set_business_status(args.task_id, action="close")
+    elif args.task_command == "revoke":
+        result = KnowledgeWorkflow(config).revoke_object(args.task_id, reason=args.reason)
+    else:
+        raise CanonicalStoreError(f"Unsupported task command: {args.task_command}")
+    _emit_json(result)
+    return 0
+
+
+def _handle_memory(args: argparse.Namespace) -> int:
+    config = _load_config_from_args(args)
+    if args.memory_command == "list":
+        result = CanonicalStore(config).list_objects("memory", limit=args.limit)
+    elif args.memory_command == "show":
+        result = CanonicalStore(config).show_typed(args.memory_id, "memory")
+    elif args.memory_command == "revoke":
+        result = KnowledgeWorkflow(config).revoke_object(args.memory_id, reason=args.reason)
+    else:
+        raise CanonicalStoreError(f"Unsupported memory command: {args.memory_command}")
+    _emit_json(result)
+    return 0
+
+
+def _handle_event(args: argparse.Namespace) -> int:
+    config = _load_config_from_args(args)
+    if args.event_command == "list":
+        result = CanonicalStore(config).list_objects("event", limit=args.limit)
+    elif args.event_command == "show":
+        result = CanonicalStore(config).show_typed(args.event_id, "event")
+    elif args.event_command == "cancel":
+        result = KnowledgeWorkflow(config).set_business_status(args.event_id, action="cancel")
+    elif args.event_command == "revoke":
+        result = KnowledgeWorkflow(config).revoke_object(args.event_id, reason=args.reason)
+    else:
+        raise CanonicalStoreError(f"Unsupported event command: {args.event_command}")
+    _emit_json(result)
+    return 0
+
+
+def _handle_remember(args: argparse.Namespace) -> int:
+    result = KnowledgeWorkflow(_load_config_from_args(args)).accept_direct(
+        "memory",
+        {
+            "text": args.text,
+            "scope": args.scope,
+            "confidence": args.confidence,
+            "expires_at": args.expires_at,
+        },
+        sensitivity=args.sensitivity,
+    )
+    _emit_json(result)
+    return 0
+
+
+def _handle_review(args: argparse.Namespace) -> int:
+    store = CanonicalStore(_load_config_from_args(args))
+    if args.review_command == "list":
+        result = store.list_reviews(status=args.status, limit=args.limit)
+    elif args.review_command == "show":
+        result = store.show_review(args.review_id)
+    elif args.review_command == "resolve":
+        result = KnowledgeWorkflow(_load_config_from_args(args)).resolve_review(
+            args.review_id,
+            action=args.action,
+        )
+    else:
+        raise CanonicalStoreError(f"Unsupported review command: {args.review_command}")
+    _emit_json(result)
+    return 0
+
+
+def _handle_typed_object(
+    args: argparse.Namespace,
+    object_type: str,
+    command: str,
+    object_id: str,
+) -> int:
+    if command != "show":
+        raise CanonicalStoreError(f"Unsupported {object_type} command: {command}")
+    result = CanonicalStore(_load_config_from_args(args)).show_typed(object_id, object_type)
     _emit_json(result)
     return 0
 

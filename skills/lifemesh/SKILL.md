@@ -67,16 +67,24 @@ RumorClaim / UnverifiedClaim has a structured local CLI MVP:
 
 This CLI stores only structured claim fields, mentions, minimal source envelope, status, and audit events. It does not ingest raw rumor material or run automatic source adapters yet.
 
-Knowledge Candidate inbox has a minimal local CLI MVP:
+Knowledge Candidate, Acceptance, and canonical object workflows use the unified local database:
 
 ```bash
 /Users/justynchen/Documents/code/life-mesh/bin/lifemesh candidate add "..." --type fact|preference|relationship|task|decision
 /Users/justynchen/Documents/code/life-mesh/bin/lifemesh candidate list
 /Users/justynchen/Documents/code/life-mesh/bin/lifemesh candidate show <candidate-id>
+/Users/justynchen/Documents/code/life-mesh/bin/lifemesh candidate edit <candidate-id> ...
+/Users/justynchen/Documents/code/life-mesh/bin/lifemesh candidate defer <candidate-id>
+/Users/justynchen/Documents/code/life-mesh/bin/lifemesh candidate resume <candidate-id>
+/Users/justynchen/Documents/code/life-mesh/bin/lifemesh candidate merge <winner-id> <loser-id>
+/Users/justynchen/Documents/code/life-mesh/bin/lifemesh candidate confirm <candidate-id>
 /Users/justynchen/Documents/code/life-mesh/bin/lifemesh candidate discard <candidate-id>
+/Users/justynchen/Documents/code/life-mesh/bin/lifemesh fact review list
+/Users/justynchen/Documents/code/life-mesh/bin/lifemesh review list
+/Users/justynchen/Documents/code/life-mesh/bin/lifemesh db status
 ```
 
-Candidates are stored in `~/.lifemesh/lifemesh.db` with `lifecycle=confirm_required` by default. `candidate confirm`, `candidate edit`, `candidate merge`, and upgrade into Canonical Fact / Memory / Task are not implemented yet.
+Candidates are stored with `status=pending` by default (compatibility output still exposes `lifecycle=confirm_required`). Manual Input and RumorClaim promote into the same inbox. Explicit confirmation upgrades by type: fact to Canonical Fact, task to Task, and preference/relationship/decision to Memory, with Acceptance and provenance written atomically.
 
 ## Quick Checks
 
@@ -85,6 +93,7 @@ Use these before relying on LifeMesh in a task:
 ```bash
 /Users/justynchen/.lmstudio/bin/lms server status
 /Users/justynchen/.lmstudio/bin/lms ps
+/Users/justynchen/Documents/code/life-mesh/bin/lifemesh db status
 /Users/justynchen/Documents/code/life-mesh/bin/lifemesh input list
 sqlite3 /Users/justynchen/.lifemesh/lifemesh.db "select key, value from lifemesh_meta where key like 'vector_%' order by key;"
 ```
@@ -120,14 +129,15 @@ If LM Studio is stopped, start it:
 - `rumor keep` marks a parked claim as `reviewed_parked`; it remains an unverified lead but is skipped by the default review list.
 - `evidence_state=contradicted` must use `assessment=contradicted`; contradicted claims are excluded from usable Bundle slices.
 - Expired, dismissed, Sensitive-over-cap, stale, missing, revoked, or deleted material must not be used as evidence.
-- `rumor promote --to candidate` currently creates a local `rumor_candidate_links` handoff and marks the claim `candidate_created`; it is not a complete Candidate inbox lifecycle.
+- `rumor promote --to candidate` creates a pending Candidate in the unified inbox and marks the claim `candidate_created`; it never creates a canonical object directly.
 
 ## Candidate Rules
 
 - Agent may use `candidate add` for inferred reusable knowledge that needs user review.
-- `candidate add` is not confirmation. It creates a `confirm_required` inbox record only.
-- Agent must not confirm, edit, merge, or upgrade a candidate unless the user explicitly asks and the current CLI supports that command.
+- `candidate add` is not confirmation. It creates a pending / `confirm_required` inbox record only.
+- Agent may add a Candidate, but must not call `candidate confirm`; confirmation remains a user-operated CLI action. Agent-side edit/merge also requires an explicit user instruction.
 - `candidate discard` is a tombstone operation; it should only be used when the user explicitly rejects a candidate or asks to clean it up.
+- Source revocation/deletion can open review items and remove dependent facts/memories from Bundle eligibility; do not bypass those reviews with direct SQL.
 
 ## How To Consume The Bundle
 

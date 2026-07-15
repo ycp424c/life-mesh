@@ -1,7 +1,7 @@
 # Provenance And Lifecycle
 
-状态：draft
-最后更新：2026-07-03
+状态：active
+最后更新：2026-07-15
 职责边界：定义数据从原始进入、派生、使用、过期到删除的生命周期。
 
 ## 生命周期
@@ -97,7 +97,7 @@ RumorClaim 处理可信度未知的文字片段、截图和图片材料。它不
 |---|---|---|
 | parked | 通过最低初筛 | 可在 rumor review 中查看；普通 Bundle 默认不含 |
 | reviewed_parked | 人工检视后决定继续保留 parked 线索 | 默认复审列表跳过；明确请求未验证线索时仍可作为 lead 进入 Bundle |
-| candidate_created | 用户或规则把 claim promote 到 Knowledge Candidate | 当前 MVP 只保留本地 candidate link；完整 Candidate inbox 落地后跟随 Candidate 生命周期 |
+| candidate_created | 用户或规则把 claim promote 到 Knowledge Candidate | 已写入统一 Candidate inbox，并跟随 Candidate 生命周期 |
 | dismissed | 用户或规则判定无价值 | 不检索，不进 Bundle，仅保留最小 tombstone / 统计 |
 | expired | 到期未复核 | 不检索，不进 Bundle，默认只保留审计摘要 |
 
@@ -105,7 +105,7 @@ RumorClaim 处理可信度未知的文字片段、截图和图片材料。它不
 
 - 普通 parked / reviewed_parked claim：60 天。
 - 高影响或用户订阅主题：180 天。
-- candidate_created：当前 MVP 只保留本地 candidate link；完整 Candidate inbox 落地后跟随 Knowledge Candidate 生命周期。
+- candidate_created：统一 handoff 已生成 pending Knowledge Candidate；后续跟随 Candidate confirm/defer/merge/discard 生命周期。
 - 用户显式 pin/save：不自动过期，但仍是未验证线索。
 
 当 RumorClaim 与 Canonical Fact 冲突时，只生成 conflict lead，不自动让 Canonical Fact 进入 `needs_review`。正式 Fact Review 需要用户明确复核，或后续多个高质量来源支持。

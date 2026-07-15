@@ -1,10 +1,12 @@
 # Canonical Objects
 
 状态：draft
-最后更新：2026-07-03
+最后更新：2026-07-15
 职责边界：定义规范化事实库中的核心对象，供后续数据模型和接口设计使用。
 
 ## 核心对象
+
+运行时已实现 Unified Candidate、Acceptance、Canonical Fact、Memory、Task、Event、normalized source links、review items 和 tombstones。表中其余未来对象仍是领域词汇，不代表都已有持久化实现。
 
 | 对象 | 说明 |
 |---|---|

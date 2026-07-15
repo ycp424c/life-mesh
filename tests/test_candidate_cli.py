@@ -41,7 +41,9 @@ class CandidateCliTest(unittest.TestCase):
             self.assertEqual(added["summary"], "Tailwind traffic decline should be reviewed as a fact")
             self.assertEqual(added["type"], "fact")
             self.assertEqual(added["lifecycle"], "confirm_required")
-            self.assertEqual(added["source_refs"], ["obsidian:hot.md#L16-L22"])
+            self.assertEqual(len(added["source_refs"]), 1)
+            self.assertTrue(added["source_refs"][0].startswith("opaque:"))
+            self.assertEqual(added["source_links"][0]["source_kind"], "opaque")
             self.assertEqual(added["confidence"], 0.72)
             self.assertEqual(added["risk"], "medium")
 

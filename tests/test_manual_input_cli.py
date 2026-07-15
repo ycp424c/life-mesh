@@ -307,7 +307,7 @@ class ManualInputCliTest(unittest.TestCase):
                 home,
             )
 
-            self.assertEqual(bundle["permission_scope"]["allowed_sources"], ["obsidian", "manual-input"])
+            self.assertEqual(bundle["permission_scope"]["allowed_sources"], ["obsidian", "manual-input", "canonical"])
             sources = {item["provenance"]["source"] for item in bundle["slices"]}
             self.assertIn("obsidian", sources)
             self.assertIn("manual-input", sources)

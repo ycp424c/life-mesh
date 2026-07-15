@@ -1,10 +1,12 @@
 # Security And Audit
 
-状态：draft
-最后更新：2026-07-03
+状态：active
+最后更新：2026-07-15
 职责边界：定义安全、审计、撤销和确认机制的架构要求。
 
 ## 必备能力
+
+Phase 1 已实现统一写事务中的 Candidate decision、Acceptance、source status、review、tombstone 和 audit 记录；数据库连接使用 shared lock，migration/restore 使用 exclusive lock 和受管备份。更广义的读取审计与外部动作审计仍属于后续阶段。
 
 - 数据分类
 - 按任务授权

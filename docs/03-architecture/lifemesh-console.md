@@ -18,7 +18,7 @@
 
 ## 当前运行时约束
 
-Unified Write Model 尚未实现，当前 Manual Input、RumorClaim 和 Candidate 仍由各自 store 管理。Console 第一版只能读取当前 runtime truth；不得为了 UI 方便新增 legacy 写旁路或把 target schema 伪装成已实现。
+Unified Write Model 已实现并完成真实库迁移。Manual Input、RumorClaim 保留来源领域 store，Candidate handoff、Acceptance、Canonical Object、review 与 provenance 由统一 database/workflow 管理。Console 第一版仍只展示既定的 Manual Input、RumorClaim、Candidate 和 Bundle read model；尚未新增 Canonical Object/Review 专页，也不得为了 UI 方便新增写旁路。
 
 ## 当前实现
 
@@ -65,7 +65,7 @@ Explore
 
 ## 后续边界
 
-- 在 Unified Write Model 落地前，不增加 Candidate confirm、RumorClaim review 或任何其他持久化写操作。
+- Unified Write Model 已落地，但 Console 仍不增加 Candidate confirm、RumorClaim review 或任何其他持久化写操作；写回能力需要独立产品与安全决策。
 - 如需常驻进程、LAN/public 监听、外部端口或写操作，必须重新评估认证、CSRF、会话生命周期和审计，而不是沿用当前无登录设计。
 - 真实个人数据规模下的长期性能、图谱密度和信息分层仍需通过持续使用验证。
 

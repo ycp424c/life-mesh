@@ -165,7 +165,7 @@ RumorClaim 默认不进入普通 Context Bundle。
 - RumorClaim 不能支撑事实性结论。
 - 回答必须标注未验证。
 - `assessment=contradicted` 默认只进入 conflict report，不进入可用 slices，除非用户专门查看冲突。
-- RumorClaim 只能 promote 到 Knowledge Candidate，不能直接到 Canonical Fact、Memory、Task、Event 或外部动作。当前本地 CLI MVP 的 promote 只创建 `rumor_candidate_links`；完整 Candidate inbox handoff 仍是后续工作。
+- RumorClaim 只能 promote 到 Knowledge Candidate，不能直接到 Canonical Fact、Memory、Task、Event 或外部动作。ADR-0010 实现后，当前 CLI 已将该 promote 切换为统一 Candidate inbox handoff；legacy `rumor_candidate_links` 仅只读保留。
 
 当 RumorClaim 与 Canonical Fact 冲突时：
 

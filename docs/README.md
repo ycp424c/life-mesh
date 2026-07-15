@@ -30,6 +30,8 @@ docs/
 
 ## 当前关键入口
 
+当前运行时已完成 ADR-0010 Unified Write Model 和真实本地数据库迁移；Candidate、Acceptance、typed Canonical Object、review/tombstone 与 Bundle 准入以实现代码和下列 active 文档为准。
+
 - [Obsidian Vault 数据源评估](02-domain/data-sources/obsidian-vault.md)
 - [Obsidian 检索最小验收样例](02-domain/data-sources/obsidian-retrieval-sample.md)
 - [Manual Input 数据源评估](02-domain/data-sources/manual-input.md)

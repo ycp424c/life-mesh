@@ -23,4 +23,4 @@
 - 数据分类和授权策略已有第 0 阶段草案。
 - Agent 最小交付架构仍是 CLI + JSON Bundle + skill，不引入 MCP 或 Agent server。ADR-0011 仅允许用户按需启动、绑定 `127.0.0.1` 的只读 Console Server；它不是 Agent 接口或后台服务。
 - 审计、删除、复核和撤销策略已有 ADR / 治理文档。
-- 最小 CLI 原型、ADR-0008 限定的 Manual Input 本地 Inbox 和 Candidate inbox `add/list/show/discard` 已落地。candidate confirm / merge / edit、正式对象与数据库迁移边界已由 ADR-0010 确认；实现必须遵守一次完整切换、动态 preflight、备份恢复和用户确认合同。Richer citation UI、frontmatter 结构化抽取、ADR-0010 范围外写命令或 Agent 自动执行仍需另行决策。
+- 最小 CLI 原型、ADR-0008 Manual Input Inbox 和 ADR-0010 Unified Write Model 已落地；Candidate 完整确认生命周期、typed Canonical Object、Fact Review 与真实数据库守恒迁移均已完成。Richer citation UI、frontmatter 结构化抽取、ADR-0010 范围外写命令或 Agent 自动执行仍需另行决策。

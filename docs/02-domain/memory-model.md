@@ -1,10 +1,12 @@
 # Memory Model
 
-状态：draft
-最后更新：2026-06-26
+状态：active
+最后更新：2026-07-15
 职责边界：定义 LifeMesh 如何写入、读取、确认、过期和删除长期记忆。
 
 ## 记忆类型
+
+Phase 1 已实现 `remember` 显式写入、Candidate confirm 到 Memory、typed Memory list/show/revoke、source-triggered `needs_review` 和 Bundle `context` 准入。完整编辑、删除和自动过期调度仍属于后续能力。
 
 | 类型 | 内容 | 写入规则 |
 |---|---|---|
