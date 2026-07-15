@@ -30,8 +30,9 @@ class CandidateError(RuntimeError):
 
 
 class CandidateStore:
-    def __init__(self, config: LifemeshConfig) -> None:
+    def __init__(self, config: LifemeshConfig, *, read_only: bool = False) -> None:
         self.config = config
+        self.read_only = read_only
 
     def add(
         self,
@@ -430,6 +431,8 @@ class CandidateStore:
 
     def _connect(self) -> sqlite3.Connection:
         database = LifeMeshDatabase(self.config)
+        if self.read_only:
+            return database.connect_read_only()
         database.ensure_current_for_write()
         _ensure_private_dir(self.config.home)
         con = database.connect()

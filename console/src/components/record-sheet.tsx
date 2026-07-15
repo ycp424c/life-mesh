@@ -16,6 +16,8 @@ interface RecordSheetProps {
 const hiddenFields = new Set([
   "text", "claim_text", "summary", "extractions", "embeddings", "derived_objects",
   "audit_events", "candidate_links", "source_envelope", "source_refs_json", "tags_json",
+  "statement", "title", "description", "acceptance", "source_links", "review_items",
+  "tombstones", "target", "trigger_source",
 ])
 
 function JsonSection({ title, value }: { title: string; value: unknown }) {
@@ -55,6 +57,12 @@ export function RecordSheet({ selected, onClose }: RecordSheetProps) {
                 {content ? <section className="detail-section"><h3>Content · 原文不遮罩</h3><div className="whitespace-pre-wrap font-display text-[17px] leading-8 text-paper">{content}</div></section> : null}
                 {metadata.length ? <section className="detail-section"><h3>Metadata</h3><dl className="grid grid-cols-[minmax(100px,.32fr)_minmax(0,.68fr)] gap-x-4 gap-y-2.5 max-sm:grid-cols-1">{metadata.flatMap(([key, value]) => [<dt key={`${key}-key`} className="font-mono text-[9px] text-paper-faint">{key}</dt>, <dd key={key} className="m-0 break-words text-[11px] leading-6 text-paper-dim">{String(value)}</dd>])}</dl></section> : null}
                 <JsonSection title="来源" value={data.data.source_envelope ?? data.data.source_refs} />
+                <JsonSection title="Acceptance" value={data.data.acceptance} />
+                <JsonSection title="Provenance · 来源链接" value={data.data.source_links} />
+                <JsonSection title="触发来源" value={data.data.trigger_source} />
+                <JsonSection title="复核目标" value={data.data.target} />
+                <JsonSection title="复核历史" value={data.data.review_items} />
+                <JsonSection title="Tombstone" value={data.data.tombstones} />
                 <JsonSection title="实体提及" value={data.data.entity_mentions} />
                 <JsonSection title="关系提及" value={data.data.relation_mentions} />
                 <JsonSection title="派生对象" value={data.data.derived_objects ?? data.data.candidate_links} />

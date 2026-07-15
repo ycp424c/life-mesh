@@ -15,11 +15,17 @@ class CanonicalStoreError(RuntimeError):
 
 
 class CanonicalStore:
-    def __init__(self, config: LifemeshConfig) -> None:
+    def __init__(self, config: LifemeshConfig, *, read_only: bool = False) -> None:
         self.database = LifeMeshDatabase(config)
+        self.read_only = read_only
+
+    def _connect(self) -> sqlite3.Connection:
+        if self.read_only:
+            return self.database.connect_read_only()
+        return self.database.connect()
 
     def show_object(self, object_id: str) -> dict[str, Any]:
-        with self.database.connect() as con:
+        with self._connect() as con:
             row = con.execute(
                 "SELECT * FROM canonical_objects WHERE object_id = ?",
                 (object_id,),
@@ -80,7 +86,7 @@ class CanonicalStore:
             "task": ("tasks", "task_id"),
             "event": ("events", "event_id"),
         }[object_type]
-        with self.database.connect() as con:
+        with self._connect() as con:
             return [
                 dict(row)
                 for row in con.execute(
@@ -96,10 +102,56 @@ class CanonicalStore:
                 ).fetchall()
             ]
 
+    def list_all_objects(self, *, limit: int = 80) -> list[dict[str, Any]]:
+        if limit < 1:
+            raise CanonicalStoreError("limit must be at least 1")
+        with self._connect() as con:
+            return [
+                dict(row)
+                for row in con.execute(
+                    """
+                    SELECT
+                        o.object_id,
+                        o.object_type,
+                        o.sensitivity,
+                        o.created_at,
+                        o.updated_at,
+                        CASE o.object_type
+                            WHEN 'fact' THEN f.statement
+                            WHEN 'memory' THEN m.text
+                            WHEN 'task' THEN t.title
+                            WHEN 'event' THEN e.title
+                        END AS title,
+                        CASE o.object_type
+                            WHEN 'fact' THEN f.review_reason
+                            WHEN 'memory' THEN m.scope
+                            WHEN 'task' THEN t.description
+                            WHEN 'event' THEN e.starts_at
+                        END AS excerpt,
+                        CASE o.object_type
+                            WHEN 'fact' THEN f.validity
+                            WHEN 'memory' THEN m.status
+                            WHEN 'task' THEN t.task_status
+                            WHEN 'event' THEN e.event_status
+                        END AS status,
+                        f.risk,
+                        m.memory_type
+                    FROM canonical_objects o
+                    LEFT JOIN canonical_facts f ON f.fact_id = o.object_id
+                    LEFT JOIN memories m ON m.memory_id = o.object_id
+                    LEFT JOIN tasks t ON t.task_id = o.object_id
+                    LEFT JOIN events e ON e.event_id = o.object_id
+                    ORDER BY o.updated_at DESC, o.object_id DESC
+                    LIMIT ?
+                    """,
+                    (limit,),
+                ).fetchall()
+            ]
+
     def list_reviews(self, *, status: str = "open", limit: int = 20) -> list[dict[str, Any]]:
         if status not in {"open", "resolved", "dismissed"}:
             raise CanonicalStoreError("review status must be open, resolved, or dismissed")
-        with self.database.connect() as con:
+        with self._connect() as con:
             return [
                 dict(row)
                 for row in con.execute(
@@ -108,8 +160,44 @@ class CanonicalStore:
                 ).fetchall()
             ]
 
+    def list_review_contexts(self, *, status: str = "open", limit: int = 80) -> list[dict[str, Any]]:
+        if status not in {"open", "resolved", "dismissed"}:
+            raise CanonicalStoreError("review status must be open, resolved, or dismissed")
+        if limit < 1:
+            raise CanonicalStoreError("limit must be at least 1")
+        with self._connect() as con:
+            return [
+                dict(row)
+                for row in con.execute(
+                    """
+                    SELECT
+                        r.*,
+                        COALESCE(o.sensitivity, c.sensitivity, 'Unclassified') AS sensitivity,
+                        CASE
+                            WHEN r.object_id IS NOT NULL THEN o.object_type
+                            ELSE 'candidate:' || COALESCE(c.type, 'unknown')
+                        END AS target_type,
+                        COALESCE(f.statement, m.text, t.title, e.title, c.summary, r.object_id, r.candidate_id) AS target_title,
+                        s.citation_label AS trigger_citation_label,
+                        s.status AS trigger_source_status
+                    FROM review_items r
+                    LEFT JOIN canonical_objects o ON o.object_id = r.object_id
+                    LEFT JOIN canonical_facts f ON f.fact_id = o.object_id
+                    LEFT JOIN memories m ON m.memory_id = o.object_id
+                    LEFT JOIN tasks t ON t.task_id = o.object_id
+                    LEFT JOIN events e ON e.event_id = o.object_id
+                    LEFT JOIN knowledge_candidates c ON c.candidate_id = r.candidate_id
+                    JOIN source_references s ON s.source_ref_id = r.trigger_source_ref_id
+                    WHERE r.status = ?
+                    ORDER BY r.opened_at, r.review_id
+                    LIMIT ?
+                    """,
+                    (status, limit),
+                ).fetchall()
+            ]
+
     def show_review(self, review_id: str) -> dict[str, Any]:
-        with self.database.connect() as con:
+        with self._connect() as con:
             row = con.execute("SELECT * FROM review_items WHERE review_id = ?", (review_id,)).fetchone()
             if row is None:
                 raise CanonicalStoreError(f"Review not found: {review_id}")
@@ -118,7 +206,7 @@ class CanonicalStore:
     def list_fact_reviews(self, *, status: str = "open", limit: int = 20) -> list[dict[str, Any]]:
         if status not in {"open", "resolved", "dismissed"}:
             raise CanonicalStoreError("review status must be open, resolved, or dismissed")
-        with self.database.connect() as con:
+        with self._connect() as con:
             return [
                 dict(row)
                 for row in con.execute(
@@ -148,7 +236,7 @@ class CanonicalStore:
         terms = [term.lower() for term in task.replace("/", " ").split() if term.strip()]
         candidates: list[ContextCandidate] = []
         excluded: list[dict[str, Any]] = []
-        with self.database.connect() as con:
+        with self._connect() as con:
             facts = con.execute(
                 """
                 SELECT o.*, f.*

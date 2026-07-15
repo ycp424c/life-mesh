@@ -19,9 +19,11 @@ const shortcutViews: Record<string, ViewName> = {
   "2": "inputs",
   "3": "rumors",
   "4": "candidates",
-  "5": "bundle",
-  "6": "graph",
-  "7": "timeline",
+  "5": "objects",
+  "6": "reviews",
+  "7": "bundle",
+  "8": "graph",
+  "9": "timeline",
 }
 
 export default function App() {
@@ -64,7 +66,7 @@ export default function App() {
       <ConsoleShell view={view} onNavigate={navigate} onSearch={search}>
         <Suspense fallback={<LoadingView />}>
           {view === "overview" ? <OverviewView onNavigate={navigate} onOpenRecord={openRecord} /> : null}
-          {view === "inputs" || view === "rumors" || view === "candidates" ? <RecordListView domain={view} onOpenRecord={openRecord} /> : null}
+          {view === "inputs" || view === "rumors" || view === "candidates" || view === "objects" || view === "reviews" ? <RecordListView key={view} domain={view} onOpenRecord={openRecord} /> : null}
           {view === "bundle" ? <BundleView /> : null}
           {view === "graph" ? <GraphView onOpenRecord={openRecord} /> : null}
           {view === "timeline" ? <TimelineView onOpenRecord={openRecord} /> : null}

@@ -102,6 +102,26 @@ class LifeMeshDatabase:
             con.close()
             raise
 
+    def connect_read_only(self) -> sqlite3.Connection:
+        if not self.config.db_path.is_file():
+            raise DatabaseError("LifeMesh database is not initialized")
+        con = self._open_connection(read_only=True)
+        try:
+            row = con.execute(
+                "SELECT checksum FROM schema_migrations WHERE migration_id = ?",
+                (TARGET_MIGRATION_ID,),
+            ).fetchone()
+            if row is None:
+                raise DatabaseError(
+                    "Unified database migration is required; run `lifemesh db migrate --apply`"
+                )
+            if str(row[0]) != MIGRATION_CHECKSUM:
+                raise DatabaseError(f"Migration checksum mismatch for {TARGET_MIGRATION_ID}")
+            return con
+        except (sqlite3.Error, DatabaseError):
+            con.close()
+            raise
+
     def ensure_current_for_write(self) -> None:
         status = self.status()["schema_status"]
         if status == "uninitialized":
@@ -470,15 +490,29 @@ class LifeMeshDatabase:
         self.config.home.mkdir(parents=True, exist_ok=True)
         os.chmod(self.config.home, 0o700)
 
-    def _open_connection(self, *, acquire_lock: bool = True) -> ClosingConnection:
+    def _open_connection(
+        self,
+        *,
+        acquire_lock: bool = True,
+        read_only: bool = False,
+    ) -> ClosingConnection:
         lock_file = None
         if acquire_lock:
             lock_path = self.config.home / ".database.lock"
-            lock_file = lock_path.open("a+b")
-            os.chmod(lock_path, 0o600)
-            fcntl.flock(lock_file.fileno(), fcntl.LOCK_SH)
+            if not read_only or lock_path.is_file():
+                lock_file = lock_path.open("rb" if read_only else "a+b")
+                if not read_only:
+                    os.chmod(lock_path, 0o600)
+                fcntl.flock(lock_file.fileno(), fcntl.LOCK_SH)
         try:
-            con = sqlite3.connect(self.config.db_path, factory=ClosingConnection)
+            target: str | Path = self.config.db_path
+            if read_only:
+                target = f"{self.config.db_path.resolve().as_uri()}?mode=ro"
+            con = sqlite3.connect(
+                target,
+                factory=ClosingConnection,
+                uri=read_only,
+            )
         except Exception:
             if lock_file is not None:
                 fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
@@ -489,6 +523,8 @@ class LifeMeshDatabase:
         con.row_factory = sqlite3.Row
         con.execute("PRAGMA foreign_keys = ON")
         con.execute("PRAGMA busy_timeout = 5000")
+        if read_only:
+            con.execute("PRAGMA query_only = ON")
         return con
 
     @contextmanager

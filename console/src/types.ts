@@ -1,4 +1,4 @@
-export type Domain = "inputs" | "rumors" | "candidates"
+export type Domain = "inputs" | "rumors" | "candidates" | "objects" | "reviews"
 export type ViewName = Domain | "overview" | "bundle" | "graph" | "timeline" | "search"
 
 export interface RecordCard {
@@ -13,6 +13,8 @@ export interface RecordCard {
   tags: string[]
   score?: number
   match_reason?: string
+  target_scope?: "object" | "candidate"
+  target_id?: string
 }
 
 export interface HealthItem {
@@ -28,12 +30,15 @@ export interface OverviewData {
     inputs: number
     rumors: number
     candidates: number
+    objects: number
+    reviews: number
     sensitive: number
   }
   queues: {
     manual_active: number
     rumor_review: number
     candidate_review: number
+    object_review: number
   }
   sensitivity: Record<string, number>
   health: HealthItem[]

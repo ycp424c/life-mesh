@@ -50,7 +50,7 @@ LifeMesh 是一个面向个人的 Personal Data OS：把分散在生活、工作
 bin/lifemesh console
 ```
 
-Console 读取当前 `LIFEMESH_HOME` 与 `LIFEMESH_OBSIDIAN_VAULT` 配置，支持总览、全局搜索、Manual Input、RumorClaim、Candidate、真实关系图谱、时间线和非持久化 Context Bundle Explorer。它不会提供 add、update、promote、dismiss、confirm 或 delete 操作。
+Console 读取当前 `LIFEMESH_HOME` 与 `LIFEMESH_OBSIDIAN_VAULT` 配置，支持总览、FTS/结构化全局搜索、Manual Input、RumorClaim、Candidate、Canonical Object、Open Review、真实关系图谱、时间线和非持久化 Context Bundle Explorer。数据库连接强制使用 SQLite `mode=ro`/`query_only`；空 HOME 只展示空状态，不初始化数据库。全局搜索不调用 embedding；需要语义检索时继续使用 Bundle Explorer。Console 不会提供 add、update、promote、dismiss、confirm 或 delete 操作。
 
 前端源码位于 `console/`。修改 React/shadcn 界面后重新生成内置静态资源：
 

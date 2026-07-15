@@ -8,6 +8,8 @@ export function DomainBadge({ card }: { card: RecordCard }) {
     inputs: "border-sprout/25 bg-sprout-deep/45 text-sprout",
     rumors: "border-unknown/30 bg-unknown/10 text-unknown-bright",
     candidates: "border-amber/30 bg-amber/10 text-amber-hot",
+    objects: "border-entity/30 bg-entity/10 text-entity",
+    reviews: "border-coral/35 bg-coral/10 text-coral",
   }
   return <Badge variant="outline" className={cn("font-mono text-[9px] uppercase tracking-[.08em]", tones[card.domain])}>{DOMAIN_NAMES[card.domain]}</Badge>
 }

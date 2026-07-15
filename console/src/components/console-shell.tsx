@@ -5,9 +5,11 @@ import {
   Braces,
   Clock3,
   FileHeart,
+  LibraryBig,
   Menu,
   Orbit,
   Search,
+  ShieldAlert,
   Sparkles,
 } from "lucide-react"
 
@@ -39,18 +41,25 @@ const navGroups = [
     ],
   },
   {
+    label: "知识",
+    items: [
+      { view: "objects" as const, label: "Canonical Objects", icon: LibraryBig, shortcut: "5" },
+      { view: "reviews" as const, label: "Open Reviews", icon: ShieldAlert, shortcut: "6" },
+    ],
+  },
+  {
     label: "探索",
     items: [
-      { view: "bundle" as const, label: "Bundle Explorer", icon: Braces, shortcut: "5" },
-      { view: "graph" as const, label: "关系图谱", icon: Boxes, shortcut: "6" },
-      { view: "timeline" as const, label: "时间脉络", icon: Clock3, shortcut: "7" },
+      { view: "bundle" as const, label: "Bundle Explorer", icon: Braces, shortcut: "7" },
+      { view: "graph" as const, label: "关系图谱", icon: Boxes, shortcut: "8" },
+      { view: "timeline" as const, label: "时间脉络", icon: Clock3, shortcut: "9" },
     ],
   },
 ]
 
 function Navigation({ view, onNavigate, onSelect }: Pick<ConsoleShellProps, "view" | "onNavigate"> & { onSelect?: () => void }) {
   return (
-    <nav className="flex flex-col gap-1" aria-label="主要导航">
+    <nav className="min-h-0 flex-1 overflow-y-auto pr-1" aria-label="主要导航">
       {navGroups.map((group) => (
         <div key={group.label}>
           <p className="mb-1 mt-5 px-3 font-mono text-[9px] font-semibold uppercase tracking-[.17em] text-paper-faint">{group.label}</p>
@@ -70,7 +79,7 @@ function Navigation({ view, onNavigate, onSelect }: Pick<ConsoleShellProps, "vie
                       view === item.view && "border border-amber/20 bg-gradient-to-r from-amber/15 to-sprout/5 text-paper before:absolute before:-left-[19px] before:h-5 before:w-[3px] before:rounded-r before:bg-amber before:shadow-[0_0_18px_rgba(242,168,93,.6)] hover:bg-amber/10",
                     )}
                   >
-                    <Icon className={cn("size-4 text-rational", item.view === "rumors" && "text-unknown-bright", item.view === "candidates" && "text-sprout")} />
+                    <Icon className={cn("size-4 text-rational", item.view === "rumors" && "text-unknown-bright", item.view === "candidates" && "text-sprout", item.view === "objects" && "text-entity", item.view === "reviews" && "text-coral")} />
                     <span className="flex-1 text-left text-[13px]">{item.label}</span>
                     <kbd className="font-mono text-[9px] font-normal text-paper-faint/60">{item.shortcut}</kbd>
                   </Button>
@@ -116,7 +125,7 @@ export function ConsoleShell({ children, view, onNavigate, onSearch }: ConsoleSh
       <aside className="fixed inset-y-0 left-0 z-30 flex w-[248px] flex-col border-r border-paper/10 bg-night-deep/85 px-[18px] py-7 backdrop-blur-2xl max-md:hidden">
         <Brand />
         <Navigation view={view} onNavigate={onNavigate} />
-        <div className="mt-auto flex items-center gap-2.5 border-t border-paper/10 px-2 pt-5">
+        <div className="mt-4 flex shrink-0 items-center gap-2.5 border-t border-paper/10 px-2 pt-5">
           <span className="session-pulse" aria-hidden="true" />
           <div><strong className="block text-[11px] text-paper-dim">本机只读会话</strong><span className="block font-mono text-[8px] text-paper-faint">127.0.0.1 · 关闭命令即结束</span></div>
         </div>
@@ -143,7 +152,7 @@ export function ConsoleShell({ children, view, onNavigate, onSearch }: ConsoleSh
               name="query"
               type="search"
               autoComplete="off"
-              placeholder="搜索记录、线索、候选…"
+              placeholder="搜索记录、对象、复核项…"
               aria-label="搜索 LifeMesh"
               className="h-auto border-0 bg-transparent px-0 text-paper shadow-none placeholder:text-paper-faint/70 focus-visible:ring-0"
             />

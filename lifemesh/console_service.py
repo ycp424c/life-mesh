@@ -8,15 +8,16 @@ from typing import Any, Iterable
 
 from .assembler import BundleAssembler
 from .candidates import CandidateError, CandidateStore
+from .canonical_store import CanonicalStore, CanonicalStoreError
 from .config import LifemeshConfig
 from .context_types import ContextCandidate
-from .database import LifeMeshDatabase
+from .database import DatabaseError, LifeMeshDatabase
 from .manual_input import ManualInputError, ManualInputStore
 from .obsidian import retrieve_candidates as retrieve_obsidian_candidates
 from .rumor_claims import RumorClaimError, RumorClaimStore
 
 
-DOMAINS = {"inputs", "rumors", "candidates"}
+DOMAINS = {"inputs", "rumors", "candidates", "objects", "reviews"}
 SENSITIVITY_LEVELS = ["Public", "Internal", "Private", "Sensitive", "Restricted"]
 
 
@@ -29,15 +30,19 @@ class ConsoleService:
 
     def __init__(self, config: LifemeshConfig) -> None:
         self.config = config
-        self.inputs = ManualInputStore(config)
-        self.rumors = RumorClaimStore(config)
-        self.candidates = CandidateStore(config)
+        self.database = LifeMeshDatabase(config)
+        self.inputs = ManualInputStore(config, read_only=True)
+        self.rumors = RumorClaimStore(config, read_only=True)
+        self.candidates = CandidateStore(config, read_only=True)
+        self.canonical = CanonicalStore(config, read_only=True)
 
     def overview(self) -> dict[str, Any]:
         inputs = self.records("inputs", limit=200)
         rumors = self.records("rumors", limit=200)
         candidates = self.records("candidates", limit=200)
-        records = [*inputs, *rumors, *candidates]
+        objects = self.records("objects", limit=200)
+        reviews = self.records("reviews", limit=200)
+        records = [*inputs, *rumors, *candidates, *objects, *reviews]
         recent = sorted(records, key=lambda item: item.get("timestamp") or "", reverse=True)[:8]
         sensitivity = Counter(item.get("sensitivity") or "Unclassified" for item in records)
 
@@ -48,6 +53,8 @@ class ConsoleService:
                 "inputs": len(inputs),
                 "rumors": len(rumors),
                 "candidates": len(candidates),
+                "objects": len(objects),
+                "reviews": len(reviews),
                 "sensitive": sensitivity.get("Sensitive", 0) + sensitivity.get("Restricted", 0),
             },
             "queues": {
@@ -56,6 +63,7 @@ class ConsoleService:
                 "candidate_review": sum(
                     item["status"] in {"inbox", "confirm_required"} for item in candidates
                 ),
+                "object_review": sum(item.get("target_scope") == "object" for item in reviews),
             },
             "sensitivity": dict(sensitivity),
             "health": self._health(records),
@@ -65,14 +73,27 @@ class ConsoleService:
     def records(self, domain: str, *, limit: int = 80) -> list[dict[str, Any]]:
         domain = _require_domain(domain)
         limit = _bounded_limit(limit)
+        if not self.config.db_path.is_file():
+            return []
         try:
             if domain == "inputs":
                 raw = self.inputs.list_inputs()[:limit]
             elif domain == "rumors":
                 raw = self._all_rumors(limit)
-            else:
+            elif domain == "candidates":
                 raw = self._all_candidates(limit)
-        except (CandidateError, ManualInputError, RumorClaimError, sqlite3.Error) as exc:
+            elif domain == "objects":
+                raw = self._all_objects(limit)
+            else:
+                raw = self._all_reviews(limit)
+        except (
+            CanonicalStoreError,
+            CandidateError,
+            DatabaseError,
+            ManualInputError,
+            RumorClaimError,
+            sqlite3.Error,
+        ) as exc:
             raise ConsoleError(str(exc)) from exc
         return [_card(domain, item) for item in raw]
 
@@ -80,14 +101,27 @@ class ConsoleService:
         domain = _require_domain(domain)
         if not str(record_id).strip():
             raise ConsoleError("record id is required")
+        if not self.config.db_path.is_file():
+            raise ConsoleError("Local database is empty")
         try:
             if domain == "inputs":
                 data = self.inputs.show(record_id)
             elif domain == "rumors":
                 data = self.rumors.show(record_id)
-            else:
+            elif domain == "candidates":
                 data = self.candidates.show(record_id)
-        except (CandidateError, ManualInputError, RumorClaimError, sqlite3.Error) as exc:
+            elif domain == "objects":
+                data = self.canonical.show_object(record_id)
+            else:
+                data = self._review_context(self.canonical.show_review(record_id))
+        except (
+            CanonicalStoreError,
+            CandidateError,
+            DatabaseError,
+            ManualInputError,
+            RumorClaimError,
+            sqlite3.Error,
+        ) as exc:
             raise ConsoleError(str(exc)) from exc
         if domain == "inputs":
             data = dict(data)
@@ -102,10 +136,17 @@ class ConsoleService:
         limit = _bounded_limit(limit, maximum=50)
         results: list[dict[str, Any]] = []
 
-        try:
-            hits = self.inputs.search(query, sensitivity_cap="Restricted", limit=limit)
-        except (ManualInputError, sqlite3.Error):
-            hits = []
+        hits = []
+        if self.config.db_path.is_file():
+            try:
+                hits = self.inputs.search(
+                    query,
+                    sensitivity_cap="Restricted",
+                    limit=limit,
+                    include_vector=False,
+                )
+            except (DatabaseError, ManualInputError, sqlite3.Error):
+                hits = []
         seen_inputs: set[str] = set()
         for hit in hits:
             seen_inputs.add(hit.input_id)
@@ -126,7 +167,7 @@ class ConsoleService:
             if score:
                 results.append(item | {"score": score, "match_reason": "title/text match"})
 
-        for domain in ("rumors", "candidates"):
+        for domain in ("rumors", "candidates", "objects", "reviews"):
             for item in self.records(domain, limit=200):
                 score = _text_score(query, f"{item['title']} {item['excerpt']} {' '.join(item['tags'])}")
                 if score:
@@ -140,6 +181,8 @@ class ConsoleService:
             *self.records("inputs", limit=limit),
             *self.records("rumors", limit=limit),
             *self.records("candidates", limit=limit),
+            *self.records("objects", limit=limit),
+            *self.records("reviews", limit=limit),
         ]
         items.sort(key=lambda item: item.get("timestamp") or "", reverse=True)
         return {"items": items[:_bounded_limit(limit, maximum=200)]}
@@ -270,19 +313,24 @@ class ConsoleService:
                     allowed_sources.append("obsidian")
 
             if "manual-input" in source_names:
-                result = self.inputs.retrieve_candidates(
-                    task=task,
-                    max_candidates=candidate_limit,
-                    sensitivity_cap=sensitivity_cap,
-                )
-                candidates.extend(result.candidates)
-                excluded.extend(result.excluded_sources)
-                freshness.extend(result.freshness_report)
-                allowed_sources.append("manual-input")
+                if not self.config.db_path.is_file():
+                    excluded.append({"source": "manual-input", "reason": "source_not_configured"})
+                else:
+                    result = self.inputs.retrieve_candidates(
+                        task=task,
+                        max_candidates=candidate_limit,
+                        sensitivity_cap=sensitivity_cap,
+                    )
+                    candidates.extend(result.candidates)
+                    excluded.extend(result.excluded_sources)
+                    freshness.extend(result.freshness_report)
+                    allowed_sources.append("manual-input")
 
             if "rumor" in source_names:
                 if not include_unverified:
                     excluded.append({"source": "rumor", "reason": "unverified_not_requested"})
+                elif not self._has_table("rumor_claims"):
+                    excluded.append({"source": "rumor", "reason": "source_not_configured"})
                 else:
                     result = self.rumors.retrieve_candidates(
                         task=task,
@@ -293,7 +341,14 @@ class ConsoleService:
                     excluded.extend(result.excluded_sources)
                     freshness.extend(result.freshness_report)
                     allowed_sources.append("rumor")
-        except (ManualInputError, RumorClaimError, ValueError, OSError, sqlite3.Error) as exc:
+        except (
+            DatabaseError,
+            ManualInputError,
+            RumorClaimError,
+            ValueError,
+            OSError,
+            sqlite3.Error,
+        ) as exc:
             raise ConsoleError(str(exc)) from exc
 
         return BundleAssembler().assemble(
@@ -308,6 +363,8 @@ class ConsoleService:
         )
 
     def _all_rumors(self, limit: int) -> list[dict[str, Any]]:
+        if not self._has_table("rumor_claims"):
+            return []
         items: dict[str, dict[str, Any]] = {}
         for status in ("parked", "reviewed_parked", "candidate_created", "dismissed", "expired"):
             for item in self.rumors.list_claims(
@@ -325,18 +382,62 @@ class ConsoleService:
                 items[item["candidate_id"]] = item
         return sorted(items.values(), key=lambda item: item.get("created_at") or "", reverse=True)[:limit]
 
+    def _all_objects(self, limit: int) -> list[dict[str, Any]]:
+        return self.canonical.list_all_objects(limit=limit)
+
+    def _all_reviews(self, limit: int) -> list[dict[str, Any]]:
+        return self.canonical.list_review_contexts(status="open", limit=limit)
+
+    def _has_table(self, table_name: str) -> bool:
+        if not self.config.db_path.is_file():
+            return False
+        try:
+            with self.database.connect_read_only() as con:
+                row = con.execute(
+                    "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?",
+                    (table_name,),
+                ).fetchone()
+        except (DatabaseError, sqlite3.Error):
+            return False
+        return row is not None
+
+    def _review_context(self, review: dict[str, Any]) -> dict[str, Any]:
+        item = dict(review)
+        if item.get("object_id"):
+            target = self.canonical.show_object(str(item["object_id"]))
+            target_type = str(target.get("object_type") or "object")
+            sensitivity = str(target.get("sensitivity") or "Private")
+        else:
+            target = self.candidates.show(str(item["candidate_id"]))
+            target_type = f"candidate:{target.get('type') or 'unknown'}"
+            sensitivity = str(target.get("sensitivity") or "Unclassified")
+        with self.database.connect_read_only() as con:
+            source = con.execute(
+                "SELECT * FROM source_references WHERE source_ref_id = ?",
+                (item["trigger_source_ref_id"],),
+            ).fetchone()
+        trigger_source = None if source is None else dict(source)
+        if trigger_source is not None:
+            trigger_source["metadata"] = json.loads(trigger_source.pop("metadata_json") or "{}")
+        item["target"] = target
+        item["trigger_source"] = trigger_source
+        item["target_type"] = target_type
+        item["target_title"] = _object_title(target)
+        item["sensitivity"] = sensitivity
+        return item
+
     def _health(self, records: list[dict[str, Any]]) -> list[dict[str, Any]]:
-        database_exists = self.config.db_path.exists()
+        database_exists = self.config.db_path.is_file()
         vector_status = "not configured"
         if database_exists:
             try:
-                with LifeMeshDatabase(self.config).connect() as con:
+                with self.database.connect_read_only() as con:
                     row = con.execute(
                         "SELECT value FROM lifemesh_meta WHERE key = 'vector_status'"
                     ).fetchone()
                     if row:
                         vector_status = str(row[0])
-            except sqlite3.Error:
+            except (DatabaseError, sqlite3.Error):
                 vector_status = "unknown"
         vault_status = "not configured"
         if self.config.obsidian_vault is not None:
@@ -371,7 +472,7 @@ def _card(domain: str, item: dict[str, Any]) -> dict[str, Any]:
         timestamp = item.get("created_at")
         tags = [str(value) for value in [item.get("claim_type"), item.get("review_queue")] if value]
         kind = item.get("claim_type") or "rumor"
-    else:
+    elif domain == "candidates":
         record_id = item.get("candidate_id")
         title = item.get("summary") or "Knowledge candidate"
         excerpt = item.get("why_suggested") or ""
@@ -379,8 +480,30 @@ def _card(domain: str, item: dict[str, Any]) -> dict[str, Any]:
         timestamp = item.get("created_at")
         tags = [str(value) for value in [item.get("type"), item.get("risk")] if value]
         kind = item.get("type") or "candidate"
+    elif domain == "objects":
+        record_id = item.get("object_id")
+        kind = str(item.get("object_type") or "object")
+        title = item.get("statement") or item.get("text") or item.get("title") or "Canonical object"
+        excerpt = item.get("excerpt") or item.get("review_reason") or item.get("description") or item.get("scope") or ""
+        status = (
+            item.get("validity")
+            or item.get("status")
+            or item.get("task_status")
+            or item.get("event_status")
+            or "current"
+        )
+        timestamp = item.get("updated_at") or item.get("created_at")
+        tags = [str(value) for value in [kind, item.get("risk"), item.get("memory_type")] if value]
+    else:
+        record_id = item.get("review_id")
+        kind = str(item.get("review_kind") or "review")
+        title = f"{kind.replace('_', ' ')} · {item.get('target_title') or 'review target'}"
+        excerpt = item.get("reason") or "Review required"
+        status = item.get("status") or "open"
+        timestamp = item.get("opened_at")
+        tags = [str(value) for value in [item.get("target_type"), kind] if value]
 
-    return {
+    card = {
         "domain": domain,
         "id": str(record_id or ""),
         "title": _single_line(title, 180),
@@ -391,6 +514,10 @@ def _card(domain: str, item: dict[str, Any]) -> dict[str, Any]:
         "timestamp": timestamp,
         "tags": tags,
     }
+    if domain == "reviews":
+        card["target_scope"] = "object" if item.get("object_id") else "candidate"
+        card["target_id"] = str(item.get("object_id") or item.get("candidate_id") or "")
+    return card
 
 
 def _graph_node(node_id: str, label: str, node_type: str, card: dict[str, Any]) -> dict[str, Any]:
@@ -403,6 +530,19 @@ def _graph_node(node_id: str, label: str, node_type: str, card: dict[str, Any]) 
         "domain": card.get("domain"),
         "record_id": card.get("id"),
     }
+
+
+def _object_title(item: dict[str, Any]) -> str:
+    return _single_line(
+        item.get("statement")
+        or item.get("text")
+        or item.get("title")
+        or item.get("summary")
+        or item.get("object_id")
+        or item.get("candidate_id")
+        or "Review target",
+        180,
+    )
 
 
 def _require_domain(value: str) -> str:

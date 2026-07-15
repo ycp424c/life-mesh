@@ -45,7 +45,8 @@ ADR-0010 对应的 Unified Write Model 已于 2026-07-15 完成交付：Candidat
 - 2026-07-09 已实现 Candidate inbox 最小 CLI：`candidate add/list/show/discard` 写入本地 `lifemesh.db`，按 risk / confidence 排序待确认队列；`discard` 只写 tombstone，不删除历史。
 - 2026-07-15 已实现 ADR-0010 Unified Write Model：Candidate edit/merge/defer/resume/confirm、统一 Manual Input/RumorClaim handoff、Acceptance、typed Canonical Object、Fact Review、source cascade、tombstone、canonical Bundle retrieval 和数据库维护 CLI 均已落地。
 - 2026-07-15 已完成真实 `~/.lifemesh/lifemesh.db` 迁移：7 Candidates、134 Source References、38 Source Tombstones 守恒，integrity/foreign-key 检查通过，二次执行为 no-op，受管备份 hash 与 manifest 一致。
-- 2026-07-15 已实现 ADR-0011 的 LifeMesh Console 只读首版：React + shadcn/ui 前端读取真实本地 Manual Input、RumorClaim、Candidate 和 Obsidian/Bundle 状态，通过按需 `127.0.0.1` Console Server 提供总览、搜索、详情、图谱、时间线与非持久化 Bundle Explorer；HTTP 和浏览器验收已覆盖既定安全边界。
+- 2026-07-15 已实现 ADR-0011 的 LifeMesh Console 只读首版：React + shadcn/ui 前端读取真实本地 Manual Input、RumorClaim、Candidate、Canonical Object、Open Review 和 Obsidian/Bundle 状态，通过按需 `127.0.0.1` Console Server 提供总览、搜索、详情、图谱、时间线与非持久化 Bundle Explorer；HTTP 和浏览器验收已覆盖既定安全边界。
+- 2026-07-15 已完成 Console 首轮真实规模稳定性与只读边界验收：141 条可见记录下的混合并发读全部成功且 FD 零增长；全局搜索移除同步 embedding 后，单用户 p95 为 52.9ms；真实数据库快照上的增量 Input → Fact → source stale → Open Review 级联与 integrity check 通过，原库未写入测试记录；Console Store 改用 SQLite `mode=ro`/`query_only`，空 HOME 不创建数据库或锁文件。
 
 仍未完成：
 
@@ -190,11 +191,11 @@ ADR-0009 对应第 1 阶段后续 milestone，不覆盖只读原型或 Manual In
 3. **LifeMesh Console 只读首版（已完成）**
    - 与静态 Project Board 分离，作为用户浏览个人数据与 Context Bundle 的产品界面。
    - 按需启动并只绑定 `127.0.0.1`；不提供 LAN/public 访问、后台 daemon 或 Agent API。
-   - 浏览 Manual Input、RumorClaim、Candidate、provenance、audit 和 freshness；支持非持久化 Bundle Explorer。
+   - 浏览 Manual Input、RumorClaim、Candidate、Canonical Object、Open Review、provenance、audit 和 freshness；支持非持久化 Bundle Explorer。
    - 默认首屏是总览工作台，提供全局搜索、数据健康、近期记录和队列摘要；Knowledge Graph 与 Timeline 作为独立视图。
    - 图谱只展示当前运行时已有关系，不根据相似度或视觉需要补造语义边。
    - Unified Write Model 已完成；Console 仍不提供写操作，后续如需写回必须单独做权限、确认和审计设计。
-   - 后续只做真实数据规模下的可用性与性能验证；增加持久化写入、常驻服务或外部监听前必须重新做产品和安全决策。
+   - 141 条可见记录的首轮性能、FD 和快照级联验收已完成；后续持续观察长期数据增长、图谱密度与信息分层。增加持久化写入、常驻服务或外部监听前必须重新做产品和安全决策。
 
 4. **RumorClaim 自动来源评估**
    - 已有结构化 CLI MVP 可验证 ADR-0009 的 source envelope、review queue、Bundle lead 和 candidate promote 边界。

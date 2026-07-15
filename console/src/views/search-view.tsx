@@ -11,7 +11,7 @@ export function SearchView({ query, onOpenRecord }: { query: string; onOpenRecor
   if (!data) return null
   return (
     <div className="view-enter">
-      <PageHeading eyebrow="GLOBAL SEARCH" title={`寻找「${data.query}」`} description="跨 Manual Input、RumorClaim 与 Knowledge Candidate 搜索；每条结果保留自己的领域、状态和敏感度。" aside={<>{data.results.length} matches<br />schema stays explicit</>} />
+      <PageHeading eyebrow="GLOBAL SEARCH" title={`寻找「${data.query}」`} description="跨 Manual Input、RumorClaim、Knowledge Candidate、Canonical Object 与 Open Review 搜索；每条结果保留自己的领域、状态和敏感度。" aside={<>{data.results.length} matches<br />schema stays explicit</>} />
       <div className="grid gap-2.5">
         {data.results.length ? data.results.map((card) => (
           <button key={`${card.domain}:${card.id}`} type="button" onClick={() => onOpenRecord({ domain: card.domain, id: card.id })} className="record-render group grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-5 rounded-2xl border border-paper/10 bg-moss/45 px-5 py-[18px] text-left transition hover:-translate-y-px hover:border-amber/20 hover:bg-amber/[.045]">

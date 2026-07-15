@@ -2,9 +2,9 @@ window.LIFEMESH_PROJECT_STATE = {
   lastUpdated: "2026-07-15",
   state: "Personal Context Layer",
   currentPhase: "第 1 阶段：Personal Context Layer",
-  overallProgress: 54,
+  overallProgress: 55,
   summary:
-    "LifeMesh 第 1 阶段已进入本地原型。2026-07-15 已实现 ADR-0011 只读 LifeMesh Console，并完成 ADR-0010 Unified Write Model：统一 Candidate handoff、Acceptance、typed Canonical Object、Fact Review、provenance/tombstone、Bundle 准入及真实本地数据库守恒迁移。",
+    "LifeMesh 第 1 阶段已进入本地原型。2026-07-15 已完成 ADR-0010 Unified Write Model，并把 ADR-0011 只读 Console 扩展到 Canonical Object / Open Review；141 条真实可见记录的性能、FD 和快照级联基线已通过。",
   metrics: [
     { label: "文档基线", value: "active", detail: "Unified Write Model 已同步", tone: "green" },
     { label: "Web 看板", value: "active", detail: "静态页面，无构建链", tone: "blue" },
@@ -15,8 +15,8 @@ window.LIFEMESH_PROJECT_STATE = {
     {
       lane: "Now",
       items: [
-        "用真实个人数据规模持续验证只读 LifeMesh Console 的可用性与性能",
-        "观察 Unified Write Model 在真实增量写入中的稳定性与 review 队列",
+        "在已通过 141 条记录基线后持续观察 Console 的长期数据增长、图谱密度和信息分层",
+        "在已通过快照级联基线后持续观察 Unified Write Model 的真实增量写入与 review 队列",
         "保留并定期验证迁移前受管备份和 restore 路径"
       ]
     },
@@ -24,7 +24,7 @@ window.LIFEMESH_PROJECT_STATE = {
       lane: "Next",
       items: [
         "评估第一个自动 RumorClaim source adapter 和 rumor_policy",
-        "评估 Console 增加 Canonical Object / Review 只读视图",
+        "收紧 Canonical Object / Review 的 provenance 与 audit 信息分层",
         "补 frontmatter 结构化事实边界",
         "补 Manual Input 长期性能边界和真实任务场景验收"
       ]
@@ -60,8 +60,8 @@ window.LIFEMESH_PROJECT_STATE = {
       id: "1",
       title: "Personal Context Layer",
       status: "active",
-      progress: 96,
-      focus: "读链路、受限采集、统一写模型、真实库迁移和只读 Console 已落地；转入真实使用稳定性验证",
+      progress: 97,
+      focus: "读链路、受限采集、统一写模型、真实库迁移、Canonical/Review 只读 Console 和首轮稳定性基线已落地",
       docs: ["phase-1-delivery-plan.md", "lifemesh-console.md", "write-model-and-migrations.md", "ADR-0006", "ADR-0010", "ADR-0011"]
     },
     {
@@ -563,7 +563,7 @@ window.LIFEMESH_PROJECT_STATE = {
   openQuestions: [
     {
       title: "LifeMesh Console 真实规模验收",
-      detail: "React + shadcn/ui 首版已完成桌面与窄屏浏览器验收；仍需在长期真实个人数据规模下验证搜索响应、图谱密度、时间线长度和详情信息分层。"
+      detail: "141 条可见记录的首轮验收已完成：混合并发读与 FD 基线通过，全局搜索单用户 p95 降至 52.9ms，快照级联产生正确 Open Review；仍需观察长期数据增长、图谱密度和详情信息分层。"
     },
     {
       title: "stale / missing 引用交互",
@@ -595,6 +595,11 @@ window.LIFEMESH_PROJECT_STATE = {
     }
   ],
   recentChanges: [
+    {
+      date: "2026-07-15",
+      title: "扩展 Console Canonical / Review 视图并完成首轮稳定性验收",
+      detail: "新增 Canonical Object 与 Open Review 只读导航、来源/目标上下文和 overview 指标；重启旧 Console 后确认连续请求 FD 零增长，141 条真实记录混合读全部成功，将全局搜索从同步 embedding 改为 FTS/结构化匹配，并在真实库快照上验证 Input → Fact → source stale → Open Review 级联。双路 review 后进一步把所有 Console Store 收紧为 SQLite mode=ro/query_only，验证读取不改 data_version/元数据、空 HOME 不创建数据库或锁文件，并修复跨域筛选状态残留。"
+    },
     {
       date: "2026-07-15",
       title: "完成 Unified Write Model 独立复审与安全加固",

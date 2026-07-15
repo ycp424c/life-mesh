@@ -4,6 +4,8 @@ export const DOMAIN_NAMES: Record<Domain, string> = {
   inputs: "Manual Input",
   rumors: "未知线索",
   candidates: "知识候选",
+  objects: "Canonical Object",
+  reviews: "Open Review",
 }
 
 export function formatDate(value: string | null, withTime = true): string {
@@ -35,5 +37,9 @@ export function recordContent(card: RecordCard, data: Record<string, unknown>): 
     return [data.text, ...extractions].filter((item): item is string => typeof item === "string" && Boolean(item)).join("\n\n")
   }
   if (card.domain === "rumors") return typeof data.claim_text === "string" ? data.claim_text : ""
-  return typeof data.summary === "string" ? data.summary : ""
+  if (card.domain === "candidates") return typeof data.summary === "string" ? data.summary : ""
+  if (card.domain === "reviews") return typeof data.reason === "string" ? data.reason : ""
+  return [data.statement, data.text, data.title, data.description]
+    .filter((item): item is string => typeof item === "string" && Boolean(item))
+    .join("\n\n")
 }

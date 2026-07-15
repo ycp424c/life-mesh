@@ -22,8 +22,8 @@ export function OverviewView({ onNavigate, onOpenRecord }: OverviewViewProps) {
     ["可见记录", data.counts.total, "live local state"],
     ["明确输入", data.counts.inputs, "manual traces"],
     ["未知线索", data.counts.rumors, "unverified"],
-    ["知识候选", data.counts.candidates, "awaiting review"],
-    ["敏感内容", data.counts.sensitive, "visible · labeled"],
+    ["正式对象", data.counts.objects, "accepted knowledge"],
+    ["开放复核", data.counts.reviews, "source attention"],
   ] as const
 
   return (
@@ -44,7 +44,7 @@ export function OverviewView({ onNavigate, onOpenRecord }: OverviewViewProps) {
 
       <section className="metric-strand" aria-label="数据概览">
         {metrics.map(([label, value, detail], index) => (
-          <article key={label} className={cn("metric-cell", index === 1 && "[&_strong]:text-amber-hot", index === 2 && "[&_strong]:text-unknown-bright", index === 3 && "[&_strong]:text-sprout", index === 4 && "[&_strong]:text-coral")}>
+          <article key={label} className={cn("metric-cell", index === 1 && "[&_strong]:text-amber-hot", index === 2 && "[&_strong]:text-unknown-bright", index === 3 && "[&_strong]:text-entity", index === 4 && "[&_strong]:text-coral")}>
             <span>{label}</span><strong>{value}</strong><small>{detail}</small>
           </article>
         ))}
@@ -72,8 +72,8 @@ export function OverviewView({ onNavigate, onOpenRecord }: OverviewViewProps) {
               </div>
             ))}
           </div>
-          <div className="mt-5 grid grid-cols-3 overflow-hidden rounded-2xl border border-paper/10 max-sm:grid-cols-1">
-            {[["活动输入", data.queues.manual_active], ["线索复核", data.queues.rumor_review], ["候选复核", data.queues.candidate_review]].map(([label, value]) => (
+          <div className="mt-5 grid grid-cols-4 overflow-hidden rounded-2xl border border-paper/10 max-lg:grid-cols-2 max-sm:grid-cols-1">
+            {[["活动输入", data.queues.manual_active], ["线索复核", data.queues.rumor_review], ["候选复核", data.queues.candidate_review], ["对象复核", data.queues.object_review]].map(([label, value]) => (
               <div key={label} className="border-r border-paper/10 p-4 last:border-0 max-sm:border-b max-sm:border-r-0"><span className="font-mono text-[8px] uppercase text-paper-faint">{label}</span><strong className="mt-1 block font-display text-3xl font-medium text-paper">{value}</strong></div>
             ))}
           </div>

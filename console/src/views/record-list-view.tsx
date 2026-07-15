@@ -11,6 +11,8 @@ const copy = {
   inputs: { eyebrow: "MANUAL INPUTS", title: "被你明确留下的痕迹", description: "截图、活动、心情、任务与短记。Sensitive 正文保持直接可见，敏感度标签始终在场。" },
   rumors: { eyebrow: "UNKNOWN / UNVERIFIED", title: "让未知保持未知", description: "这里保存值得复核、但尚不足以成为事实的线索。紫色意味着边界，而不是结论。" },
   candidates: { eyebrow: "KNOWLEDGE CANDIDATES", title: "正在形成的知识", description: "候选不是事实。它们保留来源、置信度与风险，等待未来统一写模型中的正式确认。" },
+  objects: { eyebrow: "CANONICAL OBJECTS", title: "被确认的长期对象", description: "Fact、Memory、Task 与 Event 共用统一接受路径。每个对象仍保留敏感度、来源和生命周期。" },
+  reviews: { eyebrow: "OPEN REVIEWS", title: "来源断裂，需要你看一眼", description: "这里只显示尚未关闭的复核项，并把触发来源与目标对象并排呈现；Console 不在这里替你处理。" },
 } satisfies Record<Domain, { eyebrow: string; title: string; description: string }>
 
 export function RecordListView({ domain, onOpenRecord }: { domain: Domain; onOpenRecord: (record: SelectedRecord) => void }) {

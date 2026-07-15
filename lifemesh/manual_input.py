@@ -207,8 +207,10 @@ class ManualInputStore:
         *,
         client: LMStudioClient | None = None,
         vector_backend: VectorBackend | None = None,
+        read_only: bool = False,
     ) -> None:
         self.config = config
+        self.read_only = read_only
         self.client = client or LMStudioClient(
             config.lmstudio_base_url or "",
             config.embedding_model or "",
@@ -406,6 +408,7 @@ class ManualInputStore:
         sensitivity_cap: str = "Private",
         limit: int = 20,
         include_promoted: bool = True,
+        include_vector: bool = True,
     ) -> list[SearchHit]:
         normalized_cap = _require_sensitivity(sensitivity_cap)
         if kind is not None:
@@ -413,10 +416,11 @@ class ManualInputStore:
         if status is not None:
             _require_status(status)
         vector = None
-        try:
-            vector = self.client.embed(query)
-        except ManualInputError:
-            vector = None
+        if include_vector:
+            try:
+                vector = self.client.embed(query)
+            except ManualInputError:
+                vector = None
 
         with self._connect() as con:
             fts_scores = self._fts_scores(con, query)
@@ -900,6 +904,19 @@ class ManualInputStore:
 
     def _connect(self) -> sqlite3.Connection:
         database = LifeMeshDatabase(self.config)
+        if self.read_only:
+            con = database.connect_read_only()
+            self._vector_available = False
+            self._vector_setup_error = None
+            if self.config.sqlite_vec_extension is None:
+                self._vector_setup_error = "sqlite-vec extension is not configured"
+            else:
+                try:
+                    self.vector_backend.setup(con, self.config.sqlite_vec_extension)
+                    self._vector_available = True
+                except ManualInputError as exc:
+                    self._vector_setup_error = str(exc)
+            return con
         database.ensure_current_for_write()
         _ensure_private_dir(self.config.home)
         con = database.connect()

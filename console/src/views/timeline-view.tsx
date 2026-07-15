@@ -11,7 +11,7 @@ export function TimelineView({ onOpenRecord }: { onOpenRecord: (record: Selected
   if (!data) return null
   return (
     <div className="view-enter">
-      <PageHeading eyebrow="TIMELINE" title="记录如何成为时间" description="按发生时间或创建时间排列输入、线索和候选。它显示发生过什么，不替你推断因果。" aside={<>{data.items.length} events<br />newest first</>} />
+      <PageHeading eyebrow="TIMELINE" title="记录如何成为时间" description="按发生时间或创建时间排列输入、线索、候选、正式对象与待复核项。它显示发生过什么，不替你推断因果。" aside={<>{data.items.length} events<br />newest first</>} />
       <div className="timeline-thread">
         {data.items.map((card) => (
           <button key={`${card.domain}:${card.id}`} type="button" onClick={() => onOpenRecord({ domain: card.domain, id: card.id })} className={`timeline-record timeline-${card.domain}`}>
