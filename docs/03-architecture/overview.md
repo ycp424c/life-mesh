@@ -66,6 +66,10 @@
 - RumorClaim 是处理可信度未知材料的 Phase 1 follow-on 契约：它不是独立架构层，也不是 Manual Input kind；主资产是抽取出的 claim、entity mention 和 relation mention，原始物料默认只进 temporary parsing sandbox。
 - RumorClaim 默认不进入普通 Context Bundle，明确请求未验证线索时只能作为 `lead`，且只能 promote 到 Knowledge Candidate。
 
+## LifeMesh Console
+
+LifeMesh Console 是独立于静态 Project Board 的用户产品界面。第一版读取真实本地数据但不修改数据，通过按需启动、仅绑定 `127.0.0.1` 的 Console Server 复用 read-side application logic；Agent 接口仍是 CLI + JSON Bundle + skill。详细边界见 [LifeMesh Console](lifemesh-console.md) 和 [ADR-0011](../05-decisions/ADR-0011-local-loopback-console-server.md)。
+
 ## Unified Write Model 目标架构
 
 ADR-0010 已确认 Unified Write Model 目标架构，但实现尚未开始。目标状态由统一 database layer 和 `KnowledgeWorkflow` 收敛 CLI、Manual Input、RumorClaim 的 Candidate handoff、Acceptance、Canonical Object、provenance、review、tombstone 与 audit；当前三个 legacy 写路径在迁移完成前仍是运行时真相。

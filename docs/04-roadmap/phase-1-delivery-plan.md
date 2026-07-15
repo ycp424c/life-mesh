@@ -44,6 +44,7 @@ ADR-0010 已确认 Phase 1 写侧的下一交付是 Unified Write Model：统一
 - 2026-07-09 已完成 Q20 真实 vault 手工验收记录：`bundle --source obsidian` 返回 20 个 `raw/current` slices，命中专题归档页和 `hot.md`，保留 `excluded_sources` / `freshness_report` 字段；基于真实 `hot.md` 临时副本验证 stale 和 missing 均只进入 `freshness_report`，新 Bundle slice 使用 current revision。`--source all` 对 Q20 未选入 Manual Input，因此这次只验证不会误用 weak lead；独立 Manual Input weak lead 真实任务样例仍可后续补充。
 - 2026-07-09 已实现 Candidate inbox 最小 CLI：`candidate add/list/show/discard` 写入本地 `lifemesh.db`，按 risk / confidence 排序待确认队列；`discard` 只写 tombstone，不删除历史。
 - 2026-07-15 已接受 ADR-0010 与 Unified Write Model implementation spec；当前仍是 target architecture，不宣称统一 schema、Acceptance、Canonical Object、Fact Review 或真实库迁移已实现。
+- 2026-07-15 已实现 ADR-0011 的 LifeMesh Console 只读首版：React + shadcn/ui 前端读取真实本地 Manual Input、RumorClaim、Candidate 和 Obsidian/Bundle 状态，通过按需 `127.0.0.1` Console Server 提供总览、搜索、详情、图谱、时间线与非持久化 Bundle Explorer；HTTP 和浏览器验收已覆盖既定安全边界。
 
 仍未完成：
 
@@ -188,12 +189,21 @@ ADR-0009 对应第 1 阶段后续 milestone，不覆盖只读原型或 Manual In
    - 使用动态 preflight manifest 完成真实数据库 online backup、migration、postflight、幂等和 restore 验收。
    - dashboard 继续只读展示，不做写回。
 
-3. **RumorClaim 自动来源评估**
+3. **LifeMesh Console 只读首版（已完成）**
+   - 与静态 Project Board 分离，作为用户浏览个人数据与 Context Bundle 的产品界面。
+   - 按需启动并只绑定 `127.0.0.1`；不提供 LAN/public 访问、后台 daemon 或 Agent API。
+   - 浏览 Manual Input、RumorClaim、Candidate、provenance、audit 和 freshness；支持非持久化 Bundle Explorer。
+   - 默认首屏是总览工作台，提供全局搜索、数据健康、近期记录和队列摘要；Knowledge Graph 与 Timeline 作为独立视图。
+   - 图谱只展示当前运行时已有关系，不根据相似度或视觉需要补造语义边。
+   - 在 Unified Write Model 完成前不提供任何写操作，避免把 UI 绑定到 legacy 写路径。
+   - 后续只做真实数据规模下的可用性与性能验证；增加持久化写入、常驻服务或外部监听前必须重新做产品和安全决策。
+
+4. **RumorClaim 自动来源评估**
    - 已有结构化 CLI MVP 可验证 ADR-0009 的 source envelope、review queue、Bundle lead 和 candidate promote 边界。
    - 自动来源实现前，必须决定第一个允许产出 RumorClaim 的 source adapter 和对应 `rumor_policy`。
    - 不在该步骤引入外部通知、系统任务、日历同步或自动联网 fact-check。
 
-4. **Manual Input 真实本机验收**
+5. **Manual Input 真实本机验收**
    - 首次真实本机验收已于 2026-06-30 通过：使用真实 LM Studio embedding/VLM 模型和真实 sqlite-vec 扩展路径跑通 `input add/search/show/update/revoke/delete/promote`。
    - 首次验收记录的 embedding 模型 identifier 为 `text-embedding-qwen3-embedding-0.6b`，维度为 1024；截图 VLM 为 `qwen/qwen3-vl-8b`，测试图片 extraction 成功并写入 `manual_input_extractions`。
    - 当前本机截图 OCR / VLM 配置为 `ornith-1.0-9b`。
@@ -201,7 +211,7 @@ ADR-0009 对应第 1 阶段后续 milestone，不覆盖只读原型或 Manual In
    - 首版检索阈值已落地：`vector_evidence=0.75`、`vector_lead=0.45`；`strong` 可作为 `raw`，`weak` 只能作为 `lead`。
    - 后续仍需补充长期性能边界和更完整的真实任务场景验收。
 
-5. **进入第 2 阶段准备**
+6. **进入第 2 阶段准备**
    - 当读链路、候选确认、Manual Input 和事实复核稳定后，再进入系统日历/任务同步与高级调度。
    - 第 2 阶段前必须复盘第 1 阶段的来源、权限、审计和撤销模型是否足够 source-neutral。
 

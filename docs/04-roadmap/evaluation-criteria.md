@@ -1,7 +1,7 @@
 # Evaluation Criteria
 
 状态：draft
-最后更新：2026-07-03
+最后更新：2026-07-15
 职责边界：定义 LifeMesh 每个阶段如何判断“做得对”，避免只按功能数量推进。
 
 ## 基础评估维度
@@ -43,7 +43,11 @@
 - JSON Bundle 可包含 `assembly_report`，用于验收和调试候选/准入/选择策略；该字段不能作为事实证据。
 - 事实性回答是 Source-Backed Answer，只基于 `fact` + `raw`；`context` 和 `lead` 不进入事实陈述位；`lead` 不单独支撑结论且带"未核实"标注。
 - stale / missing / revoked 来源不进入证据，只进入报告区。
-- Context Bundle 作为可序列化 JSON 产物交付（薄 CLI + skill），第 1 阶段不引入运行时 server，不绑定 MCP。
+- Context Bundle 作为可序列化 JSON 产物交付（薄 CLI + skill），第 1 阶段不引入 MCP 或 Agent server。ADR-0011 的按需 loopback Console Server 只服务用户只读界面，不改变 Bundle 交付合同。
+- LifeMesh Console 第一版读取真实本地数据但不修改数据；只绑定 `127.0.0.1`，不作为后台 daemon，不与静态 Project Board 合并，浏览器不直接打开 SQLite 文件。
+- LifeMesh Console 默认首屏是总览工作台，包含跨领域搜索、数据/索引健康、近期记录和队列摘要；Knowledge Graph 与 Timeline 使用独立视图，图谱不能展示运行时不存在的推断边。
+- Console 直接展示带敏感度标签的 Sensitive 正文，但 Bundle Explorer 默认排除 Sensitive；只有本次组装显式选择后才可加入，且不持久化该选择。
+- 2026-07-15 的首版实现已通过 Python HTTP/服务单测，以及桌面与窄屏真实浏览器验收；该记录不替代后续真实个人数据规模下的长期性能验证。
 - 配套 skill 存在，能指导 agent 调用 CLI 并按 `evidence_role` 消费 Bundle。
 - CLI 契约存在（`cli-contract.md`）：`bundle` 读 + Phase 1 后续 Manual Input `input add/search/list/show/update/revoke/delete/promote` + 传统 `fact add`/`task add`/`remember`/`candidate add` 写。
 - agent 自动捕获只能用于非高敏信息并进入 `auto_captured` Manual Input，必须透明说明；agent 推断不得直接 `fact add` 或自动 promote，只能走 candidate / auto_captured → 用户确认。

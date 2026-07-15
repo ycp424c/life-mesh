@@ -43,3 +43,7 @@
 - CLI 契约已定义在 `docs/03-architecture/cli-contract.md`（命令、JSON schema、skill 契约）。第 1 阶段可只定义不实现。
 - 编写配套 skill 实体文件（`skills/lifemesh/SKILL.md`）。
 - 后续阶段需要实时、有状态工具调用时，重新评估 MCP。
+
+## Clarification: LifeMesh Console
+
+ADR-0011 允许用户按需启动一个仅绑定 `127.0.0.1` 的只读 Console Server。它是 LifeMesh Console 的 UI adapter，不是 Agent API，不改变 CLI + JSON Bundle + skill 的交付合同，也不放开 MCP、后台 daemon、多用户服务或 LAN/public network 访问。

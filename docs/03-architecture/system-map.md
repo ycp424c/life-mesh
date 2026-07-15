@@ -17,7 +17,10 @@ Source Adapters
   -> Personal Context Layer
   -> Canonical Knowledge
   -> Agent Access
+  -> LifeMesh Console
 ```
+
+其中最后两个出口面向不同使用者：Agent 继续通过 CLI + Bundle 访问；用户通过只绑定 `127.0.0.1` 的只读 LifeMesh Console 查看实时本地状态。静态 Project Board 只展示项目状态，不进入个人数据主路径。
 
 ## 横切能力
 
@@ -39,6 +42,8 @@ Source Adapters
 - Knowledge Candidate 在确认或策略接受前不能成为 Canonical Fact 或 Memory。
 - Canonical Fact 可以作为 Context Bundle 来源，但必须可追溯、可复核、可撤销。
 - Agent Access 在第 1 阶段通过 CLI + skill 获取授权后的 JSON Context Bundle；只读原型验收后，ADR-0008 定义 Manual Input Inbox 作为 Phase 1 后续 milestone。
+- LifeMesh Console 是按需启动的用户界面适配器，首版只能读取、搜索、筛选和临时组装 Bundle；浏览器不能直接打开 SQLite，也不能借由 Console 修改个人数据。
+- Project Board 是文档派生的项目治理界面，不展示真实个人数据，也不承担 LifeMesh Console 的产品职责。
 
 ## Unified Write Model 目标路径
 

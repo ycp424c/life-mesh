@@ -1,12 +1,12 @@
 # CLI Contract
 
 状态：draft
-最后更新：2026-07-09
+最后更新：2026-07-15
 职责边界：定义第 1 阶段 LifeMesh CLI 的命令、JSON Bundle schema 和配套 skill 契约。实现状态以本文件的“当前实现”段落、README 和测试为准。
 
 ## 定位
 
-第 1 阶段 Agent 接口 = 薄 CLI + skill（见 `ADR-0006`）。CLI 读索引、组装 JSON Context Bundle、写入 Manual Input、事实、待办、记忆和候选；skill 指导 Agent 如何调用与消费。不引入运行时 server。
+第 1 阶段 Agent 接口 = 薄 CLI + skill（见 `ADR-0006`）。CLI 读索引、组装 JSON Context Bundle、写入 Manual Input、事实、待办、记忆和候选；skill 指导 Agent 如何调用与消费。不引入 Agent server。ADR-0011 的短时 loopback Console Server 只服务用户界面，不改变 Agent 接口。
 
 ## 当前实现
 
@@ -22,6 +22,7 @@
 - Bundle slice 包含 `citation` 展示字段；Manual Input 检索结果包含 `match_status`、`match_reason`、`evidence_eligible` 和 `score_breakdown`。
 - Knowledge Candidate inbox 最小 CLI：`candidate add/list/show/discard`，写入本地 `lifemesh.db`，用于 `confirm_required` 候选的异步复核。
 - RumorClaim / UnverifiedClaim 本地结构化 CLI MVP：`rumor add/list/show/keep/dismiss/expire/promote`、持久化门槛、review queue、最小 source envelope、`bundle --source rumor` 和 `bundle --source all --include-unverified`。
+- LifeMesh Console 只读入口：`lifemesh console` 按需启动仅监听 `127.0.0.1` 的用户界面；它不是 Agent API，也不提供持久化写接口。
 
 当前未实现但已进入后续契约：
 
@@ -57,6 +58,21 @@ lifemesh bundle "<task>" \
 - Manual Input 相关 source 会加载本地配置；缺 LM Studio、embedding/VLM 调用失败或 sqlite-vec 不可用时降级为 SQLite/FTS 路径，并在状态和审计中记录失败原因。
 
 不提供直接返回答案的命令，回答是 Agent 的职责，CLI 只交付 Bundle。
+
+## 用户 Console 命令
+
+```bash
+lifemesh console \
+  [--home <path>] \
+  [--vault <path>] \
+  [--port 0] \
+  [--no-open]
+```
+
+- 默认使用随机可用端口并打开浏览器；`--no-open` 只启动前台服务，`Ctrl-C` 后关闭。
+- `--port` 只用于本机开发或明确的本机端口选择；监听地址始终固定为 `127.0.0.1`。
+- Console 可读取、搜索和组装非持久化 Bundle，但不提供 add、update、dismiss、promote、confirm、revoke 或 delete。
+- Console Server 是 User Interface adapter，不得被 Agent 当作稳定 API、MCP 或后台服务调用。
 
 ## Manual Input 命令
 

@@ -18,6 +18,8 @@ from .candidates import (
     CandidateStore,
 )
 from .config import load_config
+from .console_service import ConsoleError
+from .console_server import run_console
 from .manual_input import (
     MANUAL_KINDS,
     PROMOTE_TARGETS,
@@ -84,6 +86,15 @@ def main(argv: list[str] | None = None) -> int:
     candidate_subparsers = candidate_parser.add_subparsers(dest="candidate_command", required=True)
     _add_candidate_parsers(candidate_subparsers)
 
+    console_parser = subparsers.add_parser("console", help="Open the read-only local LifeMesh Console")
+    _add_config_arguments(console_parser)
+    console_parser.add_argument(
+        "--vault",
+        help="Obsidian vault path; falls back to LIFEMESH_OBSIDIAN_VAULT or config obsidian_vault",
+    )
+    console_parser.add_argument("--port", type=int, default=0, help="Loopback port; defaults to a random free port")
+    console_parser.add_argument("--no-open", action="store_true", help="Do not open the default browser")
+
     args = parser.parse_args(argv)
 
     try:
@@ -95,7 +106,9 @@ def main(argv: list[str] | None = None) -> int:
             return _handle_rumor(args)
         if args.command == "candidate":
             return _handle_candidate(args)
-    except (CandidateError, ManualInputError, RumorClaimError, ValueError, FileNotFoundError, NotADirectoryError) as exc:
+        if args.command == "console":
+            return _handle_console(args)
+    except (CandidateError, ConsoleError, ManualInputError, RumorClaimError, ValueError, FileNotFoundError, NotADirectoryError) as exc:
         sys.stderr.write(f"lifemesh: error: {exc}\n")
         return 2
 
@@ -515,6 +528,12 @@ def _handle_candidate(args: argparse.Namespace) -> int:
     else:
         raise CandidateError(f"Unsupported candidate command: {command}")
     _emit_json(result)
+    return 0
+
+
+def _handle_console(args: argparse.Namespace) -> int:
+    config = _load_config_from_args(args, obsidian_vault=args.vault)
+    run_console(config, port=args.port, open_browser=not args.no_open)
     return 0
 
 

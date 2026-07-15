@@ -2,19 +2,20 @@ window.LIFEMESH_PROJECT_STATE = {
   lastUpdated: "2026-07-15",
   state: "Personal Context Layer",
   currentPhase: "第 1 阶段：Personal Context Layer",
-  overallProgress: 44,
+  overallProgress: 48,
   summary:
-    "LifeMesh 第 1 阶段已进入本地 CLI 原型：只读 Obsidian bundle、Manual Input Inbox、Candidate inbox、source-neutral BundleAssembler 和 RumorClaim 本地结构化 CLI MVP 已落地。2026-07-15 已接受 ADR-0010 与 Unified Write Model implementation spec，下一步一次性交付统一 Candidate handoff、Acceptance、正式对象、Fact Review 和动态数据库备份迁移；这些能力当前尚未实现。",
+    "LifeMesh 第 1 阶段已进入本地原型。2026-07-15 已实现 ADR-0011 的只读 LifeMesh Console：React + shadcn/ui 界面与本 Project Board 分离，通过按需 127.0.0.1 服务读取真实本地数据；ADR-0010 的 Unified Write Model 仍是已接受但尚未实现的目标架构。",
   metrics: [
     { label: "文档基线", value: "active", detail: "Manual Input 实现已同步", tone: "green" },
     { label: "Web 看板", value: "active", detail: "静态页面，无构建链", tone: "blue" },
-    { label: "Context Layer", value: "phase 1", detail: "Candidate inbox MVP 已落地", tone: "blue" },
-    { label: "关键风险", value: "14", detail: "含自动捕获、本地模型、流言污染和数据库迁移风险", tone: "red" }
+    { label: "Context Layer", value: "phase 1", detail: "只读 Console V1 已落地", tone: "blue" },
+    { label: "关键风险", value: "16", detail: "含本地模型、流言、数据库迁移和 Console 暴露风险", tone: "red" }
   ],
   work: [
     {
       lane: "Now",
       items: [
+        "用真实个人数据规模持续验证只读 LifeMesh Console 的可用性与性能",
         "实施 Unified Write Model、集中 schema migration 和事务边界",
         "统一 CLI、Manual Input、RumorClaim 的 Candidate handoff",
         "落地 Candidate confirm 与 Canonical Fact/Memory/Task/Event",
@@ -60,9 +61,9 @@ window.LIFEMESH_PROJECT_STATE = {
       id: "1",
       title: "Personal Context Layer",
       status: "active",
-      progress: 86,
-      focus: "既有读链路与受限采集已验收；ADR-0010 与 Unified Write Model 实施规格已接受，等待实现和真实库迁移",
-      docs: ["phase-1-delivery-plan.md", "write-model-and-migrations.md", "ADR-0005", "ADR-0006", "ADR-0008", "ADR-0009", "ADR-0010"]
+      progress: 90,
+      focus: "既有读链路、受限采集和只读 LifeMesh Console 已落地；下一核心交付是 Unified Write Model",
+      docs: ["phase-1-delivery-plan.md", "lifemesh-console.md", "write-model-and-migrations.md", "ADR-0006", "ADR-0010", "ADR-0011"]
     },
     {
       id: "2",
@@ -135,6 +136,11 @@ window.LIFEMESH_PROJECT_STATE = {
       title: "Agent Access Layer",
       detail: "CLI + skill + 工具接口，最小权限返回上下文",
       tone: "agent"
+    },
+    {
+      title: "User Interface Layer",
+      detail: "React + shadcn/ui LifeMesh Console 读取真实本地状态；Project Board 只展示项目状态",
+      tone: "agent"
     }
   ],
   systemMap: {
@@ -205,6 +211,15 @@ window.LIFEMESH_PROJECT_STATE = {
           { title: "Source-Backed Answer", detail: "引用来源和 Citation Status" },
           { title: "User Confirmation", detail: "持久化或高风险写入前确认" }
         ]
+      },
+      {
+        title: "User Interfaces",
+        subtitle: "个人数据与项目状态分离",
+        tone: "agent",
+        nodes: [
+          { title: "LifeMesh Console", detail: "已实现：按需启动、仅 127.0.0.1；读取真实本地数据但不持久化写入" },
+          { title: "Project Board", detail: "静态、文档派生；不读取或展示个人数据" }
+        ]
       }
     ],
     rails: [
@@ -216,17 +231,18 @@ window.LIFEMESH_PROJECT_STATE = {
       "User Confirmation -> Canonical Fact / Memory",
       "Source changes -> Source Reference -> Citation Status",
       "Revocation -> Tombstone -> Context Bundle cleanup",
-      "Unverified material -> RumorClaim -> Knowledge Candidate"
+      "Unverified material -> RumorClaim -> Knowledge Candidate",
+      "Local state -> read-side adapter -> LifeMesh Console"
     ]
   },
   docs: [
     { name: "Vision", path: "docs/00-vision/", status: "draft", signal: "方向已建立" },
     { name: "Governance", path: "docs/01-governance/", status: "draft", signal: "需细化删除和授权" },
     { name: "Domain", path: "docs/02-domain/", status: "draft", signal: "Candidate inbox MVP 已同步" },
-    { name: "Architecture", path: "docs/03-architecture/", status: "draft", signal: "Unified Write Model 目标架构已同步，待实现" },
-    { name: "Roadmap", path: "docs/04-roadmap/", status: "active", signal: "ADR-0010 一次性交付边界已同步" },
-    { name: "ADR", path: "docs/05-decisions/", status: "active", signal: "10 条 accepted" },
-    { name: "Security", path: "docs/07-security/", status: "draft", signal: "迁移 backup/restore 与动态验收已同步" },
+    { name: "Architecture", path: "docs/03-architecture/", status: "draft", signal: "Console 实现与 Unified Write Model 边界已同步" },
+    { name: "Roadmap", path: "docs/04-roadmap/", status: "active", signal: "只读 Console V1 已完成，统一写模型待实施" },
+    { name: "ADR", path: "docs/05-decisions/", status: "active", signal: "11 条 accepted" },
+    { name: "Security", path: "docs/07-security/", status: "draft", signal: "迁移恢复与 loopback Console 控制已同步" },
     { name: "Dashboard", path: "docs/08-dashboard/", status: "active", signal: "同步规则已落地" },
     { name: "Implementation Specs", path: "docs/superpowers/specs/", status: "active", signal: "Unified Write Model spec 已通过 written review" }
   ],
@@ -300,6 +316,16 @@ window.LIFEMESH_PROJECT_STATE = {
       title: "真实数据库迁移或恢复损坏",
       severity: "high",
       control: "exclusive lock + online backup + 动态 preflight/postflight 守恒 + forensic restore"
+    },
+    {
+      title: "本地 Console Server 暴露个人数据",
+      severity: "high",
+      control: "前台短时启动、仅 127.0.0.1 随机端口、首版只读、无 CORS、严格 Host/Origin 校验"
+    },
+    {
+      title: "Console 未遮罩 Sensitive 正文",
+      severity: "medium",
+      control: "持续显示敏感度标签；用户控制本机屏幕环境；不把 UI 直读权限扩展到 Bundle、日志或导出"
     }
   ],
   decisions: [
@@ -362,6 +388,12 @@ window.LIFEMESH_PROJECT_STATE = {
       title: "Unified Write Model, Transactional Acceptance And Database Migration",
       status: "accepted",
       path: "../docs/05-decisions/ADR-0010-unified-write-model-transactional-acceptance-and-database-migration.md"
+    },
+    {
+      id: "ADR-0011",
+      title: "Local Loopback Console Server",
+      status: "accepted",
+      path: "../docs/05-decisions/ADR-0011-local-loopback-console-server.md"
     }
   ],
   dataSources: [
@@ -459,6 +491,13 @@ window.LIFEMESH_PROJECT_STATE = {
       guardrail: "结构化 CLI MVP；默认不进普通 Bundle；只能作为 lead；promote 只到 Knowledge Candidate"
     },
     {
+      name: "LifeMesh Console 只读界面",
+      phase: "第 1 阶段",
+      risk: "medium-high",
+      status: "prototype",
+      guardrail: "前台短时启动、仅 127.0.0.1、严格 Host/Origin、无 CORS、无持久化写接口"
+    },
+    {
       name: "记忆写入",
       phase: "第 4 阶段",
       risk: "medium-high",
@@ -521,6 +560,10 @@ window.LIFEMESH_PROJECT_STATE = {
   },
   openQuestions: [
     {
+      title: "LifeMesh Console 真实规模验收",
+      detail: "React + shadcn/ui 首版已完成桌面与窄屏浏览器验收；仍需在长期真实个人数据规模下验证搜索响应、图谱密度、时间线长度和详情信息分层。"
+    },
+    {
       title: "stale / missing 引用交互",
       detail: "2026-07-09 已用真实 hot.md 的临时副本验证 CLI stale/missing freshness_report；UI 或回答渲染层仍需实现重新生成动作。"
     },
@@ -550,6 +593,21 @@ window.LIFEMESH_PROJECT_STATE = {
     }
   ],
   recentChanges: [
+    {
+      date: "2026-07-15",
+      title: "实现 React + shadcn/ui LifeMesh Console V1",
+      detail: "新增按需 127.0.0.1 Python Console Server、真实本地 read-side API、总览/搜索/分域浏览/详情/图谱/时间线/非持久化 Bundle Explorer，以及暖琥珀、萌芽绿、未知紫和理性灰蓝的响应式产品界面；完成 HTTP 安全测试和桌面/窄屏真实浏览器验收。"
+    },
+    {
+      date: "2026-07-15",
+      title: "确认 LifeMesh Console 信息架构",
+      detail: "首屏采用总览工作台；跨领域全局搜索、数据健康、近期记录和队列摘要作为主入口，Knowledge Graph 与 Timeline 独立展示，图谱只使用真实运行时关系。"
+    },
+    {
+      date: "2026-07-15",
+      title: "确认独立只读 LifeMesh Console",
+      detail: "新增 ADR-0011 和 lifemesh-console 架构文档：Console 与静态 Project Board 分离，第一版读取真实本地数据但只读，通过按需启动、仅绑定 127.0.0.1 的 Console Server 复用 read-side logic；Agent 继续使用 CLI + JSON Bundle + skill。"
+    },
     {
       date: "2026-07-15",
       title: "完成 Unified Write Model written-spec review",

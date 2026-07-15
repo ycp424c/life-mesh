@@ -19,4 +19,6 @@
 | 流言原始物料污染本地仓库 | 广告、截图噪声或第三方隐私被长期保存 | 原始物料默认只进 temporary parsing sandbox；长期保留最小 source envelope | open |
 | 本地个人数据库泄露 | `~/.lifemesh` 被其他进程或备份读取 | 目录 0700、数据库和 raw asset 0600；后续评估加密 | open |
 | 真实数据库迁移或恢复损坏 | 固定计数漏迁、外键失败、并发连接覆盖或错误 restore 导致个人数据丢失 | exclusive lock、SQLite online backup、动态 preflight/postflight 守恒、forensic 副本和锁内恢复验收 | open |
+| 本地 Console Server 暴露个人数据 | 错误绑定或恶意本地页面读取 Manual Input、RumorClaim、Candidate 或 Bundle | 前台短时启动；仅绑定 127.0.0.1 随机端口；首版只读；禁止 CORS/LAN/public；严格校验 Host/Origin；边界放宽时重新设计认证 | mitigated for V1 |
+| Console 未遮罩 Sensitive 正文 | 同屏人员、录屏或投屏看到本机用户正在浏览的敏感内容 | 始终显示敏感度标签；用户控制本机屏幕环境；UI 直读权限不扩展到 Bundle、日志或导出 | accepted for V1 |
 | 看板与文档状态漂移 | 误导规划、架构或治理判断 | AGENTS.md 强制同步，看板以 docs 和 ADR 为事实源 | open |

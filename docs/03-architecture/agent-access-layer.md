@@ -1,7 +1,7 @@
 # Agent Access Layer
 
 状态：draft
-最后更新：2026-07-03
+最后更新：2026-07-15
 职责边界：定义 AI Agent 如何通过受控接口访问 LifeMesh，而不是直接访问底层数据。
 
 ## 目标
@@ -50,6 +50,10 @@
 - 硬规则：agent 推断禁止直接 `fact add` 或自动 promote，只能走 candidate / auto_captured → 用户确认。
 - 硬规则：agent 不得替用户复核或撤销 fact，除非用户明确发出该操作指令。
 - 任何能读 skill 的 agent 都能使用 LifeMesh，不绑定特定 client 或协议。
+
+## 与 LifeMesh Console 的边界
+
+ADR-0011 的本地 Console Server 是用户界面 adapter，不属于 Agent Access Layer。它不向 Agent 暴露 HTTP/MCP API，也不改变 CLI + JSON Bundle + skill 的能力、权限和审计合同。第一版 Console 只读，浏览器不得直接打开 SQLite 文件。
 
 ## 消费 Context Bundle
 

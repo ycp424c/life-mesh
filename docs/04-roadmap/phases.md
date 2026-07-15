@@ -42,8 +42,9 @@
 - agent 推断禁止直接 `fact add`，只能走 candidate → 用户 CLI 确认 → 按 type 升级（fact→Canonical Fact、task→Task、preference/relationship/decision→Memory）。
 - fact 复核与撤销：`fact review` / `fact revoke` 处理 `needs_review`、superseded、invalid、revoked 和 tombstone。
 - Unified Write Model：ADR-0010 已确认统一 database layer、Candidate handoff、Acceptance、typed Canonical Object、normalized provenance、review/tombstone 和动态数据库迁移/恢复合同；当前是已接受目标架构，尚未实现。
+- LifeMesh Console：ADR-0011 的真实数据只读首版已实现，通过按需 loopback Console Server 访问 read-side logic；React + shadcn/ui 界面与静态 Project Board 分离，不替代 Agent 的 CLI + Bundle，也不提供持久化写操作。
 - Skill 指导 agent 调用与 `evidence_role` 消费，使用范围是用户的所有信息。
-- 不引入运行时 server，不绑定 MCP；`automation` 仍 deferred 在阶段 6。
+- 不引入 MCP、Agent server 或后台 daemon；ADR-0011 的按需只读 Console Server 是用户界面例外。`automation` 仍 deferred 在阶段 6。
 
 当前架构可视化：
 

@@ -13,6 +13,8 @@
 
 当前看板是静态 Web 页面，可直接用浏览器打开，不需要构建工具或本地服务。
 
+Project Board 只展示项目状态，不是浏览或操作个人数据的 LifeMesh Console。Console 使用独立入口和独立安全边界，见 `docs/03-architecture/lifemesh-console.md`。
+
 ## 看板职责
 
 看板用于持续可视化跟踪：

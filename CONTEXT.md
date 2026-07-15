@@ -28,6 +28,14 @@ _Avoid_: source file, current record
 The source-neutral LifeMesh layer that turns personal data sources into task-scoped, permissioned, provenance-backed context for agents. It is the first product capability to validate, not a synonym for RAG or an Obsidian knowledge map.
 _Avoid_: RAG layer, Obsidian intelligence map, knowledge base
 
+**LifeMesh Console**:
+The user-facing product surface for inspecting personal sources, candidates, reviews, and context. Its first version is read-only, uses a short-lived loopback server, and labels but does not mask sensitive content; Sensitive content still requires explicit inclusion in each Context Bundle. It is separate from project planning and engineering status.
+_Avoid_: dashboard, project board, admin panel
+
+**Project Board**:
+The docs-derived static view of LifeMesh development status, roadmap, architecture, risks, and decisions. It is not the interface for browsing or changing personal data.
+_Avoid_: LifeMesh Console, product UI, personal data dashboard
+
 **Context Slice**:
 A small source-backed unit of context selected for a specific task. It carries provenance, source revision, citation status, sensitivity, freshness, and an `evidence_role` that tells the agent whether it is fact, raw material, context, or a lead.
 _Avoid_: chunk, search hit

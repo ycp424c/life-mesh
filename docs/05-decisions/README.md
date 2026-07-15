@@ -29,3 +29,4 @@
 - [ADR-0008 Manual Input Inbox With Local Retrieval](ADR-0008-manual-input-inbox-local-retrieval.md)
 - [ADR-0009 Unverified Rumor Claims](ADR-0009-unverified-rumor-claims.md)
 - [ADR-0010 Unified Write Model, Transactional Acceptance And Database Migration](ADR-0010-unified-write-model-transactional-acceptance-and-database-migration.md)
+- [ADR-0011 Local Loopback Console Server](ADR-0011-local-loopback-console-server.md)

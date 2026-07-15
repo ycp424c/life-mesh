@@ -1,7 +1,7 @@
 # Threat Model
 
 状态：draft
-最后更新：2026-07-03
+最后更新：2026-07-15
 职责边界：识别 LifeMesh 的主要安全威胁，并记录初始缓解策略。
 
 ## 主要威胁
@@ -21,6 +21,8 @@
 | 流言污染事实层 | 自动来源把未验证片段、截图或图片误写为事实、记忆或任务 | RumorClaim 默认只作未验证 claim；规则初筛；只能 promote 到 Knowledge Candidate |
 | 流言原始物料污染 Raw Vault | 自动保存广告、转发、第三方隐私或截图噪声 | 原始物料默认只进 temporary parsing sandbox；长期只保留最小 source envelope |
 | 本地库文件泄露 | SQLite、raw assets 或 embeddings 被未授权读取 | `~/.lifemesh` 0700，数据库和 assets 0600；后续评估加密 |
+| Console Server 数据暴露 | 错误监听地址、恶意 Host/Origin 或浏览器跨站请求读取本地个人数据 | 前台短时启动；只绑定 `127.0.0.1` 随机端口；严格校验 Host/Origin；首版只读；禁止 CORS/LAN/public；边界放宽时重新引入认证设计 |
+| Console 屏幕暴露 Sensitive 内容 | 用户主动打开 Console 时，同屏人员、录屏或投屏可能看到未遮罩正文 | 敏感度标签始终可见；用户负责本机屏幕环境；不把 UI 直读权限扩展到 Bundle、日志或导出 |
 
 ## 早期默认防线
 
@@ -31,10 +33,12 @@
 - Agent 自动捕获只适用于非高敏信息，只进 Manual Input Inbox，不能自动 promote。
 - RumorClaim 自动处理只保存通过初筛的 claim 和 mentions，默认不保存原始物料。
 - RumorClaim 默认不进普通 Bundle；明确请求未验证线索时只能作为 `lead`。
-- Sensitive 可本地记录，但默认不进普通 Bundle。
+- Sensitive 可本地记录并在 Console 直接查看，但默认不进普通 Bundle；每次纳入都需要用户在本次组装中主动选择，且不保存为默认值。
 - embedding 和截图 VLM 默认使用本机 LM Studio，不默认远程发送。
 - 高风险动作必须确认。
 - 所有工具调用都生成审计事件。
+- LifeMesh Console 与 Project Board 分离；Console Server 只在用户使用时以前台进程启动，绑定 `127.0.0.1` 随机端口，严格校验 Host/Origin 且不启用 CORS，第一版不暴露写操作。
+- Console 对本机用户直接展示 Sensitive 正文并持续显示敏感度标签，不提供默认遮罩；该显式产品取舍不改变 Sensitive 默认不进普通 Bundle 的规则。
 
 ## 待建模场景
 
@@ -48,3 +52,4 @@
 - 自动 source adapter 的 `rumor_policy` 是否足以约束 raw retention、sensitive auto-save 和 dashboard 展示。
 - LM Studio 未启动、模型未加载或 embedding 维度变化导致索引不一致。
 - 多个 Agent 共享同一记忆导致权限混淆。
+- 恶意网页通过 localhost、DNS rebinding 或伪造 Host/Origin 读取个人数据。
